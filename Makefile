@@ -1,14 +1,9 @@
 .PHONY: build
-build: external/re
+build: external
 	@[ ! -f "build/build.ninja" ] && cmake -B build -G Ninja || true
 	@cmake --build build --parallel
 
-external/re:
-	mkdir -p external
-	git clone https://github.com/baresip/re.git external/re
-	git clone https://github.com/baresip/rem.git external/rem
-	git clone https://github.com/baresip/baresip.git external/baresip
-
+.PHONY: run
 run: build
 	build/slmix
 
@@ -22,3 +17,16 @@ cleaner: clean
 
 .PHONY: fresh
 fresh: clean build
+
+.PHONY: update
+update: external
+	cd external/re && git pull
+	cd external/rem && git pull
+	cd external/baresip && git pull
+
+external:
+	mkdir -p external
+	git clone https://github.com/baresip/re.git external/re
+	git clone https://github.com/baresip/rem.git external/rem
+	git clone https://github.com/baresip/baresip.git external/baresip
+
