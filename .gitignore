@@ -1,0 +1,9 @@
+/build*
+
+/external
+
+# clangd
+.cache
+
+# Vim swp files
+*.swp
