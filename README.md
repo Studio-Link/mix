@@ -11,6 +11,23 @@ Next generation decentralized social network based on voice/video and broadcasti
 - RTMP Broadcasting
 - Server/Client Recording
 
+## Development
+
+Compile and start backend
+
+```sh
+$ make
+$ build/slmix
+```
+
+Start frontend
+
+```sh
+$ cd webui
+$ npm install
+$ npm run dev
+```
+
 ## Installation
 
 TODO
