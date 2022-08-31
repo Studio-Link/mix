@@ -24,6 +24,10 @@ update: external
 	cd external/rem && git pull
 	cd external/baresip && git pull
 
+.PHONY: webui
+webui:
+	cd webui && npm run dev
+
 external:
 	mkdir -p external
 	git clone https://github.com/baresip/re.git external/re
