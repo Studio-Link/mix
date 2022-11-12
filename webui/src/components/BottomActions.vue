@@ -2,9 +2,7 @@
   <div class="fixed inset-x-0 bottom-0">
     <div class="bg-gray-600">
       <div class="mx-auto py-1 px-3 sm:px-6 lg:px-8">
-        <div
-          class="flex items-center flex-wrap justify-center space-x-16"
-        >
+        <div class="flex items-center flex-wrap justify-center space-x-16">
           <div>
             <a
               href="#"
@@ -29,22 +27,18 @@
           </div>
           <div>
             <a
+              @click="listen()"
               href="#"
               class="text-gray-300 hover:bg-gray-700 hover:text-white group items-center px-2 py-2 text-base font-medium rounded-md block"
+              title="Join as listener"
             >
-              <svg
-                class="h-12 w-12 mx-auto"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
+              <svg class="h-14 w-14 mx-auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                 <path
                   fill-rule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
                   clip-rule="evenodd"
                 />
               </svg>
-              <!-- <div class="text-gray-300 text-sm text-center">Join as listener</div> -->
             </a>
           </div>
           <div>
@@ -75,3 +69,11 @@
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import webrtc from '../webrtc'
+
+function listen() {
+  webrtc.listen()
+}
+</script>

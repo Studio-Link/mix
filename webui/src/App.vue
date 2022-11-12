@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import Speakers from './components/Speakers.vue'
 import Listeners from './components/Listeners.vue'
 import BottomActions from './components/BottomActions.vue'
@@ -9,8 +9,10 @@ import BottomActions from './components/BottomActions.vue'
         <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl text-center">
             Room 42
         </h1>
+        <!-- <div class="blur hover:blur-0"> -->
         <Speakers />
         <Listeners />
-        <BottomActions></BottomActions>
+        <!-- </div> -->
+        <BottomActions />
     </div>
 </template>
