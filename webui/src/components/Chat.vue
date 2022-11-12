@@ -1,6 +1,6 @@
 <template>
 <div class="fixed inset-0 overflow-hidden">
-  <div class="absolute inset-0 overflow-hidden">
+  <div class="absolute inset-0 overflow-hidden"> 
     <section class="absolute inset-y-0 right-0 pl-10 max-w-full flex sm:pl-16" aria-labelledby="slide-over-heading">
       <!--
         Slide-over panel, show/hide based on slide-over state.

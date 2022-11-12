@@ -50,6 +50,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wshorten-64-to-32 -Watomic-implicit-seq-cst)
 endif()
 
+
 ##############################################################################
 #
 # Subdirectory section
@@ -63,6 +64,7 @@ set(MODULES ice dtls_srtp turn opus g711)
 add_subdirectory(external/re)
 add_subdirectory(external/rem)
 add_subdirectory(external/baresip)
+
 
 ##############################################################################
 #
