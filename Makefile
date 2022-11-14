@@ -28,6 +28,13 @@ update: external
 webui:
 	cd webui && npm run dev
 
+.PHONY: release
+release:
+	make cleaner
+	make external
+	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release
+	make build
+
 external:
 	mkdir -p external
 	git clone https://github.com/baresip/re.git external/re

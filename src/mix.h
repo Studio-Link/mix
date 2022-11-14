@@ -1,0 +1,26 @@
+struct mix {
+	struct list sessl;
+	const struct mnat *mnat;
+	const struct menc *menc;
+	struct http_sock *httpsock;
+	const char *www_path;
+ 	struct rtc_configuration pc_config; 
+};
+
+int slmix_http_listen(struct http_sock **sock, struct mix *mix);
+
+struct session {
+	struct le le;
+	struct peer_connection *pc;
+	struct http_conn *conn_pending;
+	char id[8];
+};
+
+int session_new(struct list *sessl, struct session **sessp);
+int session_start(struct session *sess,
+		  const struct rtc_configuration *pc_config,
+		  const struct mnat *mnat, const struct menc *menc);
+struct session *session_lookup(const struct list *sessl,
+			       const struct http_msg *msg);
+int session_handle_ice_candidate(struct session *sess, const struct odict *od);
+void session_close(struct session *sess, int err);
