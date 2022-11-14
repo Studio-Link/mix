@@ -59,12 +59,13 @@ endif()
 set(RE_LIBRARY re CACHE STRING "re_library")
 set(REM_LIBRARY rem CACHE STRING "rem_library")
 set(STATIC ON CACHE BOOL "Build static")
-set(MODULES ice dtls_srtp turn opus g711)
+set(MODULES ice dtls_srtp turn opus avcodec)
 
 add_subdirectory(external/re)
 add_subdirectory(external/rem)
 add_subdirectory(external/baresip)
 
+find_package(re CONFIG REQUIRED)
 
 ##############################################################################
 #
@@ -73,6 +74,8 @@ add_subdirectory(external/baresip)
 
 set(SRCS
   src/main.c
+  src/http.c
+  src/sess.c
 )
 
 
