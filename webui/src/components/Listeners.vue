@@ -1,5 +1,3 @@
-<script setup lang="ts">
-</script>
 
 <template>
   <div class="mt-10 sm:mt-12">
@@ -81,3 +79,7 @@
   </div>
 </template>
 
+<script setup lang="ts">
+let avatars = [{'image': '', 'name': 'test'}]
+let avatars_small = [{'image': '', 'name': 'test'}]
+</script>

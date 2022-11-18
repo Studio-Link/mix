@@ -1,5 +1,3 @@
-<script setup lang="ts"></script>
-
 <template>
   <div class="mt-6">
     <div class="max-w-7xl mx-auto px-4 text-center sm:px-6 lg:px-8">
@@ -38,3 +36,6 @@
     </div>
   </div>
 </template>
+
+
+<script setup lang="ts"></script>

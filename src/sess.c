@@ -1,7 +1,8 @@
 /**
- * @file sess.c  Baresip WebRTC demo -- session
+ * @file sess.c  Studio Link MIX -- session
  *
  * Copyright (C) 2010 - 2022 Alfred E. Heggestad
+ * Copyright (C) 2022 Sebastian Reimers
  */
 
 #include <string.h>

@@ -7,9 +7,11 @@ static const char *modv[] = {
 	"dtls_srtp",
 
 	/* audio */
+	"aumix",
 	"opus",
 
 	/* video */
+	"vidmix",
 	"avcodec",
 };
 
@@ -50,6 +52,15 @@ static int slmix_init(struct mix *mix)
 }
 
 
+static void slmix_close(struct mix *mix)
+{
+	list_flush(&mix->sessl);
+
+	mix->httpsock		  = mem_deref(mix->httpsock);
+	mix->pc_config.ice_server = mem_deref(mix->pc_config.ice_server);
+}
+
+
 int main(int argc, char *const argv[])
 {
 	(void)argc;
@@ -58,14 +69,15 @@ int main(int argc, char *const argv[])
 
 	struct mix mix = {.sessl = LIST_INIT, .pc_config = {.offerer = false}};
 
-	const char *conf = "call_max_calls	100\n"
+	const char *conf = "call_max_calls	500\n"
 			   "sip_verify_server	yes\n"
 			   "audio_buffer	20-160\n"
 			   "audio_buffer_mode	adaptive\n"
 			   "audio_silence	-35.0\n"
 			   "jitter_buffer_type	off\n"
 			   "opus_bitrate	64000\n"
-			   "ice_policy		relay\n";
+			   "ice_policy		relay\n"
+			   "rtp_timeout		10\n";
 
 	err = libre_init();
 	if (err)
@@ -73,6 +85,7 @@ int main(int argc, char *const argv[])
 
 	fd_setsize(-1);
 	re_thread_async_init(4);
+	/* log_enable_debug(true); */
 
 	(void)sys_coredump_set(true);
 
@@ -108,7 +121,7 @@ int main(int argc, char *const argv[])
 
 	re_main(signal_handler);
 
-	mem_deref(mix.httpsock);
+	slmix_close(&mix);
 
 	module_app_unload();
 	conf_close();
