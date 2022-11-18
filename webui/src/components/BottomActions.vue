@@ -4,8 +4,10 @@
       <div class="mx-auto py-1 px-3 sm:px-6 lg:px-8">
         <div class="flex items-center flex-wrap justify-center space-x-16">
           <div>
-            <a
-              href="#"
+            <button
+              v-if="Webrtc.state.value >= WebrtcState.Listening"
+              @click="hand_clicked()"
+              ref="hand"
               class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
             >
               <svg
@@ -23,27 +25,33 @@
                 />
               </svg>
               <!-- <div class="text-gray-300 text-sm text-center">Hand</div> -->
-            </a>
+            </button>
           </div>
           <div>
-            <a
+            <button
+              v-if="Webrtc.state.value < WebrtcState.Listening"
               @click="listen()"
-              href="#"
+              ref="play"
               class="text-gray-300 hover:bg-gray-700 hover:text-white group items-center px-2 py-2 text-base font-medium rounded-md block"
               title="Join as listener"
+              :class="{ 'animate-pulse': Webrtc.state.value == WebrtcState.Connecting}"
             >
-              <svg class="h-14 w-14 mx-auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <svg 
+              class="h-14 w-14 mx-auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                 <path
                   fill-rule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
                   clip-rule="evenodd"
                 />
               </svg>
-            </a>
+              <div v-if="Webrtc.state.value == WebrtcState.Offline" class="text-gray-300 text-sm text-center">Press to listen</div>
+              <div v-if="Webrtc.state.value == WebrtcState.Connecting" class="text-gray-300 text-sm text-center">Connecting...</div>
+            </button>
           </div>
           <div>
-            <a
-              href="#"
+            <button
+            v-if="Webrtc.state.value >= WebrtcState.Listening"
+            ref="chat"
               title="Chat"
               class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
             >
@@ -62,7 +70,7 @@
                 />
               </svg>
               <!-- <div class="text-gray-300 text-sm text-center">Chat</div> -->
-            </a>
+            </button>
           </div>
         </div>
       </div>
@@ -71,9 +79,19 @@
 </template>
 
 <script setup lang="ts">
-import webrtc from '../webrtc'
+import {Webrtc, WebrtcState} from '../webrtc'
+import { ref } from 'vue'
+
+const hand = ref<HTMLButtonElement>()
+const play = ref<HTMLButtonElement>()
+const chat = ref<HTMLButtonElement>()
 
 function listen() {
-  webrtc.listen()
+  Webrtc.listen()
+  /* hand.value!.disabled = false */
+}
+
+function hand_clicked() {
+  Webrtc.speak()
 }
 </script>

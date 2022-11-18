@@ -7,15 +7,14 @@ struct mix {
  	struct rtc_configuration pc_config; 
 };
 
-int slmix_http_listen(struct http_sock **sock, struct mix *mix);
-
 struct session {
 	struct le le;
 	struct peer_connection *pc;
 	struct http_conn *conn_pending;
-	char id[8];
+	char id[32];
 };
 
+int slmix_http_listen(struct http_sock **sock, struct mix *mix);
 int session_new(struct list *sessl, struct session **sessp);
 int session_start(struct session *sess,
 		  const struct rtc_configuration *pc_config,

@@ -61,7 +61,7 @@ set(REM_LIBRARY rem CACHE STRING "rem_library")
 set(STATIC ON CACHE BOOL "Build static")
 set(APP_MODULES_DIR ${CMAKE_SOURCE_DIR}/modules)
 set(APP_MODULES aumix vidmix)
-set(MODULES ice dtls_srtp turn opus avcodec)
+set(MODULES ice dtls_srtp turn opus avcodec fakevideo)
 
 add_subdirectory(external/re)
 add_subdirectory(external/rem)

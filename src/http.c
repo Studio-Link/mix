@@ -63,7 +63,7 @@ static void http_sreply(struct http_conn *conn, uint16_t scode,
 			    sess->id);
 
 	err = http_reply(
-		conn, 200, "OK",
+		conn, scode, "OK",
 		"Content-Type: %s\r\n"
 		"Content-Length: %zu\r\n"
 		"Cache-Control: no-cache, no-store, must-revalidate\r\n"
@@ -73,10 +73,11 @@ static void http_sreply(struct http_conn *conn, uint16_t scode,
 		"frame-ancestors 'self'; form-action 'self'; img-src * data:;"
 		"style-src 'self' 'unsafe-inline';\r\n"
 #ifndef RELEASE
-		/* Only allow CORS on DEV Builds
-		 * @TODO add release test */
+		/* Only allow wildcard CORS on DEV Builds */
 		"Access-Control-Allow-Origin: *\r\n"
 		"Access-Control-Allow-Methods: *\r\n"
+		"Access-Control-Allow-Headers: *\r\n"
+		"Access-Control-Expose-Headers: *\r\n"
 #endif
 		"%s"
 		"\r\n"
@@ -99,11 +100,13 @@ static void http_req_handler(struct http_conn *conn,
 	if (!conn || !msg)
 		return;
 
+	warning("conn %r %r %p\n", &msg->met, &msg->path, conn);
+
 	/*
 	 * API Requests
 	 */
-	if (0 == pl_strcasecmp(&msg->met, "POST") &&
-	    0 == pl_strcasecmp(&msg->path, "/api/v1/client/connect")) {
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/connect") &&
+	    0 == pl_strcasecmp(&msg->met, "POST")) {
 
 		err = session_new(&mix->sessl, &sess);
 		if (err)
@@ -113,7 +116,7 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/sdp") &&
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/sdp") &&
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
 
 		sess = session_lookup(&mix->sessl, msg);
@@ -125,8 +128,10 @@ static void http_req_handler(struct http_conn *conn,
 				    mix->menc);
 		if (err)
 			goto err;
+
 		if (msg->clen &&
 		    msg_ctype_cmp(&msg->ctyp, "application", "json")) {
+			warning("handle put\n");
 			err = handle_put_sdp(sess, msg);
 			if (err)
 				goto err;
@@ -157,6 +162,14 @@ static void http_req_handler(struct http_conn *conn,
 
 		http_sreply(conn, 200, "OK", "text/html", "", 0, sess);
 	}
+
+#ifndef RELEASE
+	/* Default return OPTIONS - needed on dev for preflight CORS Check */
+	if (0 == pl_strcasecmp(&msg->met, "OPTIONS")) {
+		http_sreply(conn, 200, "OK", "text/html", "", 0, NULL);
+		return;
+	}
+#endif
 
 	/* Default 404 return */
 	http_ereply(conn, 404, "Not found");
