@@ -2,6 +2,16 @@ import api from './api'
 import { ref } from 'vue'
 
 let pc: RTCPeerConnection
+let constraints = {
+    audio: {
+        echoCancellation: false, // disabling audio processing
+        autoGainControl: false,
+        noiseSuppression: false,
+        latency: 0.02, //20ms
+        sampleRate: 48000,
+    },
+    video: { width: 1280, height: 720 },
+}
 
 const configuration: RTCConfiguration = {
     bundlePolicy: 'balanced',
@@ -30,7 +40,9 @@ let black = ({ width = 480, height = 360 } = {}) => {
     let canvas = Object.assign(document.createElement('canvas'), { width, height })
     //Chrome workaround: needs canvas frame change to start webrtc rtp
     canvas.getContext('2d')?.fillRect(0, 0, width, height)
-    setTimeout(() => { canvas.getContext('2d')?.fillRect(0, 0, width, height) }, 2000);
+    setTimeout(() => {
+        canvas.getContext('2d')?.fillRect(0, 0, width, height)
+    }, 2000)
     let stream = canvas.captureStream()
     return Object.assign(stream.getVideoTracks()[0], { enabled: false })
 }
@@ -39,8 +51,7 @@ let AVSilence = (...args: any) => new MediaStream([black(...args), silence()])
 /** End AVdummy **/
 
 function handle_answer(descr: any) {
-    if (!descr)
-        return
+    if (!descr) return
 
     console.log("remote description: type='%s'", descr.type)
 
@@ -141,13 +152,51 @@ function pc_setup() {
     }
 
     /* Add dummy tracks */
-    let video_audio = AVSilence()
-    video_audio.getTracks().forEach((track) => pc.addTrack(track, video_audio))
+    let av = AVSilence()
+    av.getTracks().forEach((track) => pc.addTrack(track, av))
 
     pc_offer()
 }
 
-function pc_media() {
+async function pc_media() {
+    let avstream: MediaStream
+    try {
+        avstream = await navigator.mediaDevices.getUserMedia(constraints)
+    } catch (e) {
+        console.error('pc_media: permission denied...', e)
+        return
+    }
+
+    await pc_replace_tracks(avstream.getAudioTracks()[0], avstream.getVideoTracks()[0])
+
+    // let deviceInfos = await navigator.mediaDevices.enumerateDevices()
+    // pc_devices(deviceInfos)
+}
+
+async function pc_replace_tracks(audio_track: MediaStreamTrack, video_track: MediaStreamTrack | null) {
+
+    const audio = pc.getSenders().find((s) => s.track?.kind === 'audio');
+    const video = pc.getSenders().find((s) => s.track?.kind === 'video');
+
+    if (!audio || !video) {
+        console.log("pc_replace_tracks: no audio or video tracks found")
+        return
+    }
+
+    if (video_track) {
+        await Promise.all([
+            audio.replaceTrack(audio_track),
+            video.replaceTrack(video_track),
+        ]);
+        console.log("pc_replace_tracks: audio and video")
+
+        return
+    }
+
+    await Promise.all([
+        audio.replaceTrack(audio_track),
+    ]);
+    console.log("pc_replace_tracks: audio")
 }
 
 export enum WebrtcState {
@@ -155,26 +204,25 @@ export enum WebrtcState {
     Offline,
     Connecting,
     Listening,
-    Speaking
+    Speaking,
 }
 
 export const Webrtc = {
     state: ref(WebrtcState.Offline),
-    errorText: ref(""),
+    errorText: ref(''),
     listen() {
         pc_setup()
         this.state.value = WebrtcState.Connecting
     },
     speak() {
-            pc_media()
+        pc_media()
     },
     error(msg: string) {
         this.errorText.value = msg
         this.state.value = WebrtcState.Error
     },
-    error_reset()
-    {
-        this.errorText.value = ""
+    error_reset() {
+        this.errorText.value = ''
         this.state.value = WebrtcState.Offline
-    }
+    },
 }
