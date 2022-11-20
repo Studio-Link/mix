@@ -34,7 +34,7 @@ export default {
     return false
   },
   async avatar(image: string) {
-    console.log(image)
+    await api_fetch('POST', '/client/avatar', image)
   },
   async login() {
     let req = await api_fetch('POST', '/client/login', null)

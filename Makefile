@@ -1,6 +1,6 @@
 .PHONY: build
 build: external
-	@[ -f "build/build.ninja" ] || cmake -B build -G Ninja
+	@[ -f "build/build.ninja" ] || cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
 	@cmake --build build --parallel
 
 .PHONY: run
