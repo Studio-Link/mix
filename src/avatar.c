@@ -8,40 +8,41 @@
 
 struct avatar {
 	struct http_conn *conn;
-	const struct http_msg *msg;
+	struct mbuf *mb;
 };
 
 
 static int work(void *arg)
 {
 	struct avatar *avatar = arg;
-	struct mbuf *mb	      = avatar->msg->mb;
+	struct mbuf *mb	      = avatar->mb;
 	FILE *jpg;
-	int w = 128;
-	int h = 128;
+	int w = 256;
+	int h = 256;
 	gdImagePtr in, out;
 	struct pl pl = PL_INIT;
+	int err	     = 0;
 
 	pl.l = mbuf_get_left(mb) * 2;
 	pl.p = mem_zalloc(pl.l, NULL);
+	if (!pl.p)
+		return ENOMEM;
 
-	FILE *tmp_png = tmpfile();
+	mbuf_advance(mb, 0x17); /* "data:image/png;base64, */
 
-	mbuf_advance(mb, 0x17);
-
-	base64_decode((char *)mbuf_buf(mb), mbuf_get_left(mb) - 1,
+	err = base64_decode((char *)mbuf_buf(mb), mbuf_get_left(mb) - 1,
 		      (uint8_t *)pl.p, &pl.l);
+	if (err) {
+		mem_deref((void *)pl.p);
+		warning("avatar: base64_decode failed %m\n", err);
+		return err;
+	}
 
-	fwrite(pl.p, pl.l, 1, tmp_png);
-
-	mem_deref((void *)pl.p);
-	rewind(tmp_png);
-
-	in = gdImageCreateFromPng(tmp_png);
-	fclose(tmp_png);
+	in = gdImageCreateFromPngPtr((int)pl.l, (void *)pl.p);
 	if (!in) {
 		warning("avatar: create image failed\n");
-		return EIO;
+		err = EIO;
+		goto err;
 	}
 
 	gdImageSetInterpolationMethod(in, GD_BILINEAR_FIXED);
@@ -49,17 +50,26 @@ static int work(void *arg)
 	if (!out) {
 		gdImageDestroy(in);
 		warning("avatar: image scale failed\n");
-		return EIO;
+		err = EIO;
+		goto err;
 	}
 
-	fs_fopen(&jpg, "/tmp/test.jpg", "w+");
+	err = fs_fopen(&jpg, "/tmp/test.jpg", "w+");
+	if (err) {
+		warning("avatar: write open failed %m\n", err);
+		goto out;
+	}
 	gdImageJpeg(out, jpg, 90);
 	fclose(jpg);
 
+out:
 	gdImageDestroy(in);
 	gdImageDestroy(out);
 
-	return 0;
+err:
+	mem_deref((void *)pl.p);
+
+	return err;
 }
 
 
@@ -74,9 +84,15 @@ static void http_callback(int err, void *arg)
 	http_sreply(avatar->conn, 201, "Created", "text/html", "", 0, NULL);
 
 out:
-	mem_deref(avatar->conn);
-	mem_deref((void *)avatar->msg);
 	mem_deref(avatar);
+}
+
+
+static void avatar_destruct(void *data)
+{
+	struct avatar *avatar = data;
+	mem_deref(avatar->conn);
+	mem_deref(avatar->mb);
 }
 
 
@@ -87,13 +103,14 @@ int avatar_save(struct http_conn *conn, const struct http_msg *msg)
 	if (!conn || !msg)
 		return EINVAL;
 
-	avatar = mem_zalloc(sizeof(struct avatar), NULL);
+	avatar = mem_zalloc(sizeof(struct avatar), avatar_destruct);
 	if (!avatar)
 		return ENOMEM;
 
 	avatar->conn = mem_ref(conn);
-	avatar->msg  = mem_ref((void *)msg);
+	avatar->mb   = mem_ref(msg->mb);
 
+	/* slow fs operations and image scaling */
 	re_thread_async(work, http_callback, avatar);
 
 	return 0;
