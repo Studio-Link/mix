@@ -9,3 +9,5 @@
 *.swp
 
 /webui/dist
+
+.gdb_history

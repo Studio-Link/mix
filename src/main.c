@@ -12,6 +12,7 @@ static const char *modv[] = {
 
 	/* video */
 	"vidmix",
+	/* "fakevideo", */
 	"avcodec",
 };
 

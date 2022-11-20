@@ -3,6 +3,7 @@
 #include "mix.h"
 
 
+
 static int handle_put_sdp(struct session *sess, const struct http_msg *msg)
 {
 	struct session_description sd = {SDP_NONE, NULL};
@@ -36,7 +37,7 @@ out:
 }
 
 
-static void http_sreply(struct http_conn *conn, uint16_t scode,
+void http_sreply(struct http_conn *conn, uint16_t scode,
 			const char *reason, const char *ctype, const char *fmt,
 			size_t size, struct session *sess)
 {
@@ -105,6 +106,13 @@ static void http_req_handler(struct http_conn *conn,
 	/*
 	 * API Requests
 	 */
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/avatar") &&
+	    0 == pl_strcasecmp(&msg->met, "POST")) {
+
+		avatar_save(conn, msg);
+		return;
+	}
+
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/connect") &&
 	    0 == pl_strcasecmp(&msg->met, "POST")) {
 

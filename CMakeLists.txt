@@ -78,6 +78,7 @@ set(SRCS
   src/main.c
   src/http.c
   src/sess.c
+  src/avatar.c
 )
 
 
@@ -87,5 +88,5 @@ set(SRCS
 #
 
 add_executable(${PROJECT_NAME} ${SRCS})
-target_link_libraries(${PROJECT_NAME} PRIVATE baresip rem re)
+target_link_libraries(${PROJECT_NAME} PRIVATE baresip rem re gd)
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${RE_DEFINITIONS})
