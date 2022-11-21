@@ -196,7 +196,7 @@ int slmix_http_listen(struct http_sock **sock, struct mix *mix)
 	if (!sock)
 		return EINVAL;
 
-	err = sa_set_str(&srv, "127.0.0.1", 9999);
+	err = sa_set_str(&srv, "0.0.0.0", 9999);
 	if (err)
 		return err;
 

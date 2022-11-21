@@ -42,7 +42,7 @@ export default {
     },
 
     savePicture() {
-        this.picture.value = cropper?.getCroppedCanvas().toDataURL('image/png')
+        this.picture.value = cropper?.getCroppedCanvas().toDataURL('image/jpeg')
         cropper?.destroy()
     },
 }

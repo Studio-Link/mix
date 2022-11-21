@@ -1,8 +1,6 @@
 #include <re.h>
 #include <baresip.h>
 #include <gd.h>
-#include <stdint.h>
-#include <stdio.h>
 
 #include "mix.h"
 
@@ -28,7 +26,7 @@ static int work(void *arg)
 	if (!pl.p)
 		return ENOMEM;
 
-	mbuf_advance(mb, 0x17); /* "data:image/png;base64, */
+	mbuf_advance(mb, 0x18); /* "data:image/jpeg;base64, */
 
 	err = base64_decode((char *)mbuf_buf(mb), mbuf_get_left(mb) - 1,
 		      (uint8_t *)pl.p, &pl.l);
@@ -38,7 +36,7 @@ static int work(void *arg)
 		return err;
 	}
 
-	in = gdImageCreateFromPngPtr((int)pl.l, (void *)pl.p);
+	in = gdImageCreateFromJpegPtr((int)pl.l, (void *)pl.p);
 	if (!in) {
 		warning("avatar: create image failed\n");
 		err = EIO;
