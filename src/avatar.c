@@ -7,6 +7,7 @@
 struct avatar {
 	struct http_conn *conn;
 	struct mbuf *mb;
+	struct session *sess;	
 };
 
 
@@ -20,13 +21,18 @@ static int work(void *arg)
 	gdImagePtr in, out;
 	struct pl pl = PL_INIT;
 	int err	     = 0;
+	size_t offset = 0x18; /* "data:image/jpeg;base64, */
+	char file[256];
+	
+	if (mbuf_get_left(mb) < offset)
+		return EINVAL;
 
 	pl.l = mbuf_get_left(mb) * 2;
 	pl.p = mem_zalloc(pl.l, NULL);
 	if (!pl.p)
 		return ENOMEM;
 
-	mbuf_advance(mb, 0x18); /* "data:image/jpeg;base64, */
+	mbuf_advance(mb, offset);
 
 	err = base64_decode((char *)mbuf_buf(mb), mbuf_get_left(mb) - 1,
 		      (uint8_t *)pl.p, &pl.l);
@@ -38,7 +44,7 @@ static int work(void *arg)
 
 	in = gdImageCreateFromJpegPtr((int)pl.l, (void *)pl.p);
 	if (!in) {
-		warning("avatar: create image failed\n");
+		warning("\navatar: create image failed\n");
 		err = EIO;
 		goto err;
 	}
@@ -52,11 +58,13 @@ static int work(void *arg)
 		goto err;
 	}
 
-	err = fs_fopen(&jpg, "/tmp/test.jpg", "w+");
+	re_snprintf(file, sizeof(file), "/tmp/%s.jpg", avatar->sess->id);
+	err = fs_fopen(&jpg, file, "w+");
 	if (err) {
 		warning("avatar: write open failed %m\n", err);
 		goto out;
 	}
+
 	gdImageJpeg(out, jpg, 90);
 	fclose(jpg);
 
@@ -91,14 +99,15 @@ static void avatar_destruct(void *data)
 	struct avatar *avatar = data;
 	mem_deref(avatar->conn);
 	mem_deref(avatar->mb);
+	mem_deref(avatar->sess);
 }
 
 
-int avatar_save(struct http_conn *conn, const struct http_msg *msg)
+int avatar_save(struct session *sess, struct http_conn *conn, const struct http_msg *msg)
 {
 	struct avatar *avatar;
 
-	if (!conn || !msg)
+	if (!sess || !conn || !msg)
 		return EINVAL;
 
 	avatar = mem_zalloc(sizeof(struct avatar), avatar_destruct);
@@ -106,9 +115,9 @@ int avatar_save(struct http_conn *conn, const struct http_msg *msg)
 		return ENOMEM;
 
 	avatar->conn = mem_ref(conn);
+	avatar->sess = mem_ref(sess);
 	avatar->mb   = mem_ref(msg->mb);
 
-	/* slow fs operations and image scaling */
 	re_thread_async(work, http_callback, avatar);
 
 	return 0;

@@ -3,7 +3,6 @@
 #include "mix.h"
 
 
-
 static int handle_put_sdp(struct session *sess, const struct http_msg *msg)
 {
 	struct session_description sd = {SDP_NONE, NULL};
@@ -37,9 +36,9 @@ out:
 }
 
 
-void http_sreply(struct http_conn *conn, uint16_t scode,
-			const char *reason, const char *ctype, const char *fmt,
-			size_t size, struct session *sess)
+void http_sreply(struct http_conn *conn, uint16_t scode, const char *reason,
+		 const char *ctype, const char *fmt, size_t size,
+		 struct session *sess)
 {
 	struct mbuf *mb;
 	int err		    = 0;
@@ -101,17 +100,27 @@ static void http_req_handler(struct http_conn *conn,
 	if (!conn || !msg)
 		return;
 
-	warning("conn %r %r %p\n", &msg->met, &msg->path, conn);
+	info("conn %r %r %p\n", &msg->met, &msg->path, conn);
+
+#ifndef RELEASE
+	/* Default return OPTIONS - needed on dev for preflight CORS Check */
+	if (0 == pl_strcasecmp(&msg->met, "OPTIONS")) {
+		http_sreply(conn, 200, "OK", "text/html", "", 0, NULL);
+		return;
+	}
+#endif
+
+	if (0 != pl_strcasecmp(&msg->path, "/api/v1/client/connect")) {
+		sess = session_lookup(&mix->sessl, msg);
+		if (!sess) {
+			http_ereply(conn, 404, "Session Not Found");
+			return;
+		}
+	}
 
 	/*
 	 * API Requests
 	 */
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/avatar") &&
-	    0 == pl_strcasecmp(&msg->met, "POST")) {
-
-		avatar_save(conn, msg);
-		return;
-	}
 
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/connect") &&
 	    0 == pl_strcasecmp(&msg->met, "POST")) {
@@ -124,14 +133,36 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/avatar") &&
+	    0 == pl_strcasecmp(&msg->met, "POST")) {
+
+		avatar_save(sess, conn, msg);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/name") &&
+	    0 == pl_strcasecmp(&msg->met, "POST")) {
+
+		struct pl name = PL_INIT;
+
+		err = re_regex((char *)mbuf_buf(msg->mb),
+			       mbuf_get_left(msg->mb), "[a-zA-Z0-9]+", &name);
+		if (err)
+			goto err;
+
+		re_snprintf(sess->name, sizeof(sess->name), "%r", &name);
+
+		if (!str_isset(sess->name)) {
+			http_ereply(conn, 400, "Invalid name");
+		}
+
+		http_sreply(conn, 201, "Updated", "text/html", "", 0, sess);
+		return;
+	}
+
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/sdp") &&
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
 
-		sess = session_lookup(&mix->sessl, msg);
-		if (!sess) {
-			http_ereply(conn, 404, "Session Not Found");
-			return;
-		}
 		err = session_start(sess, &mix->pc_config, mix->mnat,
 				    mix->menc);
 		if (err)
@@ -170,14 +201,6 @@ static void http_req_handler(struct http_conn *conn,
 
 		http_sreply(conn, 200, "OK", "text/html", "", 0, sess);
 	}
-
-#ifndef RELEASE
-	/* Default return OPTIONS - needed on dev for preflight CORS Check */
-	if (0 == pl_strcasecmp(&msg->met, "OPTIONS")) {
-		http_sreply(conn, 200, "OK", "text/html", "", 0, NULL);
-		return;
-	}
-#endif
 
 	/* Default 404 return */
 	http_ereply(conn, 404, "Not found");

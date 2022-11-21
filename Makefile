@@ -30,8 +30,7 @@ webui:
 
 .PHONY: release
 release:
-	make cleaner
-	make external
+	make clean
 	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release
 	make build
 

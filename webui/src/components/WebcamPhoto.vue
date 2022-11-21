@@ -1,20 +1,20 @@
 <template>
   <div>
-    <video ref="video" :class="{ hidden: previewTaken }" />
-    <canvas ref="picture" :class="{ hidden: !previewTaken || webcam.picture.value }" class="w-full" />
+    <video ref="video" :class="{ hidden: webcam.preview.value }" />
+    <canvas ref="picture" :class="{ hidden: !webcam.preview.value || webcam.picture.value }" class="w-full" />
     <img v-if="webcam.picture.value" :src="webcam.picture.value" class="mx-auto rounded-full h-48" />
   </div>
   <button
-    v-if="!previewTaken"
+    v-if="!webcam.preview.value"
     @click="preview()"
-    class="flex w-full justify-center rounded-md border border-transparent bg-gray-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+    class="flex w-full justify-center rounded-md border border-transparent bg-green-700 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-geen-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
   >
-    Save Preview
+    Snapshot
   </button>
   <button
-    v-if="previewTaken && !webcam.picture.value"
+    v-if="webcam.preview.value && !webcam.picture.value"
     @click="webcam.savePicture()"
-    class="flex w-full justify-center rounded-md border border-transparent bg-gray-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+    class="flex w-full justify-center rounded-md border border-transparent bg-green-700 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
   >
     Save Avatar
   </button>
@@ -27,15 +27,12 @@ import webcam from '../webcam'
 const video = ref(null)
 const picture = ref(null)
 
-const previewTaken = ref(false)
-
 function preview() {
   webcam.takePicture(picture.value, video.value)
-  previewTaken.value = true
   webcam.stop()
 }
 
 onMounted(() => {
-  webcam.start(video.value)
+  webcam.video(video.value)
 })
 </script>

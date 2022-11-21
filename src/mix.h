@@ -12,6 +12,7 @@ struct session {
 	struct peer_connection *pc;
 	struct http_conn *conn_pending;
 	char id[32];
+	char name[16];
 };
 
 int slmix_http_listen(struct http_sock **sock, struct mix *mix);
@@ -23,7 +24,7 @@ struct session *session_lookup(const struct list *sessl,
 			       const struct http_msg *msg);
 int session_handle_ice_candidate(struct session *sess, const struct odict *od);
 void session_close(struct session *sess, int err);
-int avatar_save(struct http_conn *conn, const struct http_msg *msg);
+int avatar_save(struct session *sess, struct http_conn *conn, const struct http_msg *msg);
 void http_sreply(struct http_conn *conn, uint16_t scode,
 			const char *reason, const char *ctype, const char *fmt,
 			size_t size, struct session *sess);
