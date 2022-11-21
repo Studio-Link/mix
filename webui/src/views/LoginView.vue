@@ -67,7 +67,7 @@ import webcam from '../webcam'
 import api from '../api'
 
 const random = ref(true)
-const avatar = ref<Node | null>(null)
+const avatar = ref<SVGElement | null>(null)
 const props = ref(Factory({ isCircle: true }))
 
 function randomize() {
@@ -83,16 +83,22 @@ function login() {
   if (webcam.picture.value) {
     api.avatar(webcam.picture.value)
   } else {
-    let xml = new XMLSerializer().serializeToString(avatar.value!)
-    let blob = new Blob([xml], { type: 'image/svg+xml' })
-    let canvas = document.createElement('canvas')
+    const svg = avatar.value
+    svg?.setAttribute('width', String(256))
+    svg?.setAttribute('height', String(256))
+    const xml = new XMLSerializer().serializeToString(svg!)
+    const blob = new Blob([xml], { type: 'image/svg+xml' })
+    const canvas = document.createElement('canvas')
+    const URL = window.URL || window.webkitURL || window
+    canvas.width = 256
+    canvas.height = 256
 
-    let image = new Image()
+    const image = new Image()
     image.onload = () => {
-      canvas?.getContext('2d')?.drawImage(image, 0, 0)
-      api.avatar(canvas.toDataURL('image/png'))
+      canvas.getContext('2d')?.drawImage(image, 0, 0)
+      api.avatar(canvas.toDataURL('image/jpeg'))
     }
-    image.src = window.URL.createObjectURL(blob)
+    image.src = URL.createObjectURL(blob)
   }
 }
 </script>
