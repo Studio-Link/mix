@@ -1,25 +1,33 @@
 import Cropper from 'cropperjs'
 import 'cropperjs/dist/cropper.css'
-import {ref} from 'vue'
+import { ref } from 'vue'
 
 let videoStream: MediaStream | undefined
-let cropper:Cropper | undefined
+let cropper: Cropper | undefined
+let hvideo: HTMLVideoElement | null
 
 export default {
     picture: ref<string | undefined>(),
-    start(video: HTMLVideoElement | null) {
+    preview: ref(false),
+
+    video(video: HTMLVideoElement | null) {
+        hvideo = video
+    },
+
+    start() {
         navigator.mediaDevices
             .getUserMedia({ video: true, audio: false })
             .then((stream) => {
                 videoStream = stream
-                if (video) video.srcObject = stream
-                video?.play()
+                if (hvideo) hvideo.srcObject = stream
+                hvideo?.play()
             })
             .catch((err) => {
                 console.error(`An error occurred: ${err}`)
             })
 
-            this.picture.value = undefined
+        this.picture.value = undefined
+        this.preview.value = false
     },
 
     stop() {
@@ -27,6 +35,7 @@ export default {
     },
 
     takePicture(canvas: HTMLCanvasElement | null, video: HTMLVideoElement | null) {
+        this.preview.value = true
         const context = canvas?.getContext('2d')
         const width = video?.videoWidth
         const height = video?.videoHeight
@@ -35,10 +44,7 @@ export default {
         canvas?.setAttribute('height', String(height))
 
         context?.drawImage(video!, 0, 0, width!, height!)
-
-        // pictureData = canvas?.toDataURL('image/png')
-
-        cropper = new Cropper(canvas!, {aspectRatio: 1})
+        cropper = new Cropper(canvas!, { aspectRatio: 1 })
     },
 
     savePicture() {
