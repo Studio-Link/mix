@@ -9,5 +9,6 @@
 *.swp
 
 /webui/dist
+/webui/public/avatars
 
 .gdb_history

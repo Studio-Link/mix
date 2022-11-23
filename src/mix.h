@@ -12,6 +12,7 @@ struct session {
 	struct peer_connection *pc;
 	struct http_conn *conn_pending;
 	char id[32];
+	char avatar_id[32];
 	char name[16];
 };
 

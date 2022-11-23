@@ -3,8 +3,12 @@ build: external
 	@[ -f "build/build.ninja" ] || cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
 	@cmake --build build --parallel
 
+.PHONY: avatars
+avatars:
+	mkdir -p webui/public/avatars
+
 .PHONY: run
-run: build
+run: build avatars
 	build/slmix
 
 .PHONY: clean
