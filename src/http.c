@@ -102,6 +102,15 @@ static void http_req_handler(struct http_conn *conn,
 
 	info("conn %r %r %p\n", &msg->met, &msg->path, conn);
 
+	/*
+	 * Websocket Requests
+	 */
+	if (0 == pl_strcasecmp(&msg->path, "/ws/v1/users")) {
+		sl_ws_open(conn, WS_USERS, msg, sl_ws_users_auth, mix);
+		return;
+	}
+
+
 #ifndef RELEASE
 	/* Default return OPTIONS - needed on dev for preflight CORS Check */
 	if (0 == pl_strcasecmp(&msg->met, "OPTIONS")) {
@@ -111,7 +120,7 @@ static void http_req_handler(struct http_conn *conn,
 #endif
 
 	if (0 != pl_strcasecmp(&msg->path, "/api/v1/client/connect")) {
-		sess = session_lookup(&mix->sessl, msg);
+		sess = session_lookup_hdr(&mix->sessl, msg);
 		if (!sess) {
 			http_sreply(conn, 404, "Session Not Found",
 				    "text/html", "", 0, NULL);
@@ -190,7 +199,7 @@ static void http_req_handler(struct http_conn *conn,
 		/* draft-ietf-wish-whip-03 */
 		info("mix: DELETE -> disconnect\n");
 
-		sess = session_lookup(&mix->sessl, msg);
+		sess = session_lookup_hdr(&mix->sessl, msg);
 		if (!sess) {
 			http_ereply(conn, 404, "Session Not Found");
 			return;

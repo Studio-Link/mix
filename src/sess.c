@@ -24,9 +24,9 @@ static void destructor(void *data)
 static void peerconnection_gather_handler(void *arg)
 {
 	struct session *sess = arg;
-	struct mbuf *mb_sdp = NULL;
-	struct odict *od = NULL;
-	enum sdp_type type = SDP_NONE;
+	struct mbuf *mb_sdp  = NULL;
+	struct odict *od     = NULL;
+	enum sdp_type type   = SDP_NONE;
 	int err;
 
 	switch (peerconnection_signaling(sess->pc)) {
@@ -73,7 +73,7 @@ static void peerconnection_gather_handler(void *arg)
 		}
 	}
 
- out:
+out:
 	mem_deref(mb_sdp);
 	mem_deref(od);
 
@@ -85,7 +85,7 @@ static void peerconnection_gather_handler(void *arg)
 static void peerconnection_estab_handler(struct media_track *media, void *arg)
 {
 	struct session *sess = arg;
-	int err = 0;
+	int err		     = 0;
 
 	info("mix: stream established: '%s'\n",
 	     media_kind_name(mediatrack_kind(media)));
@@ -191,8 +191,8 @@ int session_new(struct list *sessl, struct session **sessp)
 }
 
 
-struct session *session_lookup(const struct list *sessl,
-			       const struct http_msg *msg)
+struct session *session_lookup_hdr(const struct list *sessl,
+				   const struct http_msg *msg)
 {
 	const struct http_hdr *hdr;
 
@@ -202,15 +202,23 @@ struct session *session_lookup(const struct list *sessl,
 		return NULL;
 	}
 
+	return session_lookup(sessl, &hdr->val);
+}
+
+
+struct session *session_lookup(const struct list *sessl,
+			       const struct pl *sessid)
+{
+
 	for (struct le *le = sessl->head; le; le = le->next) {
 
 		struct session *sess = le->data;
 
-		if (0 == pl_strcasecmp(&hdr->val, sess->id))
+		if (0 == pl_strcasecmp(sessid, sess->id))
 			return sess;
 	}
 
-	warning("mix: session not found (%r)\n", &hdr->val);
+	warning("mix: session not found (%r)\n", sessid);
 
 	return NULL;
 }
