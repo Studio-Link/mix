@@ -63,7 +63,7 @@ void http_sreply(struct http_conn *conn, uint16_t scode, const char *reason,
 			    sess->id);
 
 	err = http_reply(
-		conn, scode, "OK",
+		conn, scode, reason,
 		"Content-Type: %s\r\n"
 		"Content-Length: %zu\r\n"
 		"Cache-Control: no-cache, no-store, must-revalidate\r\n"
@@ -113,7 +113,8 @@ static void http_req_handler(struct http_conn *conn,
 	if (0 != pl_strcasecmp(&msg->path, "/api/v1/client/connect")) {
 		sess = session_lookup(&mix->sessl, msg);
 		if (!sess) {
-			http_ereply(conn, 404, "Session Not Found");
+			http_sreply(conn, 404, "Session Not Found",
+				    "text/html", "", 0, NULL);
 			return;
 		}
 	}
@@ -160,7 +161,7 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/sdp") &&
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/sdp") &&
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
 
 		err = session_start(sess, &mix->pc_config, mix->mnat,
@@ -203,11 +204,11 @@ static void http_req_handler(struct http_conn *conn,
 	}
 
 	/* Default 404 return */
-	http_ereply(conn, 404, "Not found");
+	http_sreply(conn, 404, "Not found", "text/html", "", 0, sess);
 	return;
 
 err:
-	http_ereply(conn, 500, "Error");
+	http_sreply(conn, 500, "Error", "text/html", "", 0, sess);
 }
 
 

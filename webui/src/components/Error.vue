@@ -13,9 +13,9 @@
           </div>
           <div class="order-2 flex-shrink-0 sm:order-3 sm:ml-3">
             <button
-              @click="Webrtc.error_reset()"
               type="button"
               class="-mr-1 flex rounded-md p-2 hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-white sm:-mr-2"
+              @click="Webrtc.error_reset()"
             >
               <span class="sr-only">Dismiss</span>
               <XMarkIcon class="h-6 w-6 text-white" aria-hidden="true" />

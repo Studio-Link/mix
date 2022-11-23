@@ -9,52 +9,52 @@
         <div class="space-y-6">
           <Avatar v-if="random" ref="avatar" v-bind="props" class="h-48 mx-auto" />
           <WebcamPhoto v-if="!random" />
-          <div>
+          <div v-if="random || webcam.picture.value">
             <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
             <div class="mt-1">
               <input
-                v-model="name"
                 id="name"
+                v-model="name"
                 name="name"
                 type="text"
                 required
                 class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-                :class="{'border-red-300': error}"
+                :class="{ 'border-red-300': error }"
               />
-              <p v-if="error" class="mt-2 text-sm text-red-600" id="email-error">Please enter name</p>
+              <p v-if="error" id="email-error" class="mt-2 text-sm text-red-600">Please enter name</p>
             </div>
           </div>
           <div class="space-y-2">
             <button
               v-if="!random && !webcam.picture.value"
-              @click="randomize()"
               class="flex w-full justify-center rounded-md border border-transparent bg-red-700 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              @click="randomize()"
             >
               Cancel
             </button>
             <button
               v-if="random"
-              @click="randomize()"
               class="flex w-full justify-center rounded-md border border-transparent bg-gray-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              @click="randomize()"
             >
               Random Avatar
             </button>
             <button
               v-if="random || webcam.picture.value"
-              @click="activateCam()"
               class="flex w-full justify-center rounded-md border border-transparent bg-green-700 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              @click="activateCam()"
             >
               Webcam Photo
             </button>
-            <button
-              v-if="random || webcam.picture.value"
-              @click="login()"
-              type="submit"
-              class="flex w-full justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            >
-              Raum betreten
-            </button>
           </div>
+          <button
+            v-if="random || webcam.picture.value"
+            type="submit"
+            class="w-full justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-base font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            @click="login()"
+          >
+            Join Room
+          </button>
         </div>
       </div>
     </div>
@@ -63,7 +63,7 @@
 
 <script setup lang="ts">
 import { Avatar, Factory } from 'vue3-avataaars'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import WebcamPhoto from '../components/WebcamPhoto.vue'
 import webcam from '../webcam'
 import api from '../api'
@@ -74,10 +74,16 @@ const random = ref(true)
 const avatar = ref<SVGElement | null>(null)
 const props = ref(Factory({ isCircle: true }))
 
+onMounted(() => {
+  randomize()
+})
+
 function randomize() {
   webcam.stop()
   random.value = true
-  props.value = Factory({ isCircle: true })
+  const items = ['Smile', 'Twinkle', 'Tongue', 'Default']
+  const mouth: string = items[Math.floor(Math.random() * items.length)]
+  props.value = Factory({ isCircle: true, mouth: mouth })
 }
 
 function activateCam() {
@@ -109,7 +115,7 @@ function login() {
     const image = new Image()
     image.onload = () => {
       canvas.getContext('2d')?.drawImage(image, 0, 0)
-      api.login(name.value, canvas.toDataURL('image/jpeg'))
+      api.login(name.value, canvas.toDataURL('image/png'))
     }
     image.src = URL.createObjectURL(blob)
   }

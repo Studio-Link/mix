@@ -6,9 +6,9 @@
           <div>
             <button
               v-if="Webrtc.state.value >= WebrtcState.Listening"
-              @click="hand_clicked()"
               ref="hand"
               class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
+              @click="hand_clicked()"
             >
               <svg
                 class="h-9 w-9 mx-auto"
@@ -30,28 +30,31 @@
           <div>
             <button
               v-if="Webrtc.state.value < WebrtcState.Listening"
-              @click="listen()"
               ref="play"
               class="text-gray-300 hover:bg-gray-700 hover:text-white group items-center px-2 py-2 text-base font-medium rounded-md block"
               title="Join as listener"
-              :class="{ 'animate-pulse': Webrtc.state.value == WebrtcState.Connecting}"
+              :class="{ 'animate-pulse': Webrtc.state.value == WebrtcState.Connecting }"
+              @click="listen()"
             >
-              <svg 
-              class="h-14 w-14 mx-auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <svg class="h-14 w-14 mx-auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                 <path
                   fill-rule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
                   clip-rule="evenodd"
                 />
               </svg>
-              <div v-if="Webrtc.state.value == WebrtcState.Offline" class="text-gray-300 text-sm text-center">Press to listen</div>
-              <div v-if="Webrtc.state.value == WebrtcState.Connecting" class="text-gray-300 text-sm text-center">Connecting...</div>
+              <div v-if="Webrtc.state.value == WebrtcState.Offline" class="text-gray-300 text-sm text-center">
+                Press to listen
+              </div>
+              <div v-if="Webrtc.state.value == WebrtcState.Connecting" class="text-gray-300 text-sm text-center">
+                Connecting...
+              </div>
             </button>
           </div>
           <div>
             <button
-            v-if="Webrtc.state.value >= WebrtcState.Listening"
-            ref="chat"
+              v-if="Webrtc.state.value >= WebrtcState.Listening"
+              ref="chat"
               title="Chat"
               class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
             >
@@ -79,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import {Webrtc, WebrtcState} from '../webrtc'
+import { Webrtc, WebrtcState } from '../webrtc'
 import { ref } from 'vue'
 
 const hand = ref<HTMLButtonElement>()

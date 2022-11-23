@@ -2,7 +2,7 @@ import api from './api'
 import { ref } from 'vue'
 
 let pc: RTCPeerConnection
-let constraints = {
+const constraints = {
     audio: {
         echoCancellation: false, // disabling audio processing
         autoGainControl: false,
@@ -27,27 +27,27 @@ const configuration: RTCConfiguration = {
 }
 
 /** Start AVdummy **/
-let silence = () => {
-    let ctx = new AudioContext()
-    let oscillator = ctx.createOscillator()
-    let dst = ctx.createMediaStreamDestination()
+const silence = () => {
+    const ctx = new AudioContext()
+    const oscillator = ctx.createOscillator()
+    const dst = ctx.createMediaStreamDestination()
     oscillator.connect(dst)
     oscillator.start()
     return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false })
 }
 
-let black = ({ width = 480, height = 360 } = {}) => {
-    let canvas = Object.assign(document.createElement('canvas'), { width, height })
+const black = ({ width = 480, height = 360 } = {}) => {
+    const canvas = Object.assign(document.createElement('canvas'), { width, height })
     //Chrome workaround: needs canvas frame change to start webrtc rtp
     canvas.getContext('2d')?.fillRect(0, 0, width, height)
     setTimeout(() => {
         canvas.getContext('2d')?.fillRect(0, 0, width, height)
     }, 2000)
-    let stream = canvas.captureStream()
+    const stream = canvas.captureStream()
     return Object.assign(stream.getVideoTracks()[0], { enabled: false })
 }
 
-let AVSilence = (...args: any) => new MediaStream([black(...args), silence()])
+const AVSilence = (...args: any) => new MediaStream([black(...args), silence()])
 /** End AVdummy **/
 
 function handle_answer(descr: any) {
@@ -100,7 +100,7 @@ function pc_setup() {
         console.log('got remote track: kind=%s', track.kind)
 
         if (track.kind == 'audio') {
-            let audio: HTMLAudioElement | null = document.querySelector('audio#live')
+            const audio: HTMLAudioElement | null = document.querySelector('audio#live')
 
             if (!audio) {
                 return
@@ -113,7 +113,7 @@ function pc_setup() {
         }
 
         if (track.kind == 'video') {
-            let video: HTMLVideoElement | null = document.querySelector('video#live')
+            const video: HTMLVideoElement | null = document.querySelector('video#live')
 
             if (!video) {
                 return
@@ -136,9 +136,8 @@ function pc_setup() {
                 /* gathering has begun or is ongoing */
                 break
             case 'complete':
-                await api.connect()
-                let response = await api.sdp(pc.localDescription)
-                handle_answer(await response?.json())
+                const resp = await api.sdp(pc.localDescription)
+                if (resp?.ok) handle_answer(await resp.json())
                 break
         }
     }
@@ -152,7 +151,7 @@ function pc_setup() {
     }
 
     /* Add dummy tracks */
-    let av = AVSilence()
+    const av = AVSilence()
     av.getTracks().forEach((track) => pc.addTrack(track, av))
 
     pc_offer()
@@ -174,29 +173,23 @@ async function pc_media() {
 }
 
 async function pc_replace_tracks(audio_track: MediaStreamTrack, video_track: MediaStreamTrack | null) {
-
-    const audio = pc.getSenders().find((s) => s.track?.kind === 'audio');
-    const video = pc.getSenders().find((s) => s.track?.kind === 'video');
+    const audio = pc.getSenders().find((s) => s.track?.kind === 'audio')
+    const video = pc.getSenders().find((s) => s.track?.kind === 'video')
 
     if (!audio || !video) {
-        console.log("pc_replace_tracks: no audio or video tracks found")
+        console.log('pc_replace_tracks: no audio or video tracks found')
         return
     }
 
     if (video_track) {
-        await Promise.all([
-            audio.replaceTrack(audio_track),
-            video.replaceTrack(video_track),
-        ]);
-        console.log("pc_replace_tracks: audio and video")
+        await Promise.all([audio.replaceTrack(audio_track), video.replaceTrack(video_track)])
+        console.log('pc_replace_tracks: audio and video')
 
         return
     }
 
-    await Promise.all([
-        audio.replaceTrack(audio_track),
-    ]);
-    console.log("pc_replace_tracks: audio")
+    await Promise.all([audio.replaceTrack(audio_track)])
+    console.log('pc_replace_tracks: audio')
 }
 
 export enum WebrtcState {

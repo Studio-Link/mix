@@ -6,15 +6,15 @@
   </div>
   <button
     v-if="!webcam.preview.value"
+    class="flex w-full justify-center rounded-md border border-transparent bg-green-700 py-2 px-4 text-sm font-bold text-white shadow-sm hover:bg-geen-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
     @click="preview()"
-    class="flex w-full justify-center rounded-md border border-transparent bg-green-700 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-geen-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
   >
     Snapshot
   </button>
   <button
     v-if="webcam.preview.value && !webcam.picture.value"
+    class="flex w-full justify-center rounded-md border border-transparent bg-green-700 py-2 px-4 text-sm font-bold text-white shadow-sm hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
     @click="webcam.savePicture()"
-    class="flex w-full justify-center rounded-md border border-transparent bg-green-700 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
   >
     Save Avatar
   </button>
