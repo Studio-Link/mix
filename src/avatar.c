@@ -1,13 +1,15 @@
 #include <re.h>
 #include <baresip.h>
 #include <gd.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 #include "mix.h"
 
 struct avatar {
 	struct http_conn *conn;
 	struct mbuf *mb;
-	struct session *sess;	
+	struct session *sess;
 };
 
 
@@ -15,15 +17,16 @@ static int work(void *arg)
 {
 	struct avatar *avatar = arg;
 	struct mbuf *mb	      = avatar->mb;
-	FILE *jpg;
+	FILE *img;
 	int w = 256;
 	int h = 256;
 	gdImagePtr in, out;
-	struct pl pl = PL_INIT;
-	int err	     = 0;
-	size_t offset = 0x18; /* "data:image/jpeg;base64, */
-	char file[256];
-	
+	struct pl pl  = PL_INIT;
+	int err	      = 0;
+	size_t offset = 0x17; /* "data:image/png;base64, */
+	char path[256];
+	char file[512];
+
 	if (mbuf_get_left(mb) < offset)
 		return EINVAL;
 
@@ -35,14 +38,14 @@ static int work(void *arg)
 	mbuf_advance(mb, offset);
 
 	err = base64_decode((char *)mbuf_buf(mb), mbuf_get_left(mb) - 1,
-		      (uint8_t *)pl.p, &pl.l);
+			    (uint8_t *)pl.p, &pl.l);
 	if (err) {
 		mem_deref((void *)pl.p);
 		warning("avatar: base64_decode failed %m\n", err);
 		return err;
 	}
 
-	in = gdImageCreateFromJpegPtr((int)pl.l, (void *)pl.p);
+	in = gdImageCreateFromPngPtr((int)pl.l, (void *)pl.p);
 	if (!in) {
 		warning("\navatar: create image failed\n");
 		err = EIO;
@@ -58,15 +61,44 @@ static int work(void *arg)
 		goto err;
 	}
 
-	re_snprintf(file, sizeof(file), "/tmp/%s.jpg", avatar->sess->id);
-	err = fs_fopen(&jpg, file, "w+");
+	rand_str(avatar->sess->avatar_id, sizeof(avatar->sess->avatar_id));
+
+	if (!getcwd(path, sizeof(path))) {
+		warning("avatar: getcwd failed\n");
+		err = errno;
+		goto err;
+	}
+
+	debug("write %s/webui/public/avatars/%s.[png,webp]\n", path,
+	      avatar->sess->avatar_id);
+
+	/* PNG */
+	re_snprintf(file, sizeof(file), "%s/webui/public/avatars/%s.png", path,
+		    avatar->sess->avatar_id);
+	err = fs_fopen(&img, file, "w+");
 	if (err) {
-		warning("avatar: write open failed %m\n", err);
+		warning("avatar: write png failed %m\n", err);
 		goto out;
 	}
 
-	gdImageJpeg(out, jpg, 90);
-	fclose(jpg);
+	out->saveAlphaFlag = true;
+	gdImagePng(out, img);
+	fclose(img);
+	chmod(file, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+
+	/* WEBP */
+	re_snprintf(file, sizeof(file), "%s/webui/public/avatars/%s.webp",
+		    path, avatar->sess->avatar_id);
+	err = fs_fopen(&img, file, "w+");
+	if (err) {
+		warning("avatar: write webp failed %m\n", err);
+		goto out;
+	}
+
+	out->saveAlphaFlag = true;
+	gdImageWebp(out, img);
+	fclose(img);
+	chmod(file, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
 out:
 	gdImageDestroy(in);
@@ -87,7 +119,8 @@ static void http_callback(int err, void *arg)
 		goto out;
 	}
 
-	http_sreply(avatar->conn, 201, "Created", "text/html", "", 0, NULL);
+	http_sreply(avatar->conn, 201, "Created", "text/html", "", 0,
+		    avatar->sess);
 
 out:
 	mem_deref(avatar);
@@ -103,7 +136,8 @@ static void avatar_destruct(void *data)
 }
 
 
-int avatar_save(struct session *sess, struct http_conn *conn, const struct http_msg *msg)
+int avatar_save(struct session *sess, struct http_conn *conn,
+		const struct http_msg *msg)
 {
 	struct avatar *avatar;
 
