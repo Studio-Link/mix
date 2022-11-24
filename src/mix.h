@@ -1,7 +1,7 @@
 #include <re.h>
 #include <baresip.h>
 
-enum { SESSID_SZ = 32, USERID_SZ = 32, NAME_SZ = 16 };
+enum { SESSID_SZ = 32, USERID_SZ = 32, NAME_SZ = 32 };
 
 enum user_event { USER_ADDED, USER_UPDATED, USER_DELETED };
 
@@ -14,13 +14,19 @@ struct mix {
 	struct rtc_configuration pc_config;
 };
 
+struct user {
+	char id[USERID_SZ];
+	char name[NAME_SZ];
+	bool speaker;
+	bool admin;
+};
+
 struct session {
 	struct le le;
 	struct peer_connection *pc;
 	struct http_conn *conn_pending;
 	char id[SESSID_SZ]; /* Keep secret */
-	char user_id[USERID_SZ];
-	char name[NAME_SZ];
+	struct user *user;
 	bool connected;
 };
 

@@ -16,6 +16,7 @@ static void destructor(void *data)
 	list_unlink(&sess->le);
 	mem_deref(sess->conn_pending);
 	mem_deref(sess->pc);
+	mem_deref(sess->user);
 }
 
 
@@ -171,6 +172,7 @@ int session_start(struct session *sess,
 int session_new(struct list *sessl, struct session **sessp)
 {
 	struct session *sess;
+	struct user *user;
 
 	info("mix: create session\n");
 
@@ -178,8 +180,17 @@ int session_new(struct list *sessl, struct session **sessp)
 	if (!sess)
 		return ENOMEM;
 
+	user = mem_zalloc(sizeof(*user), NULL);
+	if (!user) {
+		mem_deref(sess);
+		return ENOMEM;
+	}
+
+	user->speaker = true;
+
 	/* generate a unique session id */
 	rand_str(sess->id, sizeof(sess->id));
+	sess->user = user;
 
 	list_append(sessl, &sess->le, sess);
 

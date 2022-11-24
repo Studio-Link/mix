@@ -39,12 +39,15 @@ int users_json(char **json, struct mix *mix)
 		if (err)
 			goto out;
 
-		odict_entry_add(o_user, "id", ODICT_STRING, sess->user_id);
-		odict_entry_add(o_user, "name", ODICT_STRING, sess->name);
-		odict_entry_add(o_user, "speaker", ODICT_BOOL, false);
-		odict_entry_add(o_user, "admin", ODICT_BOOL, true);
+		odict_entry_add(o_user, "id", ODICT_STRING, sess->user->id);
+		odict_entry_add(o_user, "name", ODICT_STRING,
+				sess->user->name);
+		odict_entry_add(o_user, "speaker", ODICT_BOOL,
+				sess->user->speaker);
+		odict_entry_add(o_user, "admin", ODICT_BOOL,
+				sess->user->admin);
 
-		odict_entry_add(o_users, sess->user_id, ODICT_OBJECT, o_user);
+		odict_entry_add(o_users, sess->user->id, ODICT_OBJECT, o_user);
 		o_user = mem_deref(o_user);
 	}
 
@@ -79,11 +82,11 @@ int user_event_json(char **json, enum user_event event, struct session *sess)
 	else if (event == USER_DELETED)
 		odict_entry_add(o, "event", ODICT_STRING, "deleted");
 
-	odict_entry_add(o, "id", ODICT_STRING, sess->user_id);
-	odict_entry_add(o, "name", ODICT_STRING, sess->name);
-	odict_entry_add(o, "speaker", ODICT_BOOL, false);
-	odict_entry_add(o, "admin", ODICT_BOOL, true);
-	
+	odict_entry_add(o, "id", ODICT_STRING, sess->user->id);
+	odict_entry_add(o, "name", ODICT_STRING, sess->user->name);
+	odict_entry_add(o, "speaker", ODICT_BOOL, sess->user->speaker);
+	odict_entry_add(o, "admin", ODICT_BOOL, sess->user->admin);
+
 	err = re_sdprintf(json, "%H", json_encode_odict, o);
 
 	mem_deref(o);

@@ -58,7 +58,7 @@ export default {
         router.push({ name: 'Home' })
     },
 
-    async websocket(){
+    async websocket() {
         Users.websocket('ws://127.0.0.1:9999', sessid)
     },
 

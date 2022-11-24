@@ -160,9 +160,10 @@ static void http_req_handler(struct http_conn *conn,
 		if (err)
 			goto err;
 
-		re_snprintf(sess->name, sizeof(sess->name), "%r", &name);
+		re_snprintf(sess->user->name, sizeof(sess->user->name), "%r",
+			    &name);
 
-		if (!str_isset(sess->name)) {
+		if (!str_isset(sess->user->name)) {
 			http_ereply(conn, 400, "Invalid name");
 		}
 

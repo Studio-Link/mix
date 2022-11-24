@@ -17,6 +17,6 @@ import api from '../api'
 import { onMounted } from 'vue'
 
 onMounted(() => {
-    api.websocket()
+  api.websocket()
 })
 </script>
