@@ -8,7 +8,7 @@
         <ul
           class="mx-auto grid grid-cols-4 gap-x-4 gap-y-6 sm:grid-cols-5 md:grid-cols-6 md:gap-x-6 lg:max-w-5xl lg:gap-x-8 lg:gap-y-12 xl:grid-cols-6"
         >
-          <li v-for="item in Users.listeners" :key="item.id">
+          <li v-for="item in Users.listeners.value" :key="item.id">
             <div class="space-y-4">
               <picture>
                 <source type="image/webp" :srcset="'/avatars/' + item.id + '.webp'" />

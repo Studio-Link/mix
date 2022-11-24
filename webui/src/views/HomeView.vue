@@ -13,4 +13,10 @@ import Speakers from '../components/Speakers.vue'
 import Listeners from '../components/Listeners.vue'
 import BottomActions from '../components/BottomActions.vue'
 import { Webrtc } from '../webrtc'
+import api from '../api'
+import { onMounted } from 'vue'
+
+onMounted(() => {
+    api.websocket()
+})
 </script>

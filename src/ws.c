@@ -7,8 +7,8 @@ static struct list wsl;
 struct ws_conn {
 	struct le le;
 	struct websock_conn *c;
-	enum ws_type type;
 	struct mix *mix;
+	struct session *sess;
 };
 
 enum { KEEPALIVE = 30 * 1000 };
@@ -27,22 +27,28 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 {
 	struct ws_conn *wsc = arg;
 	struct pl sessid;
-	struct session *sess;
 	char *json = NULL;
 	(void)hdr;
 
 	sessid.p = (const char *)mbuf_buf(mb);
 	sessid.l = mbuf_get_left(mb);
 
-	sess = session_lookup(&wsc->mix->sessl, &sessid);
-	if (!sess) {
+	wsc->sess = session_lookup(&wsc->mix->sessl, &sessid);
+	if (!wsc->sess) {
 		mem_deref(wsc);
 		return;
 	}
 
-	if (users_json(&json, wsc->mix) == 0) {
+	wsc->sess->connected = true;
+
+	if (0 == users_json(&json, wsc->mix)) {
 		websock_send(wsc->c, WEBSOCK_TEXT, "%s", json);
-		mem_deref(json);
+		json = mem_deref(json);
+	}
+
+	if (0 == user_event_json(&json, USER_ADDED, wsc->sess)) {
+		sl_ws_send_event(wsc->sess, json);
+		json = mem_deref(json);
 	}
 }
 
@@ -57,16 +63,24 @@ static void conn_destroy(void *arg)
 
 static void close_handler(int err, void *arg)
 {
-	struct ws_conn *ws_conn = arg;
+	struct ws_conn *wsc = arg;
+	char *json	    = NULL;
 	(void)err;
 
-	mem_deref(ws_conn);
+	if (wsc->sess) {
+		wsc->sess->connected = false;
+		if (0 == user_event_json(&json, USER_DELETED, wsc->sess)) {
+			sl_ws_send_event(wsc->sess, json);
+			json = mem_deref(json);
+		}
+	}
+
+	mem_deref(wsc);
 }
 
 
-int sl_ws_open(struct http_conn *conn, enum ws_type type,
-	       const struct http_msg *msg, websock_recv_h *recvh,
-	       struct mix *mix)
+int sl_ws_open(struct http_conn *conn, const struct http_msg *msg,
+	       websock_recv_h *recvh, struct mix *mix)
 {
 	struct ws_conn *ws_conn;
 	int err;
@@ -82,8 +96,6 @@ int sl_ws_open(struct http_conn *conn, enum ws_type type,
 	if (err)
 		goto out;
 
-	ws_conn->type = type;
-
 	list_append(&wsl, &ws_conn->le, ws_conn);
 
 out:
@@ -94,19 +106,19 @@ out:
 }
 
 
-void sl_ws_send_str(enum ws_type type, char *str)
+void sl_ws_send_event(struct session *sess, char *json)
 {
 	struct le *le;
 
-	if (!str)
+	if (!json)
 		return;
 
 	LIST_FOREACH(&wsl, le)
 	{
 		struct ws_conn *ws_conn = le->data;
-		if (ws_conn->type != type)
+		if (ws_conn->sess == sess)
 			continue;
-		websock_send(ws_conn->c, WEBSOCK_TEXT, "%s", str);
+		websock_send(ws_conn->c, WEBSOCK_TEXT, "%s", json);
 	}
 }
 

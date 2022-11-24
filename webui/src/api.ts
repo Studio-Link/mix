@@ -54,9 +54,12 @@ export default {
         window.localStorage.setItem('sessid', sessid)
 
         // Webrtc.listen()
-        Users.websocket('ws://127.0.0.1:9999', sessid)
 
         router.push({ name: 'Home' })
+    },
+
+    async websocket(){
+        Users.websocket('ws://127.0.0.1:9999', sessid)
     },
 
     async logout() {

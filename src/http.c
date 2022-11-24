@@ -103,10 +103,10 @@ static void http_req_handler(struct http_conn *conn,
 	info("conn %r %r %p\n", &msg->met, &msg->path, conn);
 
 	/*
-	 * Websocket Requests
+	 * Websocket Request
 	 */
 	if (0 == pl_strcasecmp(&msg->path, "/ws/v1/users")) {
-		sl_ws_open(conn, WS_USERS, msg, sl_ws_users_auth, mix);
+		sl_ws_open(conn, msg, sl_ws_users_auth, mix);
 		return;
 	}
 
