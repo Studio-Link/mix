@@ -1,8 +1,7 @@
-enum { 
-	SESSID_SZ = 32,
-	AVATARID_SZ = 32,
-	NAME_SZ	= 16
-};
+#include <re.h>
+#include <baresip.h>
+
+enum { SESSID_SZ = 32, USERID_SZ = 32, NAME_SZ = 16 };
 
 struct mix {
 	struct list sessl;
@@ -17,12 +16,25 @@ struct session {
 	struct le le;
 	struct peer_connection *pc;
 	struct http_conn *conn_pending;
-	char id[SESSID_SZ];
-	char avatar_id[AVATARID_SZ];
+	char id[SESSID_SZ]; /* Keep secret */
+	char user_id[USERID_SZ];
 	char name[NAME_SZ];
 };
 
+/******************************************************************************
+ * avatar.c
+ */
+int avatar_save(struct session *sess, struct http_conn *conn,
+		const struct http_msg *msg);
+
+/******************************************************************************
+ * http.c
+ */
 int slmix_http_listen(struct http_sock **sock, struct mix *mix);
+
+/******************************************************************************
+ * sess.c
+ */
 int session_new(struct list *sessl, struct session **sessp);
 int session_start(struct session *sess,
 		  const struct rtc_configuration *pc_config,
@@ -33,11 +45,15 @@ struct session *session_lookup(const struct list *sessl,
 			       const struct pl *sessid);
 int session_handle_ice_candidate(struct session *sess, const struct odict *od);
 void session_close(struct session *sess, int err);
-int avatar_save(struct session *sess, struct http_conn *conn,
-		const struct http_msg *msg);
 void http_sreply(struct http_conn *conn, uint16_t scode, const char *reason,
 		 const char *ctype, const char *fmt, size_t size,
 		 struct session *sess);
+
+/******************************************************************************
+ * users.c
+ */
+int users_json(char **json, struct mix *mix);
+
 
 /******************************************************************************
  * ws.c
@@ -50,4 +66,5 @@ int sl_ws_open(struct http_conn *conn, enum ws_type type,
 	       struct mix *mix);
 void sl_ws_send_str(enum ws_type ws_type, char *str);
 void sl_ws_dummyh(const struct websock_hdr *hdr, struct mbuf *mb, void *arg);
-void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb, void *arg);
+void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
+		      void *arg);

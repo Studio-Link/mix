@@ -1,5 +1,3 @@
-#include <re.h>
-#include <baresip.h>
 #include "mix.h"
 
 static const char *modv[] = {

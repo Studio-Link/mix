@@ -6,8 +6,6 @@
  */
 
 #include <string.h>
-#include <re.h>
-#include <baresip.h>
 #include "mix.h"
 
 

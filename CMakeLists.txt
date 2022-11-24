@@ -79,6 +79,7 @@ set(SRCS
   src/http.c
   src/main.c
   src/sess.c
+  src/users.c
   src/ws.c
 )
 

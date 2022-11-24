@@ -28,6 +28,7 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 	struct ws_conn *wsc = arg;
 	struct pl sessid;
 	struct session *sess;
+	char *json = NULL;
 	(void)hdr;
 
 	sessid.p = (const char *)mbuf_buf(mb);
@@ -39,7 +40,10 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 		return;
 	}
 
-	websock_send(wsc->c, WEBSOCK_TEXT, "%s", "Hello World\n");
+	if (users_json(&json, wsc->mix) == 0) {
+		websock_send(wsc->c, WEBSOCK_TEXT, "%s", json);
+		mem_deref(json);
+	}
 }
 
 

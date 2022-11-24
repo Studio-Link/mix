@@ -2,10 +2,12 @@ import { reactive } from 'vue'
 
 interface Speaker {
     id: number
+    name: string
 }
 
 interface Listener {
     id: number
+    name: string
 }
 
 interface Users {
@@ -20,12 +22,19 @@ export const Users: Users = {
     listeners: reactive([]),
     websocket(host, sessid) {
         this.socket = new WebSocket(host + '/ws/v1/users')
-        this.socket.onerror = function() {
+        this.socket.onerror = () => {
             console.log('Websocket users error')
         }
         this.socket.onopen = () => { this.socket?.send(sessid) }
         this.socket.onmessage = (message: any) => {
-            console.log("users:", message)
+
+            const users = JSON.parse(message.data)
+            for (const key in users) {
+                if (users[key].speaker)
+                    this.speakers.push(users[key])
+                else
+                    this.listeners.push(users[key])
+            }
         }
     }
 }
