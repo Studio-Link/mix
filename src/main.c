@@ -1,5 +1,3 @@
-#include <re.h>
-#include <baresip.h>
 #include "mix.h"
 
 static const char *modv[] = {
@@ -116,12 +114,14 @@ int main(int argc, char *const argv[])
 	if (err)
 		return err;
 
+	sl_ws_init();
 	slmix_http_listen(&mix.httpsock, &mix);
 	if (err)
 		return err;
 
 	re_main(signal_handler);
 
+	sl_ws_close();
 	slmix_close(&mix);
 
 	module_app_unload();

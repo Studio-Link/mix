@@ -75,10 +75,12 @@ find_package(re CONFIG REQUIRED)
 #
 
 set(SRCS
-  src/main.c
-  src/http.c
-  src/sess.c
   src/avatar.c
+  src/http.c
+  src/main.c
+  src/sess.c
+  src/users.c
+  src/ws.c
 )
 
 

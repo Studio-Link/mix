@@ -61,7 +61,7 @@ static int work(void *arg)
 		goto err;
 	}
 
-	rand_str(avatar->sess->avatar_id, sizeof(avatar->sess->avatar_id));
+	rand_str(avatar->sess->user_id, sizeof(avatar->sess->user_id));
 
 	if (!getcwd(path, sizeof(path))) {
 		warning("avatar: getcwd failed\n");
@@ -70,11 +70,11 @@ static int work(void *arg)
 	}
 
 	debug("write %s/webui/public/avatars/%s.[png,webp]\n", path,
-	      avatar->sess->avatar_id);
+	      avatar->sess->user_id);
 
 	/* PNG */
 	re_snprintf(file, sizeof(file), "%s/webui/public/avatars/%s.png", path,
-		    avatar->sess->avatar_id);
+		    avatar->sess->user_id);
 	err = fs_fopen(&img, file, "w+");
 	if (err) {
 		warning("avatar: write png failed %m\n", err);
@@ -88,7 +88,7 @@ static int work(void *arg)
 
 	/* WEBP */
 	re_snprintf(file, sizeof(file), "%s/webui/public/avatars/%s.webp",
-		    path, avatar->sess->avatar_id);
+		    path, avatar->sess->user_id);
 	err = fs_fopen(&img, file, "w+");
 	if (err) {
 		warning("avatar: write webp failed %m\n", err);
