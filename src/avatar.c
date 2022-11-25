@@ -27,7 +27,7 @@ static int work(void *arg)
 	char path[256];
 	char file[512];
 
-	if (mbuf_get_left(mb) < offset)
+	if (mbuf_get_left(mb) < offset + 1) /* offset + ending '"' */
 		return EINVAL;
 
 	pl.l = mbuf_get_left(mb) * 2;
