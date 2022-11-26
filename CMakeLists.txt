@@ -21,6 +21,9 @@ project(slmix VERSION 0.0.1 LANGUAGES C)
 # Compile options
 #
 
+option(USE_SD_SOCK "Enable systemd socket" OFF)
+option(USE_UNIX_SOCK "Enable UNIX socket" OFF)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_EXTENSIONS OFF)
@@ -50,6 +53,14 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wshorten-64-to-32 -Watomic-implicit-seq-cst)
 endif()
 
+if(USE_SD_SOCK)
+  list(APPEND MIX_DEFS -DSLMIX_SD_SOCK)
+  list(APPEND LINKLIBS systemd)
+endif()
+
+if(USE_UNIX_SOCK)
+  list(APPEND MIX_DEFS -DSLMIX_UNIX_SOCK)
+endif()
 
 ##############################################################################
 #
@@ -90,5 +101,5 @@ set(SRCS
 #
 
 add_executable(${PROJECT_NAME} ${SRCS})
-target_link_libraries(${PROJECT_NAME} PRIVATE baresip rem re gd)
-target_compile_definitions(${PROJECT_NAME} PRIVATE ${RE_DEFINITIONS})
+target_link_libraries(${PROJECT_NAME} PRIVATE baresip rem re gd ${LINKLIBS})
+target_compile_definitions(${PROJECT_NAME} PRIVATE ${RE_DEFINITIONS} ${MIX_DEFS})

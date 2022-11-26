@@ -1,6 +1,9 @@
 #include <re.h>
 #include <baresip.h>
 #include "mix.h"
+#ifdef SLMIX_SD_SOCK
+#include "systemd/sd-daemon.h"
+#endif
 
 
 static int handle_put_sdp(struct session *sess, const struct http_msg *msg)
@@ -225,17 +228,43 @@ err:
 int slmix_http_listen(struct http_sock **sock, struct mix *mix)
 {
 	int err;
-	struct sa srv;
 
 	if (!sock)
 		return EINVAL;
 
+#ifdef SLMIX_UNIX_SOCK
+	struct sa srv;
+	re_sock_t fd;
+	err = sa_set_str(&srv, "unix:/tmp/slmix.sock", 0);
+	if (err)
+		return err;
+
+	re_printf("listen webui: http://%j\n", &srv);
+
+	err = unixsock_listen_fd(&fd, &srv);
+	if (err)
+		return err;
+
+	err = http_listen_fd(sock, fd, http_req_handler, mix);
+#elif defined(SLMIX_SD_SOCK)
+	re_sock_t fd;
+
+	if (sd_listen_fds(0) != 1) {
+		re_printf("http_listen: No or to many systemd fds\n");
+		return EMFILE;
+	}
+	fd  = SD_LISTEN_FDS_START + 0;
+	err = http_listen_fd(sock, fd, http_req_handler, mix);
+#else
+	struct sa srv;
 	err = sa_set_str(&srv, "127.0.0.1", 9999);
 	if (err)
 		return err;
 
 	re_printf("listen webui: http://%J\n", &srv);
 	err = http_listen(sock, &srv, http_req_handler, mix);
+
+#endif
 
 	return err;
 }

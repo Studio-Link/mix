@@ -115,7 +115,7 @@ int main(int argc, char *const argv[])
 		return err;
 
 	sl_ws_init();
-	slmix_http_listen(&mix.httpsock, &mix);
+	err = slmix_http_listen(&mix.httpsock, &mix);
 	if (err)
 		return err;
 

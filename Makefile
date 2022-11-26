@@ -24,7 +24,7 @@ fresh: clean build
 
 .PHONY: update
 update: external
-	cd external/re && git pull
+	cd external/re && git pull && git checkout unix_sockets
 	cd external/rem && git pull
 	cd external/baresip && git pull
 
@@ -36,6 +36,12 @@ webui:
 release:
 	make clean
 	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release
+	make build
+
+.PHONY: systemd
+systemd:
+	make clean
+	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release -DUSE_SD_SOCK=ON
 	make build
 
 external:
