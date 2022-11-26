@@ -59,7 +59,7 @@ export default {
     },
 
     async websocket() {
-        Users.websocket('ws://127.0.0.1:9999', sessid)
+        Users.websocket(config.ws_host(), sessid)
     },
 
     async logout() {
