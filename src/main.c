@@ -65,6 +65,7 @@ int main(int argc, char *const argv[])
 	(void)argc;
 	(void)argv;
 	int err;
+	struct config *config;
 
 	struct mix mix = {.sessl = LIST_INIT, .pc_config = {.offerer = false}};
 
@@ -94,7 +95,10 @@ int main(int argc, char *const argv[])
 		return err;
 	}
 
-	err = baresip_init(conf_config());
+	config = conf_config();
+	config->net.use_linklocal = false;
+
+	err = baresip_init(config);
 	if (err) {
 		warning("baresip_init failed (%m)\n", err);
 		return err;
