@@ -73,6 +73,7 @@ static void close_handler(int err, void *arg)
 			sl_ws_send_event(wsc->sess, json);
 			json = mem_deref(json);
 		}
+		wsc->sess->pc = mem_deref(wsc->sess->pc);
 	}
 
 	mem_deref(wsc);

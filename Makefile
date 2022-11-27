@@ -24,7 +24,7 @@ fresh: clean build
 
 .PHONY: update
 update: external
-	cd external/re && git pull && git checkout unix_sockets
+	cd external/re && git pull
 	cd external/rem && git pull
 	cd external/baresip && git pull
 
@@ -46,7 +46,10 @@ systemd:
 
 external:
 	mkdir -p external
-	git clone https://github.com/baresip/re.git external/re
+	git clone https://github.com/baresip/re.git external/re && cd external/re && git checkout unix_sockets
 	git clone https://github.com/baresip/rem.git external/rem
-	git clone https://github.com/baresip/baresip.git external/baresip
+	git clone https://github.com/baresip/baresip.git external/baresip && \
+		cd external/baresip && \
+		patch -p1 < ../../patches/baresip_packet_dup_handler.patch && \
+		patch -p1 < ../../patches/mediatrack_audio_video.patch
 

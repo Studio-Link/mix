@@ -92,6 +92,8 @@ static void peerconnection_estab_handler(struct media_track *media, void *arg)
 	switch (mediatrack_kind(media)) {
 
 	case MEDIA_KIND_AUDIO:
+		audio_set_devicename(media_get_audio(media), sess->id,
+				     sess->id);
 		err = mediatrack_start_audio(media, baresip_ausrcl(),
 					     baresip_aufiltl());
 		if (err) {
@@ -100,6 +102,8 @@ static void peerconnection_estab_handler(struct media_track *media, void *arg)
 		break;
 
 	case MEDIA_KIND_VIDEO:
+		video_set_devicename(media_get_video(media), sess->id,
+				     sess->id);
 		err = mediatrack_start_video(media);
 		if (err) {
 			warning("mix: could not start video (%m)\n", err);
