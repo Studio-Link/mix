@@ -1,6 +1,6 @@
 <template>
   <div>
-    <video ref="video" :class="{ hidden: webcam.preview.value }" />
+    <video ref="video" :class="{ hidden: webcam.preview.value }" playsinline autoplay />
     <canvas ref="picture" :class="{ hidden: !webcam.preview.value || webcam.picture.value }" class="w-full" />
     <img v-if="webcam.picture.value" :src="webcam.picture.value" class="mx-auto rounded-full h-48" />
   </div>
