@@ -235,7 +235,7 @@ int slmix_http_listen(struct http_sock **sock, struct mix *mix)
 #ifdef SLMIX_UNIX_SOCK
 	struct sa srv;
 	re_sock_t fd;
-	err = sa_set_str(&srv, "unix:/tmp/slmix.sock", 0);
+	err = sa_set_str(&srv, "unix:/run/slmix.sock", 0);
 	if (err)
 		return err;
 
