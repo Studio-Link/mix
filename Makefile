@@ -35,13 +35,13 @@ webui:
 .PHONY: release
 release:
 	make clean
-	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release
+	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo
 	make build
 
 .PHONY: systemd
 systemd:
 	make clean
-	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release -DUSE_SD_SOCK=ON
+	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_SD_SOCK=ON
 	make build
 
 external:
