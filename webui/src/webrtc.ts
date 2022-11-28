@@ -36,7 +36,7 @@ const silence = () => {
     return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false })
 }
 
-const black = ({ width = 480, height = 360 } = {}) => {
+const black = ({ width = 1280, height = 720 } = {}) => {
     const canvas = Object.assign(document.createElement('canvas'), { width, height })
     //Chrome workaround: needs canvas frame change to start webrtc rtp
     canvas.getContext('2d')?.fillRect(0, 0, width, height)

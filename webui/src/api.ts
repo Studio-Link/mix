@@ -53,7 +53,7 @@ export default {
 
         window.localStorage.setItem('sessid', sessid)
 
-        // Webrtc.listen()
+        Webrtc.listen()
 
         router.push({ name: 'Home' })
     },
