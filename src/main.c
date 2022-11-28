@@ -80,6 +80,7 @@ int main(int argc, char *const argv[])
 			   "video_size		1920x1080\n"
 			   "video_bitrate	2097152\n" /* 2 MBit/s */
 			   "video_fps		25\n"
+			   "avcodec_keyint	2\n"
 			   "rtp_timeout		10\n";
 
 	err = libre_init();
