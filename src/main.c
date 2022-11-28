@@ -69,7 +69,7 @@ int main(int argc, char *const argv[])
 
 	struct mix mix = {.sessl = LIST_INIT, .pc_config = {.offerer = false}};
 
-	const char *conf = "call_max_calls	500\n"
+	const char *conf = "call_max_calls	10\n" /* SIP only */
 			   "sip_verify_server	yes\n"
 			   "audio_buffer	20-160\n"
 			   "audio_buffer_mode	adaptive\n"
@@ -77,6 +77,9 @@ int main(int argc, char *const argv[])
 			   "jitter_buffer_type	off\n"
 			   "opus_bitrate	64000\n"
 			   "ice_policy		relay\n"
+			   "video_size		1920x1080\n"
+			   "video_bitrate	2097152\n" /* 2 MBit/s */
+			   "video_fps		25\n"
 			   "rtp_timeout		10\n";
 
 	err = libre_init();
