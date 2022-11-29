@@ -147,12 +147,8 @@ int packet_dup_handler(uint64_t ts, uint8_t *buf, size_t size, int keyframe)
 		goto out;
 	}
 
-	mem_deref(packet_dup);
-	packet_dup = mbuf_alloc(size);
-	if (!packet_dup) {
-		warning("packet_dup_handler ENOMEM");
-		return 0;
-	}
+	packet_dup->pos = 0;
+	packet_dup->end = 0;
 
 	err = mbuf_write_mem(packet_dup, buf, size);
 	if (err) {
@@ -271,6 +267,11 @@ void vidmix_src_input(struct vidsrc_st *st, const struct vidframe *frame,
 
 int vidmix_src_init(void)
 {
+	packet_dup = mbuf_alloc(1024);
+	if (!packet_dup) {
+		return ENOMEM;
+	}
+
 	return mutex_alloc(&vmix_mutex);
 }
 
@@ -278,4 +279,5 @@ int vidmix_src_init(void)
 void vidmix_src_close(void)
 {
 	vmix_mutex = mem_deref(vmix_mutex);
+	packet_dup = mem_deref(packet_dup);
 }
