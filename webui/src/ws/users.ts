@@ -1,4 +1,5 @@
 import { Ref, ref } from 'vue'
+import router from '../router'
 
 interface User {
     id: number
@@ -21,6 +22,14 @@ export const Users: Users = {
 
         this.socket.onerror = () => {
             console.log('Websocket users error')
+        }
+
+        this.socket.onclose = (e) => {
+            console.log('Websocket users closed', e.reason)
+            if (e.code === 1011) {
+                window.localStorage.removeItem('sessid')
+                router.push({ name: 'Login' })
+            }
         }
 
         this.socket.onopen = () => {
