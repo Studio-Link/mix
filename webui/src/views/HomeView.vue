@@ -1,5 +1,5 @@
 <template>
-  <main>
+  <main class="pb-24">
     <video id="live" playsinline autoplay muted></video>
     <audio id="live" autoplay></audio>
     <Speakers />
