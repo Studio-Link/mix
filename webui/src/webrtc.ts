@@ -109,6 +109,7 @@ function pc_setup() {
             if (audio.srcObject !== event.streams[0]) {
                 audio.srcObject = event.streams[0]
                 console.log('received remote audio stream')
+                audio.play()
             }
         }
 
@@ -122,6 +123,7 @@ function pc_setup() {
             if (video.srcObject !== event.streams[0]) {
                 video.srcObject = event.streams[0]
                 console.log('received remote video stream')
+                video.play()
             }
         }
     }

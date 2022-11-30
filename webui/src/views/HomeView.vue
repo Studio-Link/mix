@@ -1,6 +1,6 @@
 <template>
   <main>
-    <video id="live" playsinline autoplay></video>
+    <video id="live" playsinline autoplay muted></video>
     <audio id="live" autoplay></audio>
     <Speakers />
     <Listeners />
