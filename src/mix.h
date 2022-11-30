@@ -52,6 +52,8 @@ struct session *session_lookup_hdr(const struct list *sessl,
 				   const struct http_msg *msg);
 struct session *session_lookup(const struct list *sessl,
 			       const struct pl *sessid);
+struct session *session_lookup_user_id(const struct list *sessl,
+				       const struct pl *user_id);
 int session_handle_ice_candidate(struct session *sess, const struct odict *od);
 void session_close(struct session *sess, int err);
 void http_sreply(struct http_conn *conn, uint16_t scode, const char *reason,
@@ -73,6 +75,14 @@ int sl_ws_close(void);
 int sl_ws_open(struct http_conn *conn, const struct http_msg *msg,
 	       websock_recv_h *recvh, struct mix *mix);
 void sl_ws_send_event(struct session *sess, char *str);
+void sl_ws_send_event_all(char *json);
 void sl_ws_dummyh(const struct websock_hdr *hdr, struct mbuf *mb, void *arg);
 void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 		      void *arg);
+
+
+/******************************************************************************
+ * external modules (aumix, vidmix etc.)
+ * @TODO: convert to registered functions
+ */
+void aumix_mute(char *device, bool mute);

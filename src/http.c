@@ -105,6 +105,14 @@ static void http_req_handler(struct http_conn *conn,
 
 	info("conn %r %r %p\n", &msg->met, &msg->path, conn);
 
+#ifndef RELEASE
+	/* Default return OPTIONS - needed on dev for preflight CORS Check */
+	if (0 == pl_strcasecmp(&msg->met, "OPTIONS")) {
+		http_sreply(conn, 204, "OK", "text/html", "", 0, NULL);
+		return;
+	}
+#endif
+
 	/*
 	 * Websocket Request
 	 */
@@ -113,28 +121,9 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-
-#ifndef RELEASE
-	/* Default return OPTIONS - needed on dev for preflight CORS Check */
-	if (0 == pl_strcasecmp(&msg->met, "OPTIONS")) {
-		http_sreply(conn, 200, "OK", "text/html", "", 0, NULL);
-		return;
-	}
-#endif
-
-	if (0 != pl_strcasecmp(&msg->path, "/api/v1/client/connect")) {
-		sess = session_lookup_hdr(&mix->sessl, msg);
-		if (!sess) {
-			http_sreply(conn, 404, "Session Not Found",
-				    "text/html", "", 0, NULL);
-			return;
-		}
-	}
-
 	/*
-	 * API Requests
+	 * API Requests without session
 	 */
-
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/connect") &&
 	    0 == pl_strcasecmp(&msg->met, "POST")) {
 
@@ -143,6 +132,19 @@ static void http_req_handler(struct http_conn *conn,
 			goto err;
 
 		http_sreply(conn, 201, "Created", "text/html", "", 0, sess);
+		return;
+	}
+
+
+	/*
+	 * API Requests with session
+	 */
+
+	/* Every requests from here must provide a valid session */
+	sess = session_lookup_hdr(&mix->sessl, msg);
+	if (!sess) {
+		http_sreply(conn, 404, "Session Not Found", "text/html", "", 0,
+			    NULL);
 		return;
 	}
 
@@ -170,7 +172,7 @@ static void http_req_handler(struct http_conn *conn,
 			http_ereply(conn, 400, "Invalid name");
 		}
 
-		http_sreply(conn, 201, "Updated", "text/html", "", 0, sess);
+		http_sreply(conn, 204, "Updated", "text/html", "", 0, sess);
 		return;
 	}
 
@@ -197,6 +199,66 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/speaker") &&
+	    0 == pl_strcasecmp(&msg->met, "POST")) {
+		/* @TODO: check permission */
+		struct pl user_id = PL_INIT;
+		char *json	  = NULL;
+
+		err = re_regex((char *)mbuf_buf(msg->mb),
+			       mbuf_get_left(msg->mb), "[a-zA-Z0-9]+",
+			       &user_id);
+		if (err)
+			goto err;
+
+		sess = session_lookup_user_id(&mix->sessl, &user_id);
+		if (!sess)
+			goto err;
+
+		sess->user->speaker = true;
+		aumix_mute(sess->id, false);
+
+		err = user_event_json(&json, USER_UPDATED, sess);
+		if (err)
+			goto err;
+
+		sl_ws_send_event_all(json);
+		json = mem_deref(json);
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/listener") &&
+	    0 == pl_strcasecmp(&msg->met, "POST")) {
+		/* @TODO: check permission */
+		struct pl user_id = PL_INIT;
+		char *json	  = NULL;
+
+		err = re_regex((char *)mbuf_buf(msg->mb),
+			       mbuf_get_left(msg->mb), "[a-zA-Z0-9]+",
+			       &user_id);
+		if (err)
+			goto err;
+
+		sess = session_lookup_user_id(&mix->sessl, &user_id);
+		if (!sess)
+			goto err;
+
+		sess->user->speaker = false;
+		aumix_mute(sess->id, true);
+
+		err = user_event_json(&json, USER_UPDATED, sess);
+		if (err)
+			goto err;
+
+		sl_ws_send_event_all(json);
+		json = mem_deref(json);
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client") &&
 	    0 == pl_strcasecmp(&msg->met, "DELETE")) {
 
@@ -213,7 +275,7 @@ static void http_req_handler(struct http_conn *conn,
 		session_close(sess, 0);
 		sess = NULL;
 
-		http_sreply(conn, 200, "OK", "text/html", "", 0, sess);
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 	}
 
 	/* Default 404 return */

@@ -2,7 +2,7 @@ import { Ref, ref } from 'vue'
 import router from '../router'
 
 interface User {
-    id: number
+    id: string
     name: string
     hand?: boolean
 }
@@ -56,12 +56,8 @@ export const Users: Users = {
             if (data.type === 'user') {
                 // keep delete before add order!
                 if (data.event === 'deleted' || data.event === 'updated') {
-                    if (data.speaker) {
-                        this.speakers.value = this.speakers.value?.filter((u) => u.id !== data.id)
-                    }
-                    else {
-                        this.listeners.value = this.listeners.value?.filter((u) => u.id !== data.id)
-                    }
+                    this.speakers.value = this.speakers.value?.filter((u) => u.id !== data.id)
+                    this.listeners.value = this.listeners.value?.filter((u) => u.id !== data.id)
                 }
 
                 if (data.event === 'added' || data.event === 'updated') {

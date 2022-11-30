@@ -18,6 +18,7 @@
                   alt="Avatar Image"
                 />
               </picture>
+              <button @click="api.speaker(item.id)">To Speaker</button>
               <div class="space-y-2">
                 <div class="text-xs font-medium">
                   <h3>{{ item.name }}</h3>
@@ -33,4 +34,5 @@
 
 <script setup lang="ts">
 import { Users } from '../ws/users'
+import api from '../api'
 </script>

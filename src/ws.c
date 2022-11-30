@@ -125,6 +125,21 @@ void sl_ws_send_event(struct session *sess, char *json)
 }
 
 
+void sl_ws_send_event_all(char *json)
+{
+	struct le *le;
+
+	if (!json)
+		return;
+
+	LIST_FOREACH(&wsl, le)
+	{
+		struct ws_conn *ws_conn = le->data;
+		websock_send(ws_conn->c, WEBSOCK_TEXT, "%s", json);
+	}
+}
+
+
 int sl_ws_init(void)
 {
 	int err;

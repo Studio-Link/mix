@@ -58,6 +58,14 @@ export default {
         router.push({ name: 'Home' })
     },
 
+    async speaker(user_id: string) {
+        await api_fetch('POST', '/client/speaker', user_id)
+    },
+    
+    async listener(user_id: string) {
+        await api_fetch('POST', '/client/listener', user_id)
+    },
+
     async websocket() {
         Users.websocket(config.ws_host(), sessid)
     },

@@ -8,7 +8,7 @@
 #include <baresip.h>
 #include "aumix.h"
 
-enum { PTIME = 20, SRATE = 48000, CH = 1, MAX_LEVEL = 500 };
+enum { PTIME = 20, SRATE = 48000, CH = 2, MAX_LEVEL = 500 };
 
 static struct auplay *auplay	      = NULL;
 static struct ausrc *ausrc	      = NULL;
@@ -240,49 +240,35 @@ out:
 }
 
 
-static int source_mute(struct re_printf *pf, void *arg)
+void aumix_mute(char *device, bool mute);
+void aumix_mute(char *device, bool mute)
 {
-	struct cmd_arg *carg = arg;
 	struct le *le;
-	struct pl r, device = pl_null, mute_pl = pl_null;
-	bool mute;
-	int err;
-	(void)pf;
-
-	pl_set_str(&r, carg->prm);
-	err = re_regex(r.p, r.l, "[^,]+,[~]*", &device, &mute_pl);
-	IF_ERR_RETURN(err);
-
-	str_bool(&mute, mute_pl.p);
 
 	LIST_FOREACH(&auplayl, le)
 	{
 		struct auplay_st *st = le->data;
-		struct pl st_device  = pl_null;
 
-		pl_set_str(&st_device, st->device);
-		if (pl_cmp(&st_device, &device))
+		if (str_cmp(st->device, device))
 			continue;
 
-		info("aumix_mute %r %d\n", &device, mute);
+		info("aumix_mute %s %d\n", device, mute);
 		aumix_source_mute(st->aumix_src, mute);
 		st->muted = mute;
+
+		return;
 	}
 
 	/* Fallback if auplay is not started yet */
 	LIST_FOREACH(&ausrcl, le)
 	{
 		struct ausrc_st *st = le->data;
-		struct pl st_device = pl_null;
 
-		pl_set_str(&st_device, st->device);
-		if (pl_cmp(&st_device, &device))
+		if (str_cmp(st->device, device))
 			continue;
 
 		st->muted = mute;
 	}
-
-	return err;
 }
 
 
@@ -327,8 +313,6 @@ static int cmd_record(struct re_printf *pf, void *arg)
 
 
 static const struct cmd cmdv[] = {
-	{"aumix_mute", 0, CMD_PRM, "aumix_mute <device>,<true,false>}",
-	 source_mute},
 	{"aumix_debug", 'z', 0, "Debug aumix", mix_debug},
 	{"aumix_record", 0, CMD_PRM, "aumix_record <true,false>", cmd_record}};
 

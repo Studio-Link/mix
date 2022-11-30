@@ -237,6 +237,24 @@ struct session *session_lookup(const struct list *sessl,
 }
 
 
+struct session *session_lookup_user_id(const struct list *sessl,
+			       const struct pl *user_id)
+{
+
+	for (struct le *le = sessl->head; le; le = le->next) {
+
+		struct session *sess = le->data;
+
+		if (0 == pl_strcmp(user_id, sess->user->id))
+			return sess;
+	}
+
+	warning("mix: session user_id not found (%r)\n", user_id);
+
+	return NULL;
+}
+
+
 int session_handle_ice_candidate(struct session *sess, const struct odict *od)
 {
 	const char *cand, *mid;
