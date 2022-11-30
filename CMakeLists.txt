@@ -13,7 +13,7 @@ cmake_minimum_required(VERSION 3.18)
 
 set(CMAKE_C_COMPILER clang)
 
-project(slmix VERSION 0.0.1 LANGUAGES C)
+project(slmix VERSION 0.1.0 LANGUAGES C)
 
 
 ##############################################################################
@@ -102,4 +102,5 @@ set(SRCS
 
 add_executable(${PROJECT_NAME} ${SRCS})
 target_link_libraries(${PROJECT_NAME} PRIVATE baresip rem re gd ${LINKLIBS})
-target_compile_definitions(${PROJECT_NAME} PRIVATE ${RE_DEFINITIONS} ${MIX_DEFS})
+target_compile_definitions(${PROJECT_NAME} PRIVATE ${RE_DEFINITIONS} ${MIX_DEFS}
+  SLMIX_VERSION="${PROJECT_VERSION}")
