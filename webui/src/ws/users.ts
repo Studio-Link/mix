@@ -1,10 +1,11 @@
 import { Ref, ref } from 'vue'
-import router from '../router'
+import api from '../api'
 
 interface User {
     id: string
     name: string
     hand?: boolean
+    host: boolean
 }
 
 interface Users {
@@ -27,8 +28,7 @@ export const Users: Users = {
         this.socket.onclose = (e) => {
             console.log('Websocket users closed', e.reason)
             if (e.code === 1011) {
-                window.localStorage.removeItem('sessid')
-                router.push({ name: 'Login' })
+                api.logout()
             }
         }
 
@@ -64,6 +64,7 @@ export const Users: Users = {
                     const user: User = {
                         id: data.id,
                         name: data.name,
+                        host: data.host
                     }
 
                     if (data.speaker) {

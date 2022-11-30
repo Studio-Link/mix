@@ -127,7 +127,12 @@ static void http_req_handler(struct http_conn *conn,
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/connect") &&
 	    0 == pl_strcasecmp(&msg->met, "POST")) {
 
-		err = session_new(&mix->sessl, &sess);
+		err = session_new(mix, &sess, msg);
+		if (err == EAUTH) {
+			http_sreply(conn, 401, "Unauthorized",
+				    "text/html", "", 0, NULL);
+			return;
+		}
 		if (err)
 			goto err;
 

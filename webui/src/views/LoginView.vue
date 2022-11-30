@@ -63,10 +63,13 @@
 
 <script setup lang="ts">
 import { Avatar, Factory } from 'vue3-avataaars'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, defineProps } from 'vue'
 import WebcamPhoto from '../components/WebcamPhoto.vue'
 import webcam from '../webcam'
 import api from '../api'
+
+const vprops = defineProps({token: String})
+api.connect(vprops?.token)
 
 const error = ref(false)
 const name = ref('')

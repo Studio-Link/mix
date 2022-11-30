@@ -1,7 +1,7 @@
 #include <re.h>
 #include <baresip.h>
 
-enum { SESSID_SZ = 32, USERID_SZ = 32, NAME_SZ = 32 };
+enum { SESSID_SZ = 32, USERID_SZ = 32, NAME_SZ = 32, TOKEN_SZ=32 };
 
 enum user_event { USER_ADDED, USER_UPDATED, USER_DELETED };
 
@@ -11,6 +11,10 @@ struct mix {
 	const struct menc *menc;
 	struct http_sock *httpsock;
 	const char *www_path;
+	char token_host[TOKEN_SZ]; 
+	char token_guests[TOKEN_SZ]; 
+	char token_listeners[TOKEN_SZ]; 
+	char token_download[TOKEN_SZ]; 
 	struct rtc_configuration pc_config;
 };
 
@@ -18,7 +22,7 @@ struct user {
 	char id[USERID_SZ];
 	char name[NAME_SZ];
 	bool speaker;
-	bool admin;
+	bool host;
 };
 
 struct session {
@@ -44,7 +48,8 @@ int slmix_http_listen(struct http_sock **sock, struct mix *mix);
 /******************************************************************************
  * sess.c
  */
-int session_new(struct list *sessl, struct session **sessp);
+int session_new(struct mix *mix, struct session **sessp,
+		const struct http_msg *msg);
 int session_start(struct session *sess,
 		  const struct rtc_configuration *pc_config,
 		  const struct mnat *mnat, const struct menc *menc);

@@ -3,7 +3,12 @@ import { Webrtc } from './webrtc'
 import router from './router'
 import { Users } from './ws/users'
 
-let sessid = window.localStorage.getItem('sessid')!
+interface Session {
+    id: string
+    auth: boolean
+}
+
+let sess: Session = JSON.parse(window.localStorage.getItem('sess')!)
 
 async function api_fetch(met: string, url: string, data: any) {
     // Default options are marked with *
@@ -13,7 +18,7 @@ async function api_fetch(met: string, url: string, data: any) {
         credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
-            'Session-ID': sessid,
+            'Session-ID': sess?.id,
         },
         redirect: 'follow',
         referrerPolicy: 'no-referrer',
@@ -23,7 +28,8 @@ async function api_fetch(met: string, url: string, data: any) {
     })
 
     const session_id = resp?.headers.get('Session-ID')
-    if (!session_id && resp?.status! >= 400 && resp?.status! < 500) {
+    if (!session_id && resp?.status! >= 400) {
+        Webrtc.error('API error: ' + resp?.status +' '+ resp?.statusText)
         window.localStorage.removeItem('sessid')
         router.push({ name: 'Login' })
     }
@@ -33,27 +39,38 @@ async function api_fetch(met: string, url: string, data: any) {
 
 export default {
     async isAuthenticated() {
-        if (window.localStorage.getItem('sessid')) return true
+        sess = JSON.parse(window.localStorage.getItem('sess')!)
+        if (sess?.auth) return true
         return false
     },
 
-    async login(name: string, image: string) {
-        let resp = await api_fetch('POST', '/client/connect', null)
+    async connect(token?: string) {
+        let resp = await api_fetch('POST', '/client/connect', token)
 
         const session_id = resp?.headers.get('Session-ID')
-        if (!session_id) return
+        if (!session_id) { 
+            window.localStorage.removeItem('sess')
+            // router.push({ name: 'LoginError' })
+            return
+        }
 
-        sessid = session_id
+        sess = {id: session_id, auth: false}
+        console.log(sess)
 
-        resp = await api_fetch('POST', '/client/name', name)
+        window.localStorage.setItem('sess', JSON.stringify(sess))
+    },
+
+    async login(name: string, image: string) {
+        let resp = await api_fetch('POST', '/client/name', name)
         if (!resp?.ok) return
 
         resp = await api_fetch('POST', '/client/avatar', image)
         if (!resp?.ok) return
 
-        window.localStorage.setItem('sessid', sessid)
-
         Webrtc.listen()
+
+        sess.auth = true
+        window.localStorage.setItem('sess', JSON.stringify(sess))
 
         router.push({ name: 'Home' })
     },
@@ -61,18 +78,19 @@ export default {
     async speaker(user_id: string) {
         await api_fetch('POST', '/client/speaker', user_id)
     },
-    
+
     async listener(user_id: string) {
         await api_fetch('POST', '/client/listener', user_id)
     },
 
     async websocket() {
-        Users.websocket(config.ws_host(), sessid)
+        Users.websocket(config.ws_host(), sess.id)
     },
 
     async logout() {
         await api_fetch('DELETE', '/client/logout', null)
-        window.localStorage.removeItem('sessid')
+        window.localStorage.removeItem('sess')
+        router.push({ name: 'Login' })
     },
 
     async sdp(desc: RTCSessionDescription | null) {

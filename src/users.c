@@ -44,8 +44,8 @@ int users_json(char **json, struct mix *mix)
 				sess->user->name);
 		odict_entry_add(o_user, "speaker", ODICT_BOOL,
 				sess->user->speaker);
-		odict_entry_add(o_user, "admin", ODICT_BOOL,
-				sess->user->admin);
+		odict_entry_add(o_user, "host", ODICT_BOOL,
+				sess->user->host);
 
 		odict_entry_add(o_users, sess->user->id, ODICT_OBJECT, o_user);
 		o_user = mem_deref(o_user);
@@ -85,7 +85,7 @@ int user_event_json(char **json, enum user_event event, struct session *sess)
 	odict_entry_add(o, "id", ODICT_STRING, sess->user->id);
 	odict_entry_add(o, "name", ODICT_STRING, sess->user->name);
 	odict_entry_add(o, "speaker", ODICT_BOOL, sess->user->speaker);
-	odict_entry_add(o, "admin", ODICT_BOOL, sess->user->admin);
+	odict_entry_add(o, "host", ODICT_BOOL, sess->user->host);
 
 	err = re_sdprintf(json, "%H", json_encode_odict, o);
 

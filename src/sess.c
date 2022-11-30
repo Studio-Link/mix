@@ -173,13 +173,17 @@ int session_start(struct session *sess,
 }
 
 
-int session_new(struct list *sessl, struct session **sessp)
+int session_new(struct mix *mix, struct session **sessp,
+		const struct http_msg *msg)
 {
 	struct session *sess;
 	struct user *user;
+	struct pl token = PL_INIT;
 
-	info("mix: create session\n");
+	re_regex((char *)mbuf_buf(msg->mb), mbuf_get_left(msg->mb),
+		 "[a-zA-Z0-9]+", &token);
 
+	info("sess: create\n");
 	sess = mem_zalloc(sizeof(*sess), destructor);
 	if (!sess)
 		return ENOMEM;
@@ -190,13 +194,36 @@ int session_new(struct list *sessl, struct session **sessp)
 		return ENOMEM;
 	}
 
-	user->speaker = true;
+	if (token.l > 0) {
+		if (str_isset(mix->token_host) &&
+		    0 == pl_strcmp(&token, mix->token_host)) {
+
+			info("sess: host token\n");
+			user->speaker = true;
+			user->host    = true;
+		}
+		else if (str_isset(mix->token_guests) &&
+			 0 == pl_strcmp(&token, mix->token_guests)) {
+
+			info("sess: guest token\n");
+			user->speaker = true;
+		}
+		else if (str_isset(mix->token_listeners) &&
+			 0 == pl_strcmp(&token, mix->token_listeners)) {
+
+			info("sess: listener token\n");
+			user->speaker = false;
+		}
+		else {
+			return EAUTH;
+		}
+	}
 
 	/* generate a unique session id */
 	rand_str(sess->id, sizeof(sess->id));
 	sess->user = user;
 
-	list_append(sessl, &sess->le, sess);
+	list_append(&mix->sessl, &sess->le, sess);
 
 	*sessp = sess;
 
@@ -238,7 +265,7 @@ struct session *session_lookup(const struct list *sessl,
 
 
 struct session *session_lookup_user_id(const struct list *sessl,
-			       const struct pl *user_id)
+				       const struct pl *user_id)
 {
 
 	for (struct le *le = sessl->head; le; le = le->next) {
@@ -265,7 +292,8 @@ int session_handle_ice_candidate(struct session *sess, const struct odict *od)
 	cand = odict_string(od, "candidate");
 	mid  = odict_string(od, "sdpMid");
 	if (!cand || !mid) {
-		warning("mix: candidate: missing 'candidate' or 'mid'\n");
+		warning("mix: candidate: missing 'candidate' or "
+			"'mid'\n");
 		return EPROTO;
 	}
 
