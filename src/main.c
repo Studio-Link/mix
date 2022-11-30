@@ -66,9 +66,9 @@ static void usage(void)
 {
 	(void)re_fprintf(stderr, "Usage: slmix [options]\n"
 				 "options:\n"
-				 "\t-h    Help\n"
-				 "\t-f    Load config\n"
-				 "\t-v    Verbose debug\n");
+				 "\t-h		Help\n"
+				 "\t-c --config	Load config file\n"
+				 "\t-v		Verbose debug\n");
 }
 
 
