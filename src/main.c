@@ -108,10 +108,10 @@ static int slmix_getopt(int argc, char *const argv[])
 				return EINVAL;
 			}
 			str_dup(&config_file, optarg);
-			return 0;
+			break;
 		case 'v':
 			log_enable_debug(true);
-			return 0;
+			break;
 		default:
 			usage();
 			return EINVAL;
