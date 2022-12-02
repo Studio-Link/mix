@@ -29,7 +29,7 @@ async function api_fetch(met: string, url: string, data: any) {
 
     const session_id = resp?.headers.get('Session-ID')
     if (!session_id && resp?.status! >= 400) {
-        Webrtc.error('API error: ' + resp?.status +' '+ resp?.statusText)
+        Webrtc.error('API error: ' + resp?.status + ' ' + resp?.statusText)
         window.localStorage.removeItem('sessid')
         router.push({ name: 'Login' })
     }
@@ -45,16 +45,16 @@ export default {
     },
 
     async connect(token?: string) {
-        let resp = await api_fetch('POST', '/client/connect', token)
+        const resp = await api_fetch('POST', '/client/connect', token)
 
         const session_id = resp?.headers.get('Session-ID')
-        if (!session_id) { 
+        if (!session_id) {
             window.localStorage.removeItem('sess')
             // router.push({ name: 'LoginError' })
             return
         }
 
-        sess = {id: session_id, auth: false}
+        sess = { id: session_id, auth: false }
         console.log(sess)
 
         window.localStorage.setItem('sess', JSON.stringify(sess))

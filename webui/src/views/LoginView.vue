@@ -68,7 +68,7 @@ import WebcamPhoto from '../components/WebcamPhoto.vue'
 import webcam from '../webcam'
 import api from '../api'
 
-const vprops = defineProps({token: String})
+const vprops = defineProps({ token: String })
 api.connect(vprops?.token)
 
 const error = ref(false)

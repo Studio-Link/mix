@@ -45,8 +45,7 @@ export const Users: Users = {
                 for (const key in data.users) {
                     if (data.users[key].speaker) {
                         this.speakers.value?.push(data.users[key])
-                    }
-                    else {
+                    } else {
                         this.listeners.value?.push(data.users[key])
                     }
                 }
@@ -64,13 +63,12 @@ export const Users: Users = {
                     const user: User = {
                         id: data.id,
                         name: data.name,
-                        host: data.host
+                        host: data.host,
                     }
 
                     if (data.speaker) {
                         this.speakers.value?.push(user)
-                    }
-                    else {
+                    } else {
                         this.listeners.value?.unshift(user)
                     }
                 }
