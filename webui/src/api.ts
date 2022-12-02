@@ -67,8 +67,6 @@ export default {
         resp = await api_fetch('POST', '/client/avatar', image)
         if (!resp?.ok) return
 
-        Webrtc.listen()
-
         sess.auth = true
         window.localStorage.setItem('sess', JSON.stringify(sess))
 
