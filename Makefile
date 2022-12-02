@@ -51,5 +51,5 @@ external:
 	git clone https://github.com/baresip/baresip.git external/baresip && \
 		cd external/baresip && \
 		patch -p1 < ../../patches/baresip_packet_dup_handler.patch && \
-		patch -p1 < ../../patches/mediatrack_audio_video.patch
-
+		patch -p1 < ../../patches/mediatrack_audio_video.patch && \
+		patch -p1 < ../../patches/avcodec_simple_decode_recorder.patch

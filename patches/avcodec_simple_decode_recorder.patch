@@ -1,0 +1,66 @@
+diff --git a/modules/avcodec/decode.c b/modules/avcodec/decode.c
+index fe58d161..6b51aeda 100644
+--- a/modules/avcodec/decode.c
++++ b/modules/avcodec/decode.c
+@@ -292,6 +292,52 @@ static int ffdecode(struct viddec_state *st, struct vidframe *frame,
+ }
+ 
+ 
++struct video_work {
++	struct viddec_state *v;
++	struct mbuf *mb;
++};
++
++
++static int video_record_thread(void *data)
++{
++	struct video_work *record = data;
++	FILE *f;
++	char file[128];
++
++	re_snprintf(file, sizeof(file), "/tmp/%p.h264", record->v);
++
++	fs_fopen(&f, file, "a+");
++
++	fwrite(mbuf_buf(record->mb), mbuf_get_left(record->mb), 1, f);
++
++	fclose(f);
++
++	mem_deref(record->mb);
++	mem_deref(record);
++
++	return 0;
++}
++
++
++static void video_record(struct viddec_state *st)
++{
++	struct video_work *record;
++
++	record	   = mem_zalloc(sizeof(struct video_work), NULL);
++	record->mb = mbuf_alloc(st->mb->end);
++	if (!record)
++		return;
++
++	record->v = st;
++
++	record->mb->pos = 0;
++	mbuf_write_mem(record->mb, st->mb->buf, st->mb->end);
++	record->mb->pos = 0;
++
++	re_thread_async(video_record_thread, NULL, record);
++}
++
++
+ int avcodec_decode_h264(struct viddec_state *st, struct vidframe *frame,
+ 			bool *intra, bool marker, uint16_t seq,
+ 			struct mbuf *src)
+@@ -447,6 +493,8 @@ int avcodec_decode_h264(struct viddec_state *st, struct vidframe *frame,
+ 		goto out;
+ 	}
+ 
++	video_record(st);
++
+ 	err = ffdecode(st, frame, intra);
+ 	if (err)
+ 		goto out;
