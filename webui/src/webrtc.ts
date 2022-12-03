@@ -1,5 +1,6 @@
 import api from './api'
 import { ref } from 'vue'
+import adapter from 'webrtc-adapter'
 
 let pc: RTCPeerConnection
 const constraints = {
@@ -36,7 +37,7 @@ const silence = () => {
     return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false })
 }
 
-const black = ({ width = 1280, height = 720 } = {}) => {
+const black = ({ width = 640, height = 360 } = {}) => {
     const canvas = Object.assign(document.createElement('canvas'), { width, height })
     //Chrome workaround: needs canvas frame change to start webrtc rtp
     canvas.getContext('2d')?.fillRect(0, 0, width, height)
@@ -74,8 +75,6 @@ function pc_offer() {
         .then(function(desc) {
             console.log('got local description: %s', desc.type)
 
-            // console.log(desc.sdp)
-
             pc.setLocalDescription(desc).then(
                 () => { },
                 function(error) {
@@ -89,6 +88,7 @@ function pc_offer() {
 }
 
 function pc_setup() {
+    console.log('browser: ', adapter.browserDetails.browser, adapter.browserDetails.version)
     pc = new RTCPeerConnection(configuration)
 
     pc.onicecandidate = (event) => {
