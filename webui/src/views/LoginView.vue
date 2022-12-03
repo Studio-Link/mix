@@ -63,7 +63,7 @@
 
 <script setup lang="ts">
 import { Avatar, Factory } from 'vue3-avataaars'
-import { ref, onMounted, defineProps } from 'vue'
+import { ref, onMounted } from 'vue'
 import WebcamPhoto from '../components/WebcamPhoto.vue'
 import webcam from '../webcam'
 import api from '../api'
