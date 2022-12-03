@@ -61,6 +61,7 @@ export default {
     },
 
     async login(name: string, image: string) {
+        Webrtc.error('')
         let resp = await api_fetch('POST', '/client/name', name)
         if (!resp?.ok) return
 
