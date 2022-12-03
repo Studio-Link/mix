@@ -82,10 +82,11 @@ void http_sreply(struct http_conn *conn, uint16_t scode, const char *reason,
 		"Access-Control-Allow-Headers: *\r\n"
 		"Access-Control-Expose-Headers: *\r\n"
 #endif
+		"Status-Reason: %s\r\n"
 		"%s"
 		"\r\n"
 		"%b",
-		ctype, mb->end, sess_head, mb->buf, mb->end);
+		ctype, mb->end, reason, sess_head, mb->buf, mb->end);
 	if (err)
 		warning("http_sreply: http_reply err %m\n", err);
 out:
