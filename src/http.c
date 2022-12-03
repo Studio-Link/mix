@@ -129,8 +129,8 @@ static void http_req_handler(struct http_conn *conn,
 
 		err = session_new(mix, &sess, msg);
 		if (err == EAUTH) {
-			http_sreply(conn, 401, "Unauthorized",
-				    "text/html", "", 0, NULL);
+			http_sreply(conn, 401, "Unauthorized", "text/html", "",
+				    0, NULL);
 			return;
 		}
 		if (err)
@@ -140,6 +140,25 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/sessions/connected")) {
+		struct le *le;
+		uint32_t cnt = 0;
+		char count[ITOA_BUFSZ];
+		char *countp;
+
+		LIST_FOREACH(&mix->sessl, le)
+		{
+			sess = le->data;
+			if (sess->connected)
+				++cnt;
+		}
+
+		countp = str_itoa(cnt, count, 10);
+		http_sreply(conn, 200, "OK", "text/html", countp,
+			    str_len(countp), NULL);
+
+		return;
+	}
 
 	/*
 	 * API Requests with session
