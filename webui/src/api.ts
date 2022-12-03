@@ -27,9 +27,12 @@ async function api_fetch(met: string, url: string, data: any) {
         Webrtc.error('API Network error: ' + error.toString())
     })
 
+    if (resp?.status! >= 400) {
+        Webrtc.error('API error: ' + resp?.status + ' ' + resp?.headers.get('Status-Reason'))
+    }
+
     const session_id = resp?.headers.get('Session-ID')
     if (!session_id && resp?.status! >= 400) {
-        Webrtc.error('API error: ' + resp?.status + ' ' + resp?.headers.get('Status-Reason'))
         window.localStorage.removeItem('sessid')
         router.push({ name: 'Login' })
     }

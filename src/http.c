@@ -187,14 +187,17 @@ static void http_req_handler(struct http_conn *conn,
 
 		err = re_regex((char *)mbuf_buf(msg->mb),
 			       mbuf_get_left(msg->mb), "[a-zA-Z0-9]+", &name);
-		if (err)
-			goto err;
+		if (err) {
+			http_sreply(conn, 400, "Name error", "text/html", "", 0, sess);
+			return;
+		}
 
 		re_snprintf(sess->user->name, sizeof(sess->user->name), "%r",
 			    &name);
 
 		if (!str_isset(sess->user->name)) {
-			http_ereply(conn, 400, "Invalid name");
+			http_sreply(conn, 400, "Name error", "text/html", "", 0, sess);
+			return;
 		}
 
 		http_sreply(conn, 204, "Updated", "text/html", "", 0, sess);
