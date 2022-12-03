@@ -180,6 +180,11 @@ int main(int argc, char *const argv[])
 		"avcodec_keyint		10\n"
 		"rtp_timeout		10\n";
 
+	/*
+	 * turn off buffering on stdout
+	 */
+	setbuf(stdout, NULL);
+
 	err = libre_init();
 	if (err)
 		return err;
