@@ -53,7 +53,7 @@
           </div>
           <div>
             <button
-              v-if="Webrtc.state.value >= WebrtcState.Listening"
+              @click="chat_clicked()"
               ref="chat"
               title="Chat"
               class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
@@ -84,6 +84,7 @@
 <script setup lang="ts">
 import { Webrtc, WebrtcState } from '../webrtc'
 import { ref } from 'vue'
+import { Users } from '../ws/users'
 
 const hand = ref<HTMLButtonElement>()
 const play = ref<HTMLButtonElement>()
@@ -91,10 +92,13 @@ const chat = ref<HTMLButtonElement>()
 
 function listen() {
   Webrtc.listen()
-  /* hand.value!.disabled = false */
 }
 
 function hand_clicked() {
   Webrtc.speak()
+}
+
+function chat_clicked() {
+    Users.chat_active.value = !Users.chat_active.value
 }
 </script>

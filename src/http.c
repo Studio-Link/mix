@@ -1,5 +1,3 @@
-#include <re.h>
-#include <baresip.h>
 #include "mix.h"
 #ifdef SLMIX_SD_SOCK
 #include "systemd/sd-daemon.h"
@@ -188,7 +186,8 @@ static void http_req_handler(struct http_conn *conn,
 		err = re_regex((char *)mbuf_buf(msg->mb),
 			       mbuf_get_left(msg->mb), "[a-zA-Z0-9]+", &name);
 		if (err) {
-			http_sreply(conn, 400, "Name error", "text/html", "", 0, sess);
+			http_sreply(conn, 400, "Name error", "text/html", "",
+				    0, sess);
 			return;
 		}
 
@@ -196,7 +195,8 @@ static void http_req_handler(struct http_conn *conn,
 			    &name);
 
 		if (!str_isset(sess->user->name)) {
-			http_sreply(conn, 400, "Name error", "text/html", "", 0, sess);
+			http_sreply(conn, 400, "Name error", "text/html", "",
+				    0, sess);
 			return;
 		}
 
@@ -304,9 +304,38 @@ static void http_req_handler(struct http_conn *conn,
 		sess = NULL;
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
 	}
 
-	/* Default 404 return */
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/chat") &&
+	    0 == pl_strcasecmp(&msg->met, "GET")) {
+
+		char *json;
+
+		err = chat_json(&json, mix);
+		if (err)
+			goto err;
+
+		http_sreply(conn, 200, "OK", "text/html", json, str_len(json),
+			    sess);
+		mem_deref(json);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/chat") &&
+	    0 == pl_strcasecmp(&msg->met, "POST")) {
+
+		err = chat_save(sess->user, mix, msg);
+		if (err && err != ENODATA)
+			goto err;
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	/*
+	 * Default 404
+	 */
 	http_sreply(conn, 404, "Not found", "text/html", "", 0, sess);
 	return;
 

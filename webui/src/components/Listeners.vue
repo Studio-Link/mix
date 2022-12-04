@@ -6,7 +6,7 @@
           <h2 v-if="Users.listeners.value?.length" class="text-xl font-medium tracking-tight">Listeners</h2>
         </div>
         <ul
-          class="mx-auto grid grid-cols-4 gap-x-4 gap-y-6 sm:grid-cols-5 md:grid-cols-6 md:gap-x-6 lg:max-w-5xl lg:gap-x-8 lg:gap-y-12 xl:grid-cols-6"
+          class="mx-auto grid grid-cols-4 gap-x-4 gap-y-6 sm:grid-cols-4 md:gap-x-5 lg:max-w-5xl lg:gap-x-8 lg:gap-y-12 xl:grid-cols-6"
         >
           <li v-for="item in Users.listeners.value" :key="item.id">
             <div class="space-y-4">

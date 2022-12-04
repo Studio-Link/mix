@@ -87,6 +87,7 @@ find_package(re CONFIG REQUIRED)
 
 set(SRCS
   src/avatar.c
+  src/chat.c
   src/http.c
   src/main.c
   src/sess.c

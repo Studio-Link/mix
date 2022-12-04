@@ -6,11 +6,13 @@ import { Users } from './ws/users'
 interface Session {
     id: string
     auth: boolean
+    user_id: string | null
 }
 
 let sess: Session = JSON.parse(window.localStorage.getItem('sess')!)
 
 async function api_fetch(met: string, url: string, data: any) {
+
     // Default options are marked with *
     const resp = await fetch(config.host() + '/api/v1' + url, {
         method: met,
@@ -22,7 +24,7 @@ async function api_fetch(met: string, url: string, data: any) {
         },
         redirect: 'follow',
         referrerPolicy: 'no-referrer',
-        body: JSON.stringify(data),
+        body: data ? JSON.stringify(data) : null,
     }).catch((error) => {
         Webrtc.error('API Network error: ' + error.toString())
     })
@@ -41,6 +43,9 @@ async function api_fetch(met: string, url: string, data: any) {
 }
 
 export default {
+    session() {
+        return sess
+    },
     async isAuthenticated() {
         sess = JSON.parse(window.localStorage.getItem('sess')!)
         if (sess?.auth) return true
@@ -57,8 +62,7 @@ export default {
             return
         }
 
-        sess = { id: session_id, auth: false }
-        console.log(sess)
+        sess = { id: session_id, auth: false, user_id: null }
 
         window.localStorage.setItem('sess', JSON.stringify(sess))
     },
@@ -72,9 +76,18 @@ export default {
         if (!resp?.ok) return
 
         sess.auth = true
+        sess.user_id = await resp?.text();
         window.localStorage.setItem('sess', JSON.stringify(sess))
 
         router.push({ name: 'Home' })
+    },
+
+    async chat(msg: string) {
+        await api_fetch('POST', '/chat', msg)
+    },
+
+    async get_chat() {
+        return await api_fetch('GET', '/chat', null)
     },
 
     async speaker(user_id: string) {

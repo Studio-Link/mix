@@ -8,16 +8,27 @@ interface User {
     host: boolean
 }
 
+interface Chat {
+    user_id: string
+    user_name: string
+    time: string
+    msg: string
+}
+
 interface Users {
     socket?: WebSocket
     websocket(host: string, sessid: string): void
     speakers: Ref<User[] | undefined>
     listeners: Ref<User[] | undefined>
+    chat_messages: Ref<Chat[] | undefined>
+    chat_active: Ref<boolean>
 }
 
 export const Users: Users = {
     speakers: ref([]),
     listeners: ref([]),
+    chat_messages: ref([]),
+    chat_active: ref(false),
     websocket(host, sessid) {
         this.socket = new WebSocket(host + '/ws/v1/users')
 
@@ -39,7 +50,7 @@ export const Users: Users = {
         this.socket.onmessage = (message: any) => {
             const data = JSON.parse(message.data)
 
-            if (data.type == 'users') {
+            if (data.type === 'users') {
                 this.speakers.value = []
                 this.listeners.value = []
                 for (const key in data.users) {
@@ -72,6 +83,16 @@ export const Users: Users = {
                         this.listeners.value?.unshift(user)
                     }
                 }
+            }
+
+            if (data.type === 'chat') {
+                const chat = {
+                    user_id: data.user_id,
+                    user_name: data.user_name,
+                    time: data.time,
+                    msg: data.msg
+                }
+                this.chat_messages.value?.push(chat)
             }
         }
     },

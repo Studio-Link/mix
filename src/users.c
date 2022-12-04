@@ -69,6 +69,9 @@ int user_event_json(char **json, enum user_event event, struct session *sess)
 	struct odict *o;
 	int err;
 
+	if (!json || !sess)
+		return EINVAL;
+
 	err = odict_alloc(&o, 8);
 	if (err)
 		return err;
@@ -81,6 +84,10 @@ int user_event_json(char **json, enum user_event event, struct session *sess)
 		odict_entry_add(o, "event", ODICT_STRING, "updated");
 	else if (event == USER_DELETED)
 		odict_entry_add(o, "event", ODICT_STRING, "deleted");
+	else {
+		err = EINVAL;
+		goto out;
+	}
 
 	odict_entry_add(o, "id", ODICT_STRING, sess->user->id);
 	odict_entry_add(o, "name", ODICT_STRING, sess->user->name);
@@ -89,6 +96,7 @@ int user_event_json(char **json, enum user_event event, struct session *sess)
 
 	err = re_sdprintf(json, "%H", json_encode_odict, o);
 
+out:
 	mem_deref(o);
 
 	return err;
