@@ -3,7 +3,7 @@
     <div class="max-w-7xl mx-auto px-4 text-center sm:px-6 lg:px-8">
       <div class="space-y-8 sm:space-y-10">
         <ul
-          class="mx-auto grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 md:grid-cols-5 md:gap-x-6 lg:max-w-5xl lg:gap-x-8 lg:gap-y-12 xl:grid-cols-6"
+          class="mx-auto grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-3 md:gap-x-4 lg:max-w-5xl lg:gap-x-8 lg:gap-y-12 xl:grid-cols-6"
         >
           <li v-for="item in Users.speakers.value" :key="item.id">
             <div class="space-y-2">

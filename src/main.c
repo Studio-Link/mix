@@ -56,6 +56,7 @@ static int slmix_init(struct mix *mix)
 static void slmix_close(struct mix *mix)
 {
 	list_flush(&mix->sessl);
+	list_flush(&mix->chatl);
 
 	mix->httpsock		  = mem_deref(mix->httpsock);
 	mix->pc_config.ice_server = mem_deref(mix->pc_config.ice_server);

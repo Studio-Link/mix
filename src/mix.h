@@ -1,20 +1,27 @@
 #include <re.h>
 #include <baresip.h>
 
-enum { SESSID_SZ = 32, USERID_SZ = 32, NAME_SZ = 32, TOKEN_SZ=32 };
+enum {
+	SESSID_SZ  = 32,
+	USERID_SZ  = 32,
+	NAME_SZ	   = 32,
+	TOKEN_SZ   = 32,
+	CHAT_MSGSZ = 1024
+};
 
-enum user_event { USER_ADDED, USER_UPDATED, USER_DELETED };
+enum user_event { USER_ADDED, USER_UPDATED, USER_DELETED, CHAT_ADDED };
 
 struct mix {
 	struct list sessl;
+	struct list chatl;
 	const struct mnat *mnat;
 	const struct menc *menc;
 	struct http_sock *httpsock;
 	const char *www_path;
-	char token_host[TOKEN_SZ]; 
-	char token_guests[TOKEN_SZ]; 
-	char token_listeners[TOKEN_SZ]; 
-	char token_download[TOKEN_SZ]; 
+	char token_host[TOKEN_SZ];
+	char token_guests[TOKEN_SZ];
+	char token_listeners[TOKEN_SZ];
+	char token_download[TOKEN_SZ];
 	struct rtc_configuration pc_config;
 };
 
@@ -23,6 +30,13 @@ struct user {
 	char name[NAME_SZ];
 	bool speaker;
 	bool host;
+};
+
+struct chat {
+	struct le le;
+	uint64_t time;
+	struct user *user;
+	char message[CHAT_MSGSZ];
 };
 
 struct session {
@@ -39,6 +53,13 @@ struct session {
  */
 int avatar_save(struct session *sess, struct http_conn *conn,
 		const struct http_msg *msg);
+
+/******************************************************************************
+ * chat.c
+ */
+int chat_save(struct user *user, struct mix *mix, const struct http_msg *msg);
+int chat_json(char **json, struct mix *mix);
+int chat_event_json(char **json, enum user_event event, struct chat *chat);
 
 /******************************************************************************
  * http.c

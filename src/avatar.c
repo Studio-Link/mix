@@ -119,7 +119,8 @@ static void http_callback(int err, void *arg)
 		goto out;
 	}
 
-	http_sreply(avatar->conn, 201, "Created", "text/html", "", 0,
+	http_sreply(avatar->conn, 201, "Created", "text/html",
+		    avatar->sess->user->id, str_len(avatar->sess->user->id),
 		    avatar->sess);
 
 out:
