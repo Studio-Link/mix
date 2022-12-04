@@ -80,7 +80,7 @@ int user_event_json(char **json, enum user_event event, struct session *sess)
 
 	if (event == USER_ADDED)
 		odict_entry_add(o, "event", ODICT_STRING, "added");
-	if (event == USER_UPDATED)
+	else if (event == USER_UPDATED)
 		odict_entry_add(o, "event", ODICT_STRING, "updated");
 	else if (event == USER_DELETED)
 		odict_entry_add(o, "event", ODICT_STRING, "deleted");
