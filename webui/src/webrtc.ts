@@ -2,16 +2,24 @@ import api from './api'
 import { ref } from 'vue'
 import adapter from 'webrtc-adapter'
 
+// --- Private Webrtc API ---
 let pc: RTCPeerConnection
-const constraints = {
+let avdummy: MediaStream
+let avstream: MediaStream | null = null 
+
+const constraints: any = {
     audio: {
         echoCancellation: false, // disabling audio processing
         autoGainControl: false,
         noiseSuppression: false,
         latency: 0.02, //20ms
         sampleRate: 48000,
+        deviceId: undefined
     },
-    video: { width: 1280, height: 720 },
+    video: {
+        width: 1280, height: 720,
+        deviceId: undefined
+    },
 }
 
 const configuration: RTCConfiguration = {
@@ -153,25 +161,26 @@ function pc_setup() {
     }
 
     /* Add dummy tracks */
-    const av = AVSilence()
-    av.getTracks().forEach((track) => pc.addTrack(track, av))
+    avdummy = AVSilence()
+    avdummy.getTracks().forEach((track) => pc.addTrack(track, avdummy))
 
     pc_offer()
 }
 
 async function pc_media() {
-    let avstream: MediaStream
+
+    avstream?.getVideoTracks()[0].stop();
+    avstream?.getAudioTracks()[0].stop();
+
     try {
         avstream = await navigator.mediaDevices.getUserMedia(constraints)
     } catch (e) {
         console.error('pc_media: permission denied...', e)
+        Webrtc.errorText.value = "Microphone/Camera permission denied!"
         return
     }
 
-    await pc_replace_tracks(avstream.getAudioTracks()[0], avstream.getVideoTracks()[0])
 
-    // let deviceInfos = await navigator.mediaDevices.enumerateDevices()
-    // pc_devices(deviceInfos)
 }
 
 async function pc_replace_tracks(audio_track: MediaStreamTrack, video_track: MediaStreamTrack | null) {
@@ -202,15 +211,48 @@ export enum WebrtcState {
     Speaking,
 }
 
+// --- Public Webrtc API ---
 export const Webrtc = {
     state: ref(WebrtcState.Offline),
     errorText: ref(''),
+    deviceInfos: ref<MediaDeviceInfo[] | undefined>([]),
+    audio_input_id: ref<string | undefined>(undefined),
+    audio_output_id: ref<string | undefined>(undefined),
+    video_input_id: ref<string | undefined>(undefined),
+
     listen() {
         pc_setup()
         this.state.value = WebrtcState.Connecting
     },
-    speak() {
-        pc_media()
+    async init_avdevices(): Promise<MediaStream | null> {
+        await pc_media()
+
+        this.deviceInfos.value = await navigator.mediaDevices.enumerateDevices()
+
+        this.deviceInfos.value.forEach((device) => {
+            console.log(`${device.kind}: ${device.label} id = ${device.deviceId}`)
+        })
+
+        this.video_input_id.value = avstream?.getVideoTracks()[0].getSettings().deviceId
+        this.audio_input_id.value = avstream?.getAudioTracks()[0].getSettings().deviceId
+
+        return avstream
+    },
+    async change_audio(): Promise<MediaStream | null> {
+        constraints.audio.deviceId = { exact: this.audio_input_id.value }
+        await pc_media()
+        console.log("audio changed")
+        return avstream
+    },
+    async change_video(): Promise<MediaStream | null> {
+        constraints.video.deviceId = { exact: this.video_input_id.value }
+        await pc_media()
+        console.log("video changed")
+        return avstream
+    },
+    async join() {
+        if (avstream === null) return
+        await pc_replace_tracks(avstream.getAudioTracks()[0], avstream.getVideoTracks()[0])
     },
     error(msg: string) {
         this.errorText.value = msg

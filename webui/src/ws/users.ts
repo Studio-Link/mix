@@ -22,6 +22,7 @@ interface Users {
     listeners: Ref<User[] | undefined>
     chat_messages: Ref<Chat[] | undefined>
     chat_active: Ref<boolean>
+    settings_active: Ref<boolean>
 }
 
 export const Users: Users = {
@@ -29,6 +30,7 @@ export const Users: Users = {
     listeners: ref([]),
     chat_messages: ref([]),
     chat_active: ref(false),
+    settings_active: ref(false),
     websocket(host, sessid) {
         this.socket = new WebSocket(host + '/ws/v1/users')
 
