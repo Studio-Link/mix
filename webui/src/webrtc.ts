@@ -223,6 +223,8 @@ export const Webrtc = {
     listen() {
         pc_setup()
         this.state.value = WebrtcState.Connecting
+        const audio: HTMLAudioElement | null = document.querySelector('audio#live')
+        audio?.play()
     },
 
     async init_avdevices(): Promise<MediaStream | null> {
