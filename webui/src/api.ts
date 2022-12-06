@@ -79,7 +79,7 @@ export default {
         sess.auth = true
         let user = JSON.parse(await resp?.text())
 
-        sess.user_id = user.user_id
+        sess.user_id = user.id
         sess.host = user.host
         window.localStorage.setItem('sess', JSON.stringify(sess))
 
