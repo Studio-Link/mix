@@ -6,6 +6,7 @@ import { Users } from './ws/users'
 interface Session {
     id: string
     auth: boolean
+    host: boolean
     user_id: string | null
 }
 
@@ -62,7 +63,7 @@ export default {
             return
         }
 
-        sess = { id: session_id, auth: false, user_id: null }
+        sess = { id: session_id, auth: false, host: false, user_id: null }
 
         window.localStorage.setItem('sess', JSON.stringify(sess))
     },
@@ -76,7 +77,10 @@ export default {
         if (!resp?.ok) return
 
         sess.auth = true
-        sess.user_id = await resp?.text();
+        let user = JSON.parse(await resp?.text())
+
+        sess.user_id = user.user_id
+        sess.host = user.host
         window.localStorage.setItem('sess', JSON.stringify(sess))
 
         router.push({ name: 'Home' })
@@ -111,4 +115,8 @@ export default {
     async sdp(desc: RTCSessionDescription | null) {
         return await api_fetch('PUT', '/webrtc/sdp', desc)
     },
+
+    is_host() {
+        return sess.host
+    }
 }

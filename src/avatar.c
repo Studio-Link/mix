@@ -114,16 +114,24 @@ err:
 static void http_callback(int err, void *arg)
 {
 	struct avatar *avatar = arg;
+	char *json	      = NULL;
+
 	if (err) {
 		http_ereply(avatar->conn, 500, "Error");
 		goto out;
 	}
 
-	http_sreply(avatar->conn, 201, "Created", "text/html",
-		    avatar->sess->user->id, str_len(avatar->sess->user->id),
-		    avatar->sess);
+	err = user_event_json(&json, USER_ADDED, avatar->sess);
+	if (err) {
+		http_ereply(avatar->conn, 500, "Error");
+		goto out;
+	}
+
+	http_sreply(avatar->conn, 201, "Created", "text/html", json,
+		    str_len(json), avatar->sess);
 
 out:
+	mem_deref(json);
 	mem_deref(avatar);
 }
 
