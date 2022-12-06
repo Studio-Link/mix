@@ -6,6 +6,8 @@ interface User {
     name: string
     hand?: boolean
     host: boolean
+    video: boolean
+    audio: boolean
 }
 
 interface Chat {
@@ -77,6 +79,8 @@ export const Users: Users = {
                         id: data.id,
                         name: data.name,
                         host: data.host,
+                        video: data.video,
+                        audio: data.audio
                     }
 
                     if (data.speaker) {

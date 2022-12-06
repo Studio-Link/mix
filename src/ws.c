@@ -71,6 +71,9 @@ static void close_handler(int err, void *arg)
 
 	if (wsc->sess) {
 		wsc->sess->connected = false;
+		wsc->sess->user->audio = false;
+		wsc->sess->user->video = false;
+
 		if (0 == user_event_json(&json, USER_DELETED, wsc->sess)) {
 			sl_ws_send_event(wsc->sess, json);
 			json = mem_deref(json);

@@ -19,6 +19,8 @@
               <div class="space-y-2">
                 <div class="text-xs font-medium">
                   <h3>{{ item.name }}</h3>
+                  audio: {{item.audio}}
+                  video: {{item.video}}
                 </div>
               </div>
             </div>

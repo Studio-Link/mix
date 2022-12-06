@@ -30,6 +30,8 @@ struct user {
 	char name[NAME_SZ];
 	bool speaker;
 	bool host;
+	bool video;
+	bool audio;
 };
 
 struct chat {
@@ -71,6 +73,7 @@ int slmix_http_listen(struct http_sock **sock, struct mix *mix);
 /******************************************************************************
  * sess.c
  */
+int session_user_updated(struct session *sess);
 void session_video(struct session *sess, bool enable);
 int session_speaker(struct session *sess, bool enable);
 int session_new(struct mix *mix, struct session **sessp,

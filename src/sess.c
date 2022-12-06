@@ -336,23 +336,41 @@ void session_close(struct session *sess, int err)
 }
 
 
+int session_user_updated(struct session *sess)
+{
+	char *json = NULL;
+	int err;
+
+	err = user_event_json(&json, USER_UPDATED, sess);
+	if (err)
+		return err;
+
+	sl_ws_send_event_all(json);
+	json = mem_deref(json);
+
+	return 0;
+}
+
+
 void session_video(struct session *sess, bool enable)
 {
+
 	if (!sess || !sess->user)
 		return;
 
 	if (!sess->user->speaker)
 		return;
 
+	sess->user->video = enable;
+
 	vidmix_disp_enable(sess->id, enable);
+
+	session_user_updated(sess);
 }
 
 
 int session_speaker(struct session *sess, bool enable)
 {
-	char *json = NULL;
-	int err;
-
 	if (!sess || !sess->user)
 		return EINVAL;
 
@@ -362,16 +380,9 @@ int session_speaker(struct session *sess, bool enable)
 
 	stream_enable(media_get_stream(sess->mvideo), enable);
 
+	/* only disable for privacy reasons */
 	if (!enable)
-		vidmix_disp_enable(sess->id, false);
+		session_video(sess, false);
 
-	err = user_event_json(&json, USER_UPDATED, sess);
-	if (err)
-		return err;
-
-	sl_ws_send_event_all(json);
-	json = mem_deref(json);
-
-
-	return err;
+	return session_user_updated(sess);
 }
