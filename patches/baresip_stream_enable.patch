@@ -1,0 +1,13 @@
+diff --git a/src/stream.c b/src/stream.c
+index 645ea4f4..60dc7553 100644
+--- a/src/stream.c
++++ b/src/stream.c
+@@ -349,7 +349,7 @@ static void rtp_handler(const struct sa *src, const struct rtp_header *hdr,
+ 
+ 	MAGIC_CHECK(s);
+ 
+-	if (!s->rx.enabled && s->type == MEDIA_AUDIO)
++	if (!s->rx.enabled)
+ 		return;
+ 
+ 	if (rtp_pt_is_rtcp(hdr->pt)) {

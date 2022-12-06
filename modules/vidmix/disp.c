@@ -22,12 +22,11 @@ static void destructor(void *arg)
 
 
 int vidmix_disp_alloc(struct vidisp_st **stp, const struct vidisp *vd,
-			 struct vidisp_prm *prm, const char *dev,
-			 vidisp_resize_h *resizeh, void *arg)
+		      struct vidisp_prm *prm, const char *dev,
+		      vidisp_resize_h *resizeh, void *arg)
 {
 	struct vidisp_st *st;
 	int err = 0;
-	// char device[] = "vidmix";
 	(void)prm;
 	(void)resizeh;
 	(void)arg;
@@ -45,16 +44,16 @@ int vidmix_disp_alloc(struct vidisp_st **stp, const struct vidisp *vd,
 
 	/* find the vidsrc with the same device-name */
 	st->vidsrc = vidmix_src_find(dev);
-	if(!st->vidsrc || !st->vidsrc->vidmix_src) {
+	if (!st->vidsrc || !st->vidsrc->vidmix_src) {
 		err = ENOKEY;
 		goto out;
 	}
 
 	st->vidsrc->vidisp = st;
-	vidmix_source_enable(st->vidsrc->vidmix_src, true);
+	/* vidmix_source_enable(st->vidsrc->vidmix_src, false); */
 	hash_append(vidmix_disp, hash_joaat_str(dev), &st->le, st);
 
- out:
+out:
 	if (err)
 		mem_deref(st);
 	else
@@ -73,7 +72,7 @@ static bool list_apply_handler(struct le *le, void *arg)
 
 
 int vidmix_disp_display(struct vidisp_st *st, const char *title,
-			   const struct vidframe *frame, uint64_t timestamp)
+			const struct vidframe *frame, uint64_t timestamp)
 {
 	int err = 0;
 	(void)title;
@@ -89,6 +88,19 @@ int vidmix_disp_display(struct vidisp_st *st, const char *title,
 	}
 
 	return err;
+}
+
+
+void vidmix_disp_enable(const char *device, bool enable);
+void vidmix_disp_enable(const char *device, bool enable)
+{
+	struct vidsrc_st *src;
+
+	if (!device)
+		return;
+
+	src = vidmix_src_find(device);
+	vidmix_source_enable(src->vidmix_src, enable);
 }
 
 

@@ -46,6 +46,8 @@ struct session {
 	char id[SESSID_SZ]; /* Keep secret */
 	struct user *user;
 	bool connected;
+	struct media_track *maudio;
+	struct media_track *mvideo;
 };
 
 /******************************************************************************
@@ -69,6 +71,7 @@ int slmix_http_listen(struct http_sock **sock, struct mix *mix);
 /******************************************************************************
  * sess.c
  */
+int session_speaker(struct session *sess, bool enable);
 int session_new(struct mix *mix, struct session **sessp,
 		const struct http_msg *msg);
 int session_start(struct session *sess,
@@ -112,3 +115,4 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
  * @TODO: convert to registered functions
  */
 void aumix_mute(char *device, bool mute);
+void vidmix_disp_enable(const char *device, bool enable);

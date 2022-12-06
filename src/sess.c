@@ -99,6 +99,7 @@ static void peerconnection_estab_handler(struct media_track *media, void *arg)
 		if (err) {
 			warning("mix: could not start audio (%m)\n", err);
 		}
+		sess->maudio = media;
 		break;
 
 	case MEDIA_KIND_VIDEO:
@@ -108,6 +109,7 @@ static void peerconnection_estab_handler(struct media_track *media, void *arg)
 		if (err) {
 			warning("mix: could not start video (%m)\n", err);
 		}
+		sess->mvideo = media;
 		break;
 
 	default:
@@ -119,7 +121,13 @@ static void peerconnection_estab_handler(struct media_track *media, void *arg)
 		return;
 	}
 
-	stream_enable(media_get_stream(media), true);
+	if (sess->user->speaker) {
+		stream_enable(media_get_stream(media), true);
+		vidmix_disp_enable(sess->id, true);
+		aumix_mute(sess->id, false);
+	}
+	else
+		stream_enable(media_get_stream(media), false);
 }
 
 
@@ -325,4 +333,34 @@ void session_close(struct session *sess, int err)
 	}
 
 	mem_deref(sess);
+}
+
+
+int session_speaker(struct session *sess, bool enable)
+{
+	char *json = NULL;
+	int err;
+
+	if (!sess || !sess->user)
+		return EINVAL;
+
+	sess->user->speaker = enable;
+
+	aumix_mute(sess->id, !enable);
+	vidmix_disp_enable(sess->id, enable);
+
+	stream_enable(media_get_stream(sess->maudio), enable);
+	stream_enable(media_get_stream(sess->mvideo), enable);
+
+	/* stream_flush(sess->maudio); */
+
+	err = user_event_json(&json, USER_UPDATED, sess);
+	if (err)
+		return err;
+
+	sl_ws_send_event_all(json);
+	json = mem_deref(json);
+
+
+	return err;
 }

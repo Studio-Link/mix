@@ -229,9 +229,11 @@ static void http_req_handler(struct http_conn *conn,
 
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/speaker") &&
 	    0 == pl_strcasecmp(&msg->met, "POST")) {
-		/* @TODO: check permission */
 		struct pl user_id = PL_INIT;
-		char *json	  = NULL;
+
+		/* check permission */
+		if (!sess->user->host)
+			goto err;
 
 		err = re_regex((char *)mbuf_buf(msg->mb),
 			       mbuf_get_left(msg->mb), "[a-zA-Z0-9]+",
@@ -243,15 +245,9 @@ static void http_req_handler(struct http_conn *conn,
 		if (!sess)
 			goto err;
 
-		sess->user->speaker = true;
-		aumix_mute(sess->id, false);
-
-		err = user_event_json(&json, USER_UPDATED, sess);
+		err = session_speaker(sess, true);
 		if (err)
 			goto err;
-
-		sl_ws_send_event_all(json);
-		json = mem_deref(json);
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;
@@ -259,9 +255,11 @@ static void http_req_handler(struct http_conn *conn,
 
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/listener") &&
 	    0 == pl_strcasecmp(&msg->met, "POST")) {
-		/* @TODO: check permission */
 		struct pl user_id = PL_INIT;
-		char *json	  = NULL;
+
+		/* check permission */
+		if (!sess->user->host)
+			goto err;
 
 		err = re_regex((char *)mbuf_buf(msg->mb),
 			       mbuf_get_left(msg->mb), "[a-zA-Z0-9]+",
@@ -273,15 +271,9 @@ static void http_req_handler(struct http_conn *conn,
 		if (!sess)
 			goto err;
 
-		sess->user->speaker = false;
-		aumix_mute(sess->id, true);
-
-		err = user_event_json(&json, USER_UPDATED, sess);
+		err = session_speaker(sess, false);
 		if (err)
 			goto err;
-
-		sl_ws_send_event_all(json);
-		json = mem_deref(json);
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;
