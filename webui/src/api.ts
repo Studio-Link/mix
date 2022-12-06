@@ -116,6 +116,14 @@ export default {
         return await api_fetch('PUT', '/webrtc/sdp', desc)
     },
 
+    async video(enable: boolean)
+    {
+        if (enable)
+            await api_fetch('PUT', '/webrtc/video/enable', null)
+        else 
+            await api_fetch('PUT', '/webrtc/video/disable', null)
+    },
+
     is_host() {
         return sess.host
     }

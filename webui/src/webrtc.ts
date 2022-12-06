@@ -5,7 +5,7 @@ import adapter from 'webrtc-adapter'
 // --- Private Webrtc API ---
 let pc: RTCPeerConnection
 let avdummy: MediaStream
-let avstream: MediaStream | null = null 
+let avstream: MediaStream | null = null
 
 const constraints: any = {
     audio: {
@@ -224,6 +224,7 @@ export const Webrtc = {
         pc_setup()
         this.state.value = WebrtcState.Connecting
     },
+
     async init_avdevices(): Promise<MediaStream | null> {
         await pc_media()
 
@@ -238,26 +239,40 @@ export const Webrtc = {
 
         return avstream
     },
+
     async change_audio(): Promise<MediaStream | null> {
         constraints.audio.deviceId = { exact: this.audio_input_id.value }
         await pc_media()
         console.log("audio changed")
         return avstream
     },
+
     async change_video(): Promise<MediaStream | null> {
+        if (this.video_input_id.value === "disabled")
+            return null
         constraints.video.deviceId = { exact: this.video_input_id.value }
         await pc_media()
-        console.log("video changed")
+        console.log("video changed", constraints)
         return avstream
     },
+
     async join() {
         if (avstream === null) return
-        await pc_replace_tracks(avstream.getAudioTracks()[0], avstream.getVideoTracks()[0])
+        if (this.video_input_id.value === "disabled") {
+            await api.video(false)
+            await pc_replace_tracks(avstream.getAudioTracks()[0], avdummy.getVideoTracks()[0])
+        }
+        else {
+            await api.video(true)
+            await pc_replace_tracks(avstream.getAudioTracks()[0], avstream.getVideoTracks()[0])
+        }
     },
+
     error(msg: string) {
         this.errorText.value = msg
         this.state.value = WebrtcState.Error
     },
+
     error_reset() {
         this.errorText.value = ''
         this.state.value = WebrtcState.Offline

@@ -100,6 +100,8 @@ static void peerconnection_estab_handler(struct media_track *media, void *arg)
 			warning("mix: could not start audio (%m)\n", err);
 		}
 		sess->maudio = media;
+		/* Currently audio is muted only, never disabled */
+		stream_enable(media_get_stream(media), true);
 		break;
 
 	case MEDIA_KIND_VIDEO:
@@ -110,6 +112,7 @@ static void peerconnection_estab_handler(struct media_track *media, void *arg)
 			warning("mix: could not start video (%m)\n", err);
 		}
 		sess->mvideo = media;
+		stream_enable(media_get_stream(media), false);
 		break;
 
 	default:
@@ -123,11 +126,8 @@ static void peerconnection_estab_handler(struct media_track *media, void *arg)
 
 	if (sess->user->speaker) {
 		stream_enable(media_get_stream(media), true);
-		vidmix_disp_enable(sess->id, true);
 		aumix_mute(sess->id, false);
 	}
-	else
-		stream_enable(media_get_stream(media), false);
 }
 
 
@@ -336,6 +336,18 @@ void session_close(struct session *sess, int err)
 }
 
 
+void session_video(struct session *sess, bool enable)
+{
+	if (!sess || !sess->user)
+		return;
+
+	if (!sess->user->speaker)
+		return;
+
+	vidmix_disp_enable(sess->id, enable);
+}
+
+
 int session_speaker(struct session *sess, bool enable)
 {
 	char *json = NULL;
@@ -347,12 +359,11 @@ int session_speaker(struct session *sess, bool enable)
 	sess->user->speaker = enable;
 
 	aumix_mute(sess->id, !enable);
-	vidmix_disp_enable(sess->id, enable);
 
-	stream_enable(media_get_stream(sess->maudio), enable);
 	stream_enable(media_get_stream(sess->mvideo), enable);
 
-	/* stream_flush(sess->maudio); */
+	if (!enable)
+		vidmix_disp_enable(sess->id, false);
 
 	err = user_event_json(&json, USER_UPDATED, sess);
 	if (err)

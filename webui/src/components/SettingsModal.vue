@@ -56,6 +56,7 @@
                         name="cam"
                         class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                       >
+                        <option value="disabled">Disabled</option>
                         <template v-for="item in Webrtc.deviceInfos.value">
                           <option v-if="item.kind === 'videoinput'" :value="item.deviceId">{{ item.label }}</option>
                         </template>
@@ -139,26 +140,27 @@ const open = Users.settings_active
 const audio_input_id = Webrtc.audio_input_id
 const video_input_id = Webrtc.video_input_id
 const video_echo = ref<HTMLVideoElement>()
-let avstream: MediaStream | null
 
 watch(audio_input_id, async (newValue, oldValue) => {
   if (oldValue === undefined) return //prevent first auto change
   console.log('new audio device: ', newValue)
-  avstream = await Webrtc.change_audio()
-  if (video_echo.value) video_echo.value.srcObject = avstream
+  if (video_input_id.value !== 'disabled' && video_echo.value) {
+    video_echo.value.srcObject = await Webrtc.change_audio()
+  }
 })
 
 watch(video_input_id, async (newValue, oldValue) => {
   if (oldValue === undefined) return //prevent first auto change
   console.log('new video device: ', newValue)
-  avstream = await Webrtc.change_video()
-  if (video_echo.value) video_echo.value.srcObject = avstream
+  if (video_echo.value) video_echo.value.srcObject = await Webrtc.change_video()
 })
 
 onUpdated(async () => {
   if (open.value) {
-    avstream = await Webrtc.init_avdevices()
-    if (video_echo.value) video_echo.value.srcObject = avstream
+    if (video_input_id.value !== 'disabled') {
+        const avstream = await Webrtc.init_avdevices()
+        if (video_echo.value) video_echo.value.srcObject = avstream
+    }
   }
 })
 

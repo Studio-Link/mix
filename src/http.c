@@ -232,7 +232,7 @@ static void http_req_handler(struct http_conn *conn,
 		struct pl user_id = PL_INIT;
 
 		/* check permission */
-		if (!sess->user->host)
+		if (!sess->user || !sess->user->host)
 			goto err;
 
 		err = re_regex((char *)mbuf_buf(msg->mb),
@@ -258,7 +258,7 @@ static void http_req_handler(struct http_conn *conn,
 		struct pl user_id = PL_INIT;
 
 		/* check permission */
-		if (!sess->user->host)
+		if (!sess->user || !sess->user->host)
 			goto err;
 
 		err = re_regex((char *)mbuf_buf(msg->mb),
@@ -274,6 +274,24 @@ static void http_req_handler(struct http_conn *conn,
 		err = session_speaker(sess, false);
 		if (err)
 			goto err;
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/video/enable") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+
+		session_video(sess, true);
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/video/disable") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+
+		session_video(sess, false);
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;
