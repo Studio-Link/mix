@@ -100,6 +100,9 @@ void vidmix_disp_enable(const char *device, bool enable)
 		return;
 
 	src = vidmix_src_find(device);
+	if (!src)
+		return;
+
 	vidmix_source_enable(src->vidmix_src, enable);
 }
 
