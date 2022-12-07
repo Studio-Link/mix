@@ -19,6 +19,7 @@ interface Chat {
 
 interface Users {
     socket?: WebSocket
+    ws_close(): void
     websocket(host: string, sessid: string): void
     speakers: Ref<User[] | undefined>
     listeners: Ref<User[] | undefined>
@@ -33,6 +34,9 @@ export const Users: Users = {
     chat_messages: ref([]),
     chat_active: ref(false),
     settings_active: ref(false),
+    ws_close() {
+        this.socket?.close()
+    },
     websocket(host, sessid) {
         this.socket = new WebSocket(host + '/ws/v1/users')
 

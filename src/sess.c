@@ -14,9 +14,9 @@ static void destructor(void *data)
 	struct session *sess = data;
 
 	list_unlink(&sess->le);
-	mem_deref(sess->conn_pending);
-	mem_deref(sess->pc);
-	mem_deref(sess->user);
+	sess->conn_pending = mem_deref(sess->conn_pending);
+	sess->pc = mem_deref(sess->pc);
+	sess->user = mem_deref(sess->user);
 }
 
 

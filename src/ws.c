@@ -41,6 +41,9 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 		return;
 	}
 
+	mem_ref(wsc->sess);
+	mem_ref(wsc->sess->user);
+
 	wsc->sess->connected = true;
 
 	if (0 == users_json(&json, wsc->mix)) {
@@ -59,6 +62,9 @@ static void conn_destroy(void *arg)
 {
 	struct ws_conn *ws_conn = arg;
 	mem_deref(ws_conn->c);
+	if (ws_conn->sess)
+		mem_deref(ws_conn->sess->user);
+	mem_deref(ws_conn->sess);
 	list_unlink(&ws_conn->le);
 }
 
@@ -69,7 +75,7 @@ static void close_handler(int err, void *arg)
 	char *json	    = NULL;
 	(void)err;
 
-	if (wsc->sess) {
+	if (wsc->sess && wsc->sess->user) {
 		wsc->sess->connected = false;
 		wsc->sess->user->audio = false;
 		wsc->sess->user->video = false;

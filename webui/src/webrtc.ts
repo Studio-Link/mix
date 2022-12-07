@@ -69,7 +69,7 @@ function handle_answer(descr: any) {
             console.log('set remote description -- success')
             Webrtc.state.value = WebrtcState.Listening
         },
-        function(error) {
+        function (error) {
             console.warn('setRemoteDescription: %s', error.toString())
         }
     )
@@ -80,17 +80,17 @@ function pc_offer() {
         iceRestart: false,
     }
     pc.createOffer(offerOptions)
-        .then(function(desc) {
+        .then(function (desc) {
             console.log('got local description: %s', desc.type)
 
             pc.setLocalDescription(desc).then(
                 () => { },
-                function(error) {
+                function (error) {
                     console.log('setLocalDescription: %s', error.toString())
                 }
             )
         })
-        .catch(function(error) {
+        .catch(function (error) {
             console.log('Failed to create session description: %s', error.toString())
         })
 }
@@ -103,7 +103,7 @@ function pc_setup() {
         console.log('webrtc/icecandidate: ' + event.candidate?.type + ' IP: ' + event.candidate?.candidate)
     }
 
-    pc.ontrack = function(event) {
+    pc.ontrack = function (event) {
         const track = event.track
         console.log('got remote track: kind=%s', track.kind)
 

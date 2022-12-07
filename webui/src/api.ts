@@ -107,9 +107,10 @@ export default {
     },
 
     async logout() {
-        await api_fetch('DELETE', '/client/logout', null)
+        await api_fetch('DELETE', '/client', sess)
         window.localStorage.removeItem('sess')
         router.push({ name: 'Login' })
+        Users.ws_close()
     },
 
     async sdp(desc: RTCSessionDescription | null) {

@@ -313,7 +313,7 @@ static void http_req_handler(struct http_conn *conn,
 		session_close(sess, 0);
 		sess = NULL;
 
-		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		http_sreply(conn, 204, "OK", "text/html", "", 0, NULL);
 		return;
 	}
 
