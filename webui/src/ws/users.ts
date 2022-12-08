@@ -26,7 +26,15 @@ interface Users {
     chat_messages: Ref<Chat[] | undefined>
     chat_active: Ref<boolean>
     settings_active: Ref<boolean>
+    record_timer: Ref<string>
+    record: Ref<boolean>
 }
+
+function pad(num: number, size: number) {
+    var s = "0000" + num;
+    return s.substring(s.length - size);
+}
+
 
 export const Users: Users = {
     speakers: ref([]),
@@ -34,6 +42,8 @@ export const Users: Users = {
     chat_messages: ref([]),
     chat_active: ref(false),
     settings_active: ref(false),
+    record_timer: ref('0:00:00'),
+    record: ref(false),
     ws_close() {
         this.socket?.close()
     },
@@ -103,6 +113,22 @@ export const Users: Users = {
                     msg: data.msg
                 }
                 this.chat_messages.value?.push(chat)
+            }
+
+            if (data.type === 'rec') {
+                let time = parseInt(data.t)
+                if (time)
+                    this.record.value = true
+                else this.record.value = false
+
+                const h = Math.floor(time / (60 * 60));
+                time = time % (60 * 60);
+                const m = Math.floor(time / 60);
+                time = time % 60;
+                const s = Math.floor(time);
+
+                this.record_timer.value = pad(h, 1) + ":" + pad(m, 2) + ":" + pad(s, 2);
+
             }
         }
     },

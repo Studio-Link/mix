@@ -227,6 +227,30 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/record/enable") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+		/* check permission */
+		if (!sess->user || !sess->user->host)
+			goto err;
+
+		aumix_record_enable(true);
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/record/disable") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+		/* check permission */
+		if (!sess->user || !sess->user->host)
+			goto err;
+
+		aumix_record_enable(false);
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/speaker") &&
 	    0 == pl_strcasecmp(&msg->met, "POST")) {
 		struct pl user_id = PL_INIT;

@@ -117,15 +117,29 @@ export default {
         return await api_fetch('PUT', '/webrtc/sdp', desc)
     },
 
-    async video(enable: boolean)
-    {
+    async video(enable: boolean) {
         if (enable)
             await api_fetch('PUT', '/webrtc/video/enable', null)
-        else 
+        else
             await api_fetch('PUT', '/webrtc/video/disable', null)
     },
 
     is_host() {
         return sess.host
+    },
+
+    async record_switch() {
+        if (!sess.host)
+            return
+
+        if (Users.record.value) {
+            Users.record.value = false
+            Users.record_timer.value = "0:00:00"
+            await api_fetch('PUT', '/record/disable', null)
+        }
+        else {
+            Users.record.value = true;
+            await api_fetch('PUT', '/record/enable', null)
+        }
     }
 }

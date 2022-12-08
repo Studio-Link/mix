@@ -8,8 +8,6 @@
 #include <baresip.h>
 #include "aumix.h"
 
-enum { PTIME = 20, SRATE = 48000, CH = 2, MAX_LEVEL = 500 };
-
 static struct auplay *auplay	      = NULL;
 static struct ausrc *ausrc	      = NULL;
 static struct list auplayl	      = LIST_INIT;
@@ -289,18 +287,30 @@ static int mix_debug(struct re_printf *pf, void *arg)
 }
 
 
-static int cmd_record(struct re_printf *pf, void *arg)
+int aumix_record_enable(bool enable);
+int aumix_record_enable(bool enable)
 {
-	struct cmd_arg *carg = arg;
-	bool record;
-	(void)pf;
+	int err;
 
-	str_bool(&record, carg->prm);
+	/* check already started */
+	if (enable && aumix_record_src)
+		return 0;
 
-	if (record) {
-		aumix_record_start();
-		aumix_source_alloc(&aumix_record_src, aumix, record_handler,
-				   NULL);
+	/* check already closed */
+	if (!enable && !aumix_record_src)
+		return 0;
+
+	if (enable) {
+		err = aumix_record_start();
+		if (err)
+			return err;
+
+		err = aumix_source_alloc(&aumix_record_src, aumix,
+					 record_handler, NULL);
+		if (err)
+			return err;
+
+		aumix_source_mute(aumix_record_src, true);
 		aumix_source_enable(aumix_record_src, true);
 	}
 	else {
@@ -313,8 +323,7 @@ static int cmd_record(struct re_printf *pf, void *arg)
 
 
 static const struct cmd cmdv[] = {
-	{"aumix_debug", 'z', 0, "Debug aumix", mix_debug},
-	{"aumix_record", 0, CMD_PRM, "aumix_record <true,false>", cmd_record}};
+	{"aumix_debug", 'z', 0, "Debug aumix", mix_debug}};
 
 
 static void talk_detection(void *arg)

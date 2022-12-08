@@ -116,7 +116,9 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 
 /******************************************************************************
  * external modules (aumix, vidmix etc.)
- * @TODO: convert to registered functions
+ * @TODO: convert to registered functions or shared header
  */
 void aumix_mute(char *device, bool mute);
+int aumix_record_enable(bool enable);
+uint64_t aumix_record_msecs(void);
 void vidmix_disp_enable(const char *device, bool enable);

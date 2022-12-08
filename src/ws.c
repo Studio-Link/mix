@@ -13,6 +13,8 @@ struct ws_conn {
 
 enum { KEEPALIVE = 30 * 1000 };
 
+static struct tmr tmr_update;
+
 
 void sl_ws_dummyh(const struct websock_hdr *hdr, struct mbuf *mb, void *arg)
 {
@@ -76,7 +78,7 @@ static void close_handler(int err, void *arg)
 	(void)err;
 
 	if (wsc->sess && wsc->sess->user) {
-		wsc->sess->connected = false;
+		wsc->sess->connected   = false;
 		wsc->sess->user->audio = false;
 		wsc->sess->user->video = false;
 
@@ -150,6 +152,25 @@ void sl_ws_send_event_all(char *json)
 }
 
 
+static void update_handler(void *arg)
+{
+	(void)arg;
+	char json[512];
+	uint64_t secs = aumix_record_msecs() / 1000;
+
+	if (!secs)
+		goto out;
+
+	re_snprintf(json, sizeof(json), "{\"type\": \"rec\", \"t\": %u}",
+		    secs);
+
+	sl_ws_send_event_all(json);
+
+out:
+	tmr_start(&tmr_update, 1000, update_handler, NULL);
+}
+
+
 int sl_ws_init(void)
 {
 	int err;
@@ -157,12 +178,16 @@ int sl_ws_init(void)
 	list_init(&wsl);
 	err = websock_alloc(&ws, NULL, NULL);
 
+	tmr_init(&tmr_update);
+	tmr_start(&tmr_update, 1000, update_handler, NULL);
+
 	return err;
 }
 
 
 int sl_ws_close(void)
 {
+	tmr_cancel(&tmr_update);
 	list_flush(&wsl);
 
 	if (ws)
