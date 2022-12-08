@@ -9,7 +9,7 @@ avatars:
 
 .PHONY: run
 run: build avatars
-	build/slmix
+	build/slmix -c config_example
 
 .PHONY: clean
 clean:
@@ -51,7 +51,8 @@ external:
 	git clone https://github.com/baresip/baresip.git external/baresip && \
 		cd external/baresip && \
 		patch -p1 < ../../patches/baresip_packet_dup_handler.patch && \
-		patch -p1 < ../../patches/baresip_stream_enable.patch
+		patch -p1 < ../../patches/baresip_stream_enable.patch && \
+		patch -p1 < ../../patches/baresip_video_remove_sendq_empty.patch
 
 .PHONY: cloc
 cloc:

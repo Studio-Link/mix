@@ -126,7 +126,7 @@ static void frame_handler(uint32_t ts, const struct vidframe *frame, void *arg)
 	}
 
 	/* record */
-	vidmix_record(vp.buf, vp.size);
+	vidmix_record(vp.buf, vp.size, &reset);
 
 	/* prevent sending packets multiple times */
 	vp.buf = NULL;
@@ -209,7 +209,7 @@ int vidmix_src_alloc(struct vidsrc_st **stp, const struct vidsrc *vs,
 		st->vidisp->vidsrc = st;
 	}
 
-	warning("vidmix: src_alloc\n");
+	warning("vidmix: src_alloc (%f fps)\n", st->fps);
 	hash_append(vidmix_src, hash_joaat_str(dev), &st->le, st);
 
 	vmix_lock();

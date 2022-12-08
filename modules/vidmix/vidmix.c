@@ -93,27 +93,6 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 }
 
 
-static int cmd_record(struct re_printf *pf, void *arg)
-{
-	struct cmd_arg *carg = arg;
-	bool record;
-	(void)pf;
-
-	str_bool(&record, carg->prm);
-
-	if (record)
-		vidmix_record_start();
-	else
-		vidmix_record_close();
-
-	return 0;
-}
-
-
-static const struct cmd cmdv[] = {{"vidmix_record", 0, CMD_PRM,
-				   "vidmix_record <true,false>", cmd_record}};
-
-
 static int module_init(void)
 {
 	int err;
@@ -125,9 +104,6 @@ static int module_init(void)
 	list_init(&vidmix_srcl);
 
 	err = vidmix_src_init();
-	IF_ERR_GOTO_OUT(err);
-
-	err = cmd_register(baresip_commands(), cmdv, ARRAY_SIZE(cmdv));
 	IF_ERR_GOTO_OUT(err);
 
 	err = vidisp_register(&vidisp, baresip_vidispl(), "vidmix",
@@ -149,7 +125,6 @@ out:
 
 static int module_close(void)
 {
-	cmd_unregister(baresip_commands(), cmdv);
 	vidmix_record_close();
 	list_flush(&vidmix_srcl);
 	uag_event_unregister(ua_event_handler);

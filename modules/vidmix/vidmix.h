@@ -54,8 +54,8 @@ void vidmix_src_input(struct vidsrc_st *st,
 			 const struct vidframe *frame, uint64_t timestamp);
 
 
-int vidmix_record_start(void);
-int vidmix_record(const uint8_t *buf, size_t size);
+int vidmix_record_start(char *record_folder);
+int vidmix_record(const uint8_t *buf, size_t size, bool *update);
 void vidmix_record_close(void);
 
 

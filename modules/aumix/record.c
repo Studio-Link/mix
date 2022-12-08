@@ -99,6 +99,7 @@ static void *record_thread(void *arg)
 }
 
 
+int vidmix_record_start(char *record_folder);
 int aumix_record_start(char *token)
 {
 	int err;
@@ -124,6 +125,8 @@ int aumix_record_start(char *token)
 
 	record.run = true;
 	info("aumix: record started\n");
+
+	vidmix_record_start(record_folder);
 
 	pthread_create(&record.thread, NULL, record_thread, NULL);
 
@@ -178,10 +181,13 @@ out:
 }
 
 
+void vidmix_record_close(void);
 void aumix_record_close(void)
 {
 	if (!record.run)
 		return;
+
+	vidmix_record_close();
 
 	record.run = false;
 	info("aumix: record close\n");
