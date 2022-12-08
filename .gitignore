@@ -11,4 +11,7 @@
 /webui/dist
 /webui/public/avatars
 
+/webui/public/download/*
+!/webui/public/download/index.html
+
 .gdb_history
