@@ -119,6 +119,6 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
  * @TODO: convert to registered functions or shared header
  */
 void aumix_mute(char *device, bool mute);
-int aumix_record_enable(bool enable);
+int aumix_record_enable(bool enable, char *token);
 uint64_t aumix_record_msecs(void);
 void vidmix_disp_enable(const char *device, bool enable);

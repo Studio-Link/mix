@@ -287,8 +287,8 @@ static int mix_debug(struct re_printf *pf, void *arg)
 }
 
 
-int aumix_record_enable(bool enable);
-int aumix_record_enable(bool enable)
+int aumix_record_enable(bool enable, char *token);
+int aumix_record_enable(bool enable, char *token)
 {
 	int err;
 
@@ -301,7 +301,7 @@ int aumix_record_enable(bool enable)
 		return 0;
 
 	if (enable) {
-		err = aumix_record_start();
+		err = aumix_record_start(token);
 		if (err)
 			return err;
 

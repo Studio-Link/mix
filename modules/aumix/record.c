@@ -47,13 +47,13 @@ static int timestamp_print(struct re_printf *pf, const struct tm *tm)
 }
 
 
-static void mkdir_folder(void)
+static void mkdir_folder(char *token)
 {
 	time_t tnow   = time(0);
 	struct tm *tm = localtime(&tnow);
 
 	(void)re_snprintf(record_folder, sizeof(record_folder),
-			  "webui/public/download/%s", "token"); /*TODO TOKEN */
+			  "webui/public/download/%s", token);
 
 	fs_mkdir(record_folder, 0700);
 
@@ -99,7 +99,7 @@ static void *record_thread(void *arg)
 }
 
 
-int aumix_record_start(void)
+int aumix_record_start(char *token)
 {
 	int err;
 	char filename[512] = {0};
@@ -109,7 +109,7 @@ int aumix_record_start(void)
 
 	record_msecs = 0;
 
-	mkdir_folder();
+	mkdir_folder(token);
 	re_snprintf(filename, sizeof(filename), "%s/audio.pcm", record_folder);
 
 	err = fs_fopen(&record.f, filename, "w+");
