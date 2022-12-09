@@ -69,7 +69,7 @@ function handle_answer(descr: any) {
             console.log('set remote description -- success')
             Webrtc.state.value = WebrtcState.Listening
         },
-        function (error) {
+        function(error) {
             console.warn('setRemoteDescription: %s', error.toString())
         }
     )
@@ -80,17 +80,17 @@ function pc_offer() {
         iceRestart: false,
     }
     pc.createOffer(offerOptions)
-        .then(function (desc) {
+        .then(function(desc) {
             console.log('got local description: %s', desc.type)
 
             pc.setLocalDescription(desc).then(
                 () => { },
-                function (error) {
+                function(error) {
                     console.log('setLocalDescription: %s', error.toString())
                 }
             )
         })
-        .catch(function (error) {
+        .catch(function(error) {
             console.log('Failed to create session description: %s', error.toString())
         })
 }
@@ -103,7 +103,7 @@ function pc_setup() {
         console.log('webrtc/icecandidate: ' + event.candidate?.type + ' IP: ' + event.candidate?.candidate)
     }
 
-    pc.ontrack = function (event) {
+    pc.ontrack = function(event) {
         const track = event.track
         console.log('got remote track: kind=%s', track.kind)
 
@@ -208,6 +208,7 @@ export enum WebrtcState {
     Offline,
     Connecting,
     Listening,
+    ReadySpeaking,
     Speaking,
 }
 
@@ -219,6 +220,7 @@ export const Webrtc = {
     audio_input_id: ref<string | undefined>(undefined),
     audio_output_id: ref<string | undefined>(undefined),
     video_input_id: ref<string | undefined>(undefined),
+    muted: ref(true),
 
     listen() {
         pc_setup()
@@ -238,6 +240,8 @@ export const Webrtc = {
 
         this.video_input_id.value = avstream?.getVideoTracks()[0].getSettings().deviceId
         this.audio_input_id.value = avstream?.getAudioTracks()[0].getSettings().deviceId
+
+        this.state.value = WebrtcState.ReadySpeaking
 
         return avstream
     },
@@ -268,6 +272,19 @@ export const Webrtc = {
             await api.video(true)
             await pc_replace_tracks(avstream.getAudioTracks()[0], avstream.getVideoTracks()[0])
         }
+    },
+
+    mic_switch() {
+        this.muted.value = !this.muted.value
+
+        avstream?.getAudioTracks().forEach((track) => {
+            track.enabled = this.muted.value;
+        });
+    },
+
+    logout() {
+        avstream?.getVideoTracks()[0].stop();
+        avstream?.getAudioTracks()[0].stop();
     },
 
     error(msg: string) {

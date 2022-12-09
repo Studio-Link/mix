@@ -7,6 +7,7 @@ interface Session {
     id: string
     auth: boolean
     host: boolean
+    speaker: boolean
     user_id: string | null
 }
 
@@ -63,7 +64,7 @@ export default {
             return
         }
 
-        sess = { id: session_id, auth: false, host: false, user_id: null }
+        sess = { id: session_id, auth: false, host: false, speaker: false, user_id: null }
 
         window.localStorage.setItem('sess', JSON.stringify(sess))
     },
@@ -81,6 +82,7 @@ export default {
 
         sess.user_id = user.id
         sess.host = user.host
+        sess.speaker = user.speaker
         window.localStorage.setItem('sess', JSON.stringify(sess))
 
         router.push({ name: 'Home' })
@@ -107,6 +109,7 @@ export default {
     },
 
     async logout() {
+        Webrtc.logout()
         await api_fetch('DELETE', '/client', sess)
         window.localStorage.removeItem('sess')
         router.push({ name: 'Login' })
@@ -124,8 +127,12 @@ export default {
             await api_fetch('PUT', '/webrtc/video/disable', null)
     },
 
-    is_host() {
+    is_host(): boolean {
         return sess.host
+    },
+
+    is_speaker(): boolean {
+        return sess.speaker
     },
 
     async record_switch() {
