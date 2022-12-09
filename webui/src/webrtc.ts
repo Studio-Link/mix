@@ -242,6 +242,7 @@ export const Webrtc = {
         this.audio_input_id.value = avstream?.getAudioTracks()[0].getSettings().deviceId
 
         this.state.value = WebrtcState.ReadySpeaking
+        this.muted.value = false
 
         return avstream
     },
@@ -274,11 +275,10 @@ export const Webrtc = {
         }
     },
 
-    mic_switch() {
-        this.muted.value = !this.muted.value
-
+    mic(mute: boolean) {
         avstream?.getAudioTracks().forEach((track) => {
-            track.enabled = this.muted.value;
+            track.enabled = !mute
+            this.muted.value = mute
         });
     },
 
