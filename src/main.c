@@ -8,6 +8,7 @@ static const char *modv[] = {
 	/* audio */
 	"aumix",
 	"opus",
+	"auresamp",
 
 	/* video */
 	"vidmix",
@@ -181,7 +182,9 @@ int main(int argc, char *const argv[])
 		"video_bitrate		1572864\n" /* 1.5 MBit/s */
 		"video_fps		25\n"
 		"avcodec_keyint		10\n"
-		"rtp_timeout		10\n";
+		"avcodec_h265enc	nil\n"
+		"avcodec_h265dec	nil\n"
+		"audio_txmode		thread\n";
 
 	/*
 	 * turn off buffering on stdout
@@ -213,8 +216,8 @@ int main(int argc, char *const argv[])
 
 	config->audio.srate_play    = 48000;
 	config->audio.srate_src	    = 48000;
-	config->audio.channels_play = 2;
-	config->audio.channels_src  = 2;
+	config->audio.channels_play = 1;
+	config->audio.channels_src  = 1;
 
 	slmix_config(&mix);
 
