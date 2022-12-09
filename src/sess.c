@@ -381,8 +381,10 @@ int session_speaker(struct session *sess, bool enable)
 	stream_enable(media_get_stream(sess->mvideo), enable);
 
 	/* only disable for privacy reasons */
-	if (!enable)
-		session_video(sess, false);
+	if (!enable) {
+		sess->user->video = false;
+		vidmix_disp_enable(sess->id, false);
+	}
 
 	return session_user_updated(sess);
 }
