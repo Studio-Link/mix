@@ -4,7 +4,7 @@ import api from '../api'
 interface User {
     id: string
     name: string
-    hand?: boolean
+    hand: boolean
     host: boolean
     video: boolean
     audio: boolean
@@ -94,7 +94,8 @@ export const Users: Users = {
                         name: data.name,
                         host: data.host,
                         video: data.video,
-                        audio: data.audio
+                        audio: data.audio,
+                        hand: data.hand
                     }
 
                     if (data.speaker) {

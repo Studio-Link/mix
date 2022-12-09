@@ -141,5 +141,12 @@ export default {
             Users.record.value = true;
             await api_fetch('PUT', '/record/enable', null)
         }
+    },
+
+    hand(enable: boolean) {
+        if (enable)
+            api_fetch('PUT', '/hand/enable', null)
+        else
+            api_fetch('PUT', '/hand/disable', null)
     }
 }

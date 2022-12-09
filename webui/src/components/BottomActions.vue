@@ -6,6 +6,7 @@
           <div v-if="Webrtc.state.value >= WebrtcState.Listening">
             <button
               ref="hand"
+              :class="{ 'animate-pulse': hand_status }"
               class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
               @click="hand_clicked()"
             >
@@ -84,13 +85,15 @@ const hand = ref<HTMLButtonElement>()
 const play = ref<HTMLButtonElement>()
 const chat = ref<HTMLButtonElement>()
 const settings = ref<HTMLButtonElement>()
+const hand_status = ref(false)
 
 function listen() {
   Webrtc.listen()
 }
 
 function hand_clicked() {
-  /* Webrtc.speak() */
+  hand_status.value = !hand_status.value
+  api.hand(hand_status.value)
 }
 
 async function settings_clicked() {
@@ -102,6 +105,6 @@ function chat_clicked() {
 }
 
 function logout_clicked() {
-    api.logout()
+  api.logout()
 }
 </script>

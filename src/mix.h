@@ -32,6 +32,7 @@ struct user {
 	bool host;
 	bool video;
 	bool audio;
+	bool hand;
 };
 
 struct chat {

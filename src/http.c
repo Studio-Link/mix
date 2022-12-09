@@ -303,6 +303,32 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/hand/enable") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+
+		sess->user->hand = true;
+
+		err = session_user_updated(sess);
+		if (err)
+			goto err;
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/hand/disable") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+
+		sess->user->hand = false;
+
+		err = session_user_updated(sess);
+		if (err)
+			goto err;
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/video/enable") &&
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
 
