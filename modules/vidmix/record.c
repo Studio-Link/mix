@@ -5,6 +5,7 @@
  */
 
 #include <time.h>
+#include <sys/stat.h>
 #include <pthread.h>
 #include <re.h>
 #include <rem.h>
@@ -20,7 +21,8 @@ static struct {
 	bool started;
 	uint64_t frames;
 	uint64_t start_time;
-} record = {NULL, false, LIST_INIT, NULL, 0, false, 0, 0};
+	char filename[512];
+} record = {NULL, false, LIST_INIT, NULL, 0, false, 0, 0, {0}};
 
 struct record_entry {
 	struct le le;
@@ -68,15 +70,14 @@ static void *record_thread(void *arg)
 int vidmix_record_start(char *record_folder)
 {
 	int err;
-	char filename[256] = {0};
 
 	if (record.run)
 		return EALREADY;
 
-	re_snprintf(filename, sizeof(filename), "%s/video.h264",
+	re_snprintf(record.filename, sizeof(record.filename), "%s/video.h264",
 		    record_folder);
 
-	err = fs_fopen(&record.f, filename, "w+");
+	err = fs_fopen(&record.f, record.filename, "w+");
 	if (err)
 		return err;
 
@@ -172,5 +173,6 @@ void vidmix_record_close(void)
 	mem_deref(record.lock);
 
 	fclose(record.f);
+	chmod(record.filename, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	record.f = NULL;
 }

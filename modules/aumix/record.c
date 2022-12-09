@@ -5,6 +5,7 @@
  */
 
 #include <time.h>
+#include <sys/stat.h>
 #include <pthread.h>
 #include <re.h>
 #include <rem.h>
@@ -17,7 +18,8 @@ static struct {
 	struct list bufs;
 	mtx_t *lock;
 	pthread_t thread;
-} record = {NULL, false, LIST_INIT, NULL, 0};
+	char filename[512];
+} record = {NULL, false, LIST_INIT, NULL, 0, {0}};
 
 struct record_entry {
 	struct le le;
@@ -55,12 +57,12 @@ static void mkdir_folder(char *token)
 	(void)re_snprintf(record_folder, sizeof(record_folder),
 			  "webui/public/download/%s", token);
 
-	fs_mkdir(record_folder, 0700);
+	fs_mkdir(record_folder, 0755);
 
 	(void)re_snprintf(record_folder, sizeof(record_folder), "%s/%H",
 			  record_folder, timestamp_print, tm);
 
-	fs_mkdir(record_folder, 0700);
+	fs_mkdir(record_folder, 0755);
 }
 
 
@@ -103,7 +105,6 @@ int vidmix_record_start(char *record_folder);
 int aumix_record_start(char *token)
 {
 	int err;
-	char filename[512] = {0};
 
 	if (record.run)
 		return EALREADY;
@@ -111,9 +112,10 @@ int aumix_record_start(char *token)
 	record_msecs = 0;
 
 	mkdir_folder(token);
-	re_snprintf(filename, sizeof(filename), "%s/audio.pcm", record_folder);
+	re_snprintf(record.filename, sizeof(record.filename), "%s/audio.pcm",
+		    record_folder);
 
-	err = fs_fopen(&record.f, filename, "w+");
+	err = fs_fopen(&record.f, record.filename, "w+");
 	if (err)
 		return err;
 
@@ -200,5 +202,6 @@ void aumix_record_close(void)
 	mem_deref(record.lock);
 
 	fclose(record.f);
+	chmod(record.filename, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	record.f = NULL;
 }
