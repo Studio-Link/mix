@@ -30,7 +30,7 @@ update: external
 
 .PHONY: webui
 webui:
-	cd webui && npm run dev
+	cd webui && npm run build
 
 .PHONY: release
 release:

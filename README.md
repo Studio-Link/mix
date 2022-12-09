@@ -1,6 +1,6 @@
 # Studio Link - Mix
 
-Next generation decentralized social network based on voice/video and broadcasting support.
+Next generation decentralized social network with voice/video and broadcasting support.
 
 
 ## Roadmap
@@ -28,13 +28,35 @@ $ npm install
 $ npm run dev
 ```
 
+
+## Requirements
+
+### Debian/Ubuntu
+
+```bash
+apt install curl wget ninja pkg-config clang cmake make git ca-certificates \
+	libgd-dev libopus-dev libz-dev libssl-dev libavformat-dev libavcodec-dev libflac-dev
+```
+
+Node.js v18.x LTS or v19.x (Current)
+https://github.com/nodesource/distributions/blob/master/README.md#debinstall
+
+
+### Archlinux
+
+```bash
+pacman -S curl wget ninja pkgconf clang cmake make git patch ca-certificates \
+	gd opus zlib ffmpeg flac nodejs npm
+```
+
 ## Installation
 
-TODO
-
-## Usage
-
-TODO
+```bash
+git clone https://github.com/Studio-Link/mix.git
+cd mix
+make release
+make webui
+```
 
 ## License
 
