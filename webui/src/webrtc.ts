@@ -243,6 +243,7 @@ export const Webrtc = {
 
         this.state.value = WebrtcState.ReadySpeaking
         this.muted.value = false
+        api.audio(true)
 
         return avstream
     },
@@ -279,6 +280,7 @@ export const Webrtc = {
         avstream?.getAudioTracks().forEach((track) => {
             track.enabled = !mute
             this.muted.value = mute
+            api.audio(!mute)
         });
     },
 

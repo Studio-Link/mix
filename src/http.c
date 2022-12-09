@@ -347,6 +347,32 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/audio/enable") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+
+		sess->user->audio = true;
+
+		err = session_user_updated(sess);
+		if (err)
+			goto err;
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/audio/disable") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+
+		sess->user->audio = false;
+
+		err = session_user_updated(sess);
+		if (err)
+			goto err;
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client") &&
 	    0 == pl_strcasecmp(&msg->met, "DELETE")) {
 

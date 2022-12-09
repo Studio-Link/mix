@@ -127,6 +127,13 @@ export default {
             await api_fetch('PUT', '/webrtc/video/disable', null)
     },
 
+    async audio(enable: boolean) {
+        if (enable)
+            await api_fetch('PUT', '/webrtc/audio/enable', null)
+        else
+            await api_fetch('PUT', '/webrtc/audio/disable', null)
+    },
+
     is_host(): boolean {
         return sess.host
     },

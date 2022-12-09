@@ -84,9 +84,11 @@ onMounted(() => {
 function randomize() {
   webcam.stop()
   random.value = true
-  const items = ['Smile', 'Twinkle', 'Tongue', 'Default']
-  const mouth: string = items[Math.floor(Math.random() * items.length)]
-  props.value = Factory({ isCircle: true, mouth: mouth })
+  const mouths = ['Smile', 'Twinkle', 'Tongue', 'Default']
+  const mouth: string = mouths[Math.floor(Math.random() * mouths.length)]
+  const eyes = ['EyeRoll', 'Happy', 'Hearts', 'Side', 'Squint', 'Wink', 'Default']
+  const eye: string = eyes[Math.floor(Math.random() * eyes.length)]
+  props.value = Factory({ isCircle: true, mouth: mouth, facialHair: 'Blank', eyes: eye })
 }
 
 function activateCam() {

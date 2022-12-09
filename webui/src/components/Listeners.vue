@@ -3,14 +3,14 @@
     <div class="max-w-7xl mx-auto px-4 text-center sm:px-6 lg:px-8">
       <div class="space-y-8 sm:space-y-10">
         <div class="space-y-5 sm:mx-auto sm:max-w-xl sm:space-y-4 lg:max-w-5xl">
-          <h2 v-if="Users.listeners.value?.length" class="text-xl font-medium tracking-tight">Listeners</h2>
+          <h2 v-if="Users.listeners.value?.length" class="text-xl font-medium tracking-tight">Audience</h2>
         </div>
         <ul
           class="mx-auto grid grid-cols-4 gap-x-4 gap-y-6 sm:grid-cols-4 md:gap-x-5 lg:max-w-5xl lg:gap-x-8 lg:gap-y-12 xl:grid-cols-6"
         >
           <li v-for="item in Users.listeners.value" :key="item.id">
             <div class="space-y-4">
-              <div class="inline-block relative">
+              <div class="group inline-block relative">
                 <picture>
                   <source type="image/webp" :srcset="'/avatars/' + item.id + '.webp'" />
                   <img
@@ -35,7 +35,14 @@
                     />
                   </svg>
                 </span>
-                <button v-if="api.is_host()" @click="api.speaker(item.id)">To Speaker</button>
+                <button
+                  v-if="api.is_host()"
+                  @click="api.speaker(item.id)"
+                  type="button"
+                  class="hidden group-hover:inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                >
+                  On Stage
+                </button>
                 <div class="space-y-2">
                   <div class="text-xs font-medium">
                     <h3>{{ item.name }}</h3>
