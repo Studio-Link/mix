@@ -181,7 +181,7 @@ int main(int argc, char *const argv[])
 		"video_size		1920x1080\n"
 		"video_bitrate		1572864\n" /* 1.5 MBit/s */
 		"video_fps		25\n"
-		"avcodec_keyint		10\n"
+		"avcodec_keyint		2\n"
 		"avcodec_h265enc	nil\n"
 		"avcodec_h265dec	nil\n"
 		"audio_txmode		thread\n";
