@@ -5,6 +5,7 @@
  */
 
 #include <time.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <pthread.h>
 #include <re.h>
@@ -183,11 +184,40 @@ out:
 }
 
 
+static int ffmpeg_final(void *arg)
+{
+	char *folder = arg;
+	char *cmd;
+	int err;
+
+	if (!folder)
+		return EINVAL;
+
+	err = re_sdprintf(
+		&cmd,
+		"cd %s && ffmpeg -f s16le -ar %d -ac %d -i audio.pcm -i "
+		"video.h264 -c:v copy -c:a aac record.mp4",
+		folder, SRATE, CH);
+	if (err)
+		goto out;
+
+	system(cmd);
+
+	mem_deref(cmd);
+
+out:
+	mem_deref(folder);
+
+	return err;
+}
+
+
 void vidmix_record_close(void);
 void aumix_record_close(void)
 {
 	if (!record.run)
 		return;
+	char *folder = NULL;
 
 	vidmix_record_close();
 
@@ -204,4 +234,8 @@ void aumix_record_close(void)
 	fclose(record.f);
 	chmod(record.filename, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	record.f = NULL;
+
+	str_dup(&folder, record_folder);
+
+	re_thread_async(ffmpeg_final, NULL, folder);
 }
