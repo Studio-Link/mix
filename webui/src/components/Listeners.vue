@@ -44,7 +44,7 @@
                   On Stage
                 </button>
                 <div class="space-y-2">
-                  <div class="text-xs font-medium">
+                  <div class="text-sm font-medium">
                     <h3>{{ item.name }}</h3>
                   </div>
                 </div>
