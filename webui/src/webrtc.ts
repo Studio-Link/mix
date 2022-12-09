@@ -221,6 +221,7 @@ export const Webrtc = {
     audio_output_id: ref<string | undefined>(undefined),
     video_input_id: ref<string | undefined>(undefined),
     muted: ref(true),
+    echo: ref(false),
 
     listen() {
         pc_setup()
@@ -242,8 +243,7 @@ export const Webrtc = {
         this.audio_input_id.value = avstream?.getAudioTracks()[0].getSettings().deviceId
 
         this.state.value = WebrtcState.ReadySpeaking
-        this.muted.value = false
-        api.audio(true)
+        this.mic(true)
 
         return avstream
     },
@@ -251,6 +251,7 @@ export const Webrtc = {
     async change_audio(): Promise<MediaStream | null> {
         constraints.audio.deviceId = { exact: this.audio_input_id.value }
         await pc_media()
+        this.mic(this.muted.value)
         console.log("audio changed")
         return avstream
     },
@@ -261,6 +262,13 @@ export const Webrtc = {
         constraints.video.deviceId = { exact: this.video_input_id.value }
         await pc_media()
         console.log("video changed", constraints)
+        return avstream
+    },
+
+    async change_echo() {
+        constraints.audio.echoCancellation = this.echo.value
+        console.log("echo changed", constraints)
+        await pc_media()
         return avstream
     },
 

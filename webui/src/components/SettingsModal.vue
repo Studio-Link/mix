@@ -24,7 +24,7 @@
             leave-from="opacity-100 translate-y-0 sm:scale-100"
             leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
           >
-            <DialogPanel 
+            <DialogPanel
               class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg"
             >
               <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -35,8 +35,8 @@
                     <Cog6ToothIcon class="h-6 w-6 text-gray-800" aria-hidden="true" />
                   </div>
                   <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left space-y-3">
-                    <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900"
-                      >Audio/Video Settings</DialogTitle
+                    <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900">
+                      Audio/Video Settings</DialogTitle
                     >
                     <video
                       ref="video_echo"
@@ -88,6 +88,7 @@
                     <div class="relative flex items-start">
                       <div class="flex items-center h-5">
                         <input
+                          v-model="echo"
                           id="echo_headset"
                           name="echo_headset"
                           type="checkbox"
@@ -125,12 +126,13 @@
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { Cog6ToothIcon } from '@heroicons/vue/24/outline'
 import { Users } from '../ws/users'
-import { Webrtc } from '../webrtc'
+import { Webrtc, WebrtcState } from '../webrtc'
 import { ref, watch, onUpdated } from 'vue'
 
 const open = Users.settings_active
 const audio_input_id = Webrtc.audio_input_id
 const video_input_id = Webrtc.video_input_id
+const echo = Webrtc.echo
 const video_echo = ref<HTMLVideoElement>()
 
 watch(audio_input_id, async (newValue, oldValue) => {
@@ -147,11 +149,18 @@ watch(video_input_id, async (newValue, oldValue) => {
   if (video_echo.value) video_echo.value.srcObject = await Webrtc.change_video()
 })
 
+watch(echo, async () => {
+  if (video_echo.value) video_echo.value.srcObject = await Webrtc.change_echo()
+})
+
 onUpdated(async () => {
   if (open.value) {
-    if (video_input_id.value !== 'disabled') {
-        const avstream = await Webrtc.init_avdevices()
-        if (video_echo.value) video_echo.value.srcObject = avstream
+    if (Webrtc.state.value < WebrtcState.ReadySpeaking) {
+      const avstream = await Webrtc.init_avdevices()
+      if (video_echo.value) video_echo.value.srcObject = avstream
+    } else {
+      const avstream = await Webrtc.change_video()
+      if (video_echo.value) video_echo.value.srcObject = avstream
     }
   }
 })
