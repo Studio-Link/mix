@@ -6,6 +6,7 @@ import adapter from 'webrtc-adapter'
 let pc: RTCPeerConnection
 let avdummy: MediaStream
 let avstream: MediaStream | null = null
+let screenstream: MediaStream | null = null
 
 const constraints: any = {
     audio: {
@@ -183,6 +184,20 @@ async function pc_media() {
 
 }
 
+async function pc_screen() {
+    const gdmOptions = {
+        video: true,
+        audio: false,
+    };
+    try {
+        screenstream = await navigator.mediaDevices.getDisplayMedia(
+            gdmOptions
+        );
+    } catch (err) {
+        console.error("webrtc_video/setup_screen: " + err);
+    }
+}
+
 async function pc_replace_tracks(audio_track: MediaStreamTrack, video_track: MediaStreamTrack | null) {
     const audio = pc.getSenders().find((s) => s.track?.kind === 'audio')
     const video = pc.getSenders().find((s) => s.track?.kind === 'video')
@@ -259,6 +274,10 @@ export const Webrtc = {
     async change_video(): Promise<MediaStream | null> {
         if (this.video_input_id.value === "disabled")
             return null
+        if (this.video_input_id.value === "screen") {
+            await pc_screen()
+            return screenstream
+        }
         constraints.video.deviceId = { exact: this.video_input_id.value }
         await pc_media()
         console.log("video changed", constraints)
@@ -274,9 +293,14 @@ export const Webrtc = {
 
     async join() {
         if (avstream === null) return
+
         if (this.video_input_id.value === "disabled") {
             await api.video(false)
             await pc_replace_tracks(avstream.getAudioTracks()[0], avdummy.getVideoTracks()[0])
+        }
+        else if (this.video_input_id.value === "screen" && screenstream !== null) {
+            await api.video(true)
+            await pc_replace_tracks(avstream.getAudioTracks()[0], screenstream.getVideoTracks()[0])
         }
         else {
             await api.video(true)
