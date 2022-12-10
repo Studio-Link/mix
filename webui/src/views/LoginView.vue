@@ -58,6 +58,7 @@
         </div>
       </div>
     </div>
+    <FooterLinks />
   </div>
 </template>
 
@@ -65,6 +66,7 @@
 import { Avatar, Factory } from 'vue3-avataaars'
 import { ref, onMounted } from 'vue'
 import WebcamPhoto from '../components/WebcamPhoto.vue'
+import FooterLinks from '../components/FooterLinks.vue'
 import webcam from '../webcam'
 import api from '../api'
 

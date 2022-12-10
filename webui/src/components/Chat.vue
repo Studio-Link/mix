@@ -15,7 +15,7 @@
           <div class="h-full flex flex-col bg-white shadow-xl overflow-y-scroll">
             <div class="p-4">
               <div class="flex items-start justify-between">
-                <h2 class="text-lg font-medium text-gray-900" id="slide-over-title">Studio Link - Release Day</h2>
+                <h2 class="text-lg font-medium text-gray-900" id="slide-over-title">Chat</h2>
               </div>
             </div>
 
