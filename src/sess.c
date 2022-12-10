@@ -375,14 +375,11 @@ int session_speaker(struct session *sess, bool enable)
 		return EINVAL;
 
 	sess->user->speaker = enable;
-
 	aumix_mute(sess->id, !enable);
-
 	stream_enable(media_get_stream(sess->mvideo), enable);
+	sess->user->hand = false;
 
 	if (!enable) {
-		sess->user->hand = false;
-
 		/* only disable for privacy reasons */
 		sess->user->video = false;
 		vidmix_disp_enable(sess->id, false);
