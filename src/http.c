@@ -254,6 +254,7 @@ static void http_req_handler(struct http_conn *conn,
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/speaker") &&
 	    0 == pl_strcasecmp(&msg->met, "POST")) {
 		struct pl user_id = PL_INIT;
+		struct session *sess_speaker;
 
 		/* check permission */
 		if (!sess->user || !sess->user->host)
@@ -265,11 +266,11 @@ static void http_req_handler(struct http_conn *conn,
 		if (err)
 			goto err;
 
-		sess = session_lookup_user_id(&mix->sessl, &user_id);
-		if (!sess)
+		sess_speaker = session_lookup_user_id(&mix->sessl, &user_id);
+		if (!sess_speaker)
 			goto err;
 
-		err = session_speaker(sess, true);
+		err = session_speaker(sess_speaker, true);
 		if (err)
 			goto err;
 
@@ -280,9 +281,9 @@ static void http_req_handler(struct http_conn *conn,
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/listener") &&
 	    0 == pl_strcasecmp(&msg->met, "POST")) {
 		struct pl user_id = PL_INIT;
+		struct session *sess_listener;
 
-		/* check permission */
-		if (!sess->user || !sess->user->host)
+		if (!sess->user)
 			goto err;
 
 		err = re_regex((char *)mbuf_buf(msg->mb),
@@ -291,13 +292,16 @@ static void http_req_handler(struct http_conn *conn,
 		if (err)
 			goto err;
 
-		sess = session_lookup_user_id(&mix->sessl, &user_id);
-		if (!sess)
+		sess_listener = session_lookup_user_id(&mix->sessl, &user_id);
+		if (!sess_listener)
 			goto err;
 
-		err = session_speaker(sess, false);
-		if (err)
-			goto err;
+		/* check permission, allow self listener downgrade */
+		if (sess->user->host || sess == sess_listener) {
+			err = session_speaker(sess_listener, false);
+			if (err)
+				goto err;
+		}
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;

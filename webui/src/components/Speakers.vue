@@ -50,7 +50,10 @@
                         ></path>
                       </svg>
                     </span>
-                    <span v-if="!item.video" class="absolute -bottom-0 left-0 bg-indigo-600 rounded-lg text-gray-200 p-0.5">
+                    <span
+                      v-if="!item.video"
+                      class="absolute -bottom-0 left-0 bg-indigo-600 rounded-lg text-gray-200 p-0.5"
+                    >
                       <svg class="h-4 w-4" aria-hidden="true" viewBox="0 0 640 512" xmlns="http://www.w3.org/2000/svg">
                         <path
                           fill="currentColor"
@@ -93,12 +96,12 @@
                   </picture>
                 </div>
                 <button
-                  v-if="api.is_host()"
+                  v-if="api.is_host() || item.id === api.session().user_id"
                   @click="api.listener(item.id)"
                   type="button"
                   class="hidden group-hover:inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >
-                  To Audience 
+                  To Audience
                 </button>
 
                 <div class="space-y-2">
