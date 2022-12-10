@@ -28,6 +28,7 @@ interface Users {
     settings_active: Ref<boolean>
     record_timer: Ref<string>
     record: Ref<boolean>
+    hand_status: Ref<boolean>
 }
 
 function pad(num: number, size: number) {
@@ -44,6 +45,8 @@ export const Users: Users = {
     settings_active: ref(false),
     record_timer: ref('0:00:00'),
     record: ref(false),
+    hand_status: ref(false),
+
     ws_close() {
         this.socket?.close()
     },
@@ -97,6 +100,9 @@ export const Users: Users = {
                         audio: data.audio,
                         hand: data.hand
                     }
+
+                    if (user.id === api.session().user_id)
+                        this.hand_status.value = user.hand
 
                     if (data.speaker) {
                         this.speakers.value?.push(user)

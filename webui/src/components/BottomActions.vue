@@ -133,7 +133,7 @@ const hand = ref<HTMLButtonElement>()
 const play = ref<HTMLButtonElement>()
 const chat = ref<HTMLButtonElement>()
 const settings = ref<HTMLButtonElement>()
-const hand_status = ref(false)
+const hand_status = Users.hand_status
 
 function listen() {
   Webrtc.listen()
