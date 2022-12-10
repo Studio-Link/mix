@@ -15,8 +15,8 @@ static void destructor(void *data)
 
 	list_unlink(&sess->le);
 	sess->conn_pending = mem_deref(sess->conn_pending);
-	sess->pc = mem_deref(sess->pc);
-	sess->user = mem_deref(sess->user);
+	sess->pc	   = mem_deref(sess->pc);
+	sess->user	   = mem_deref(sess->user);
 }
 
 
@@ -380,8 +380,10 @@ int session_speaker(struct session *sess, bool enable)
 
 	stream_enable(media_get_stream(sess->mvideo), enable);
 
-	/* only disable for privacy reasons */
 	if (!enable) {
+		sess->user->hand = false;
+
+		/* only disable for privacy reasons */
 		sess->user->video = false;
 		vidmix_disp_enable(sess->id, false);
 	}
