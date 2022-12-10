@@ -171,7 +171,7 @@ int main(int argc, char *const argv[])
 		"call_max_calls		10\n" /* SIP only */
 		"sip_verify_server	yes\n"
 		"audio_buffer		20-160\n"
-		"audio_buffer_mode	adaptive\n"
+		"audio_buffer_mode	fixed\n"
 		"audio_silence		-35.0\n"
 		"jitter_buffer_type     fixed\n"
 		"jitter_buffer_wish     5\n"
