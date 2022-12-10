@@ -96,15 +96,21 @@
                   </picture>
                 </div>
                 <button
-                  v-if="api.is_host() || item.id === api.session().user_id"
+                  v-if="api.is_host()"
                   @click="api.listener(item.id)"
                   type="button"
                   class="group-hover:inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                  :class="{'hidden': api.is_host()}"
                 >
                   To Audience
                 </button>
-
+                <button
+                  v-if="!api.is_host() && item.id === api.session().user_id"
+                  @click="api.listener(item.id)"
+                  type="button"
+                  class="group-hover:inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                >
+                  Leave Stage
+                </button>
                 <div class="space-y-2">
                   <div class="text-base font-medium">
                     <h3>{{ item.name }}</h3>
