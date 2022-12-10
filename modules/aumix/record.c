@@ -193,6 +193,7 @@ static int ffmpeg_final(void *arg)
 	if (!folder)
 		return EINVAL;
 
+	/* Audio/Video MP4 conversion */
 	err = re_sdprintf(
 		&cmd,
 		"cd %s && ffmpeg -f s16le -ar %d -ac %d -i audio.pcm -i "
@@ -202,7 +203,17 @@ static int ffmpeg_final(void *arg)
 		goto out;
 
 	system(cmd);
+	mem_deref(cmd);
 
+	/* Audio FLAC conversion */
+	err = re_sdprintf(&cmd,
+			  "cd %s && ffmpeg -f s16le -ar %d -ac %d -i "
+			  "audio.pcm audio.flac",
+			  folder, SRATE, CH);
+	if (err)
+		goto out;
+
+	system(cmd);
 	mem_deref(cmd);
 
 out:
