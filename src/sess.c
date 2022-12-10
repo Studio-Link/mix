@@ -345,7 +345,7 @@ int session_user_updated(struct session *sess)
 	if (err)
 		return err;
 
-	sl_ws_send_event_all(json);
+	sl_ws_send_event_all(WS_USERS, json);
 	json = mem_deref(json);
 
 	return 0;

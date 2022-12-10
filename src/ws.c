@@ -9,6 +9,7 @@ struct ws_conn {
 	struct websock_conn *c;
 	struct mix *mix;
 	struct session *sess;
+	enum ws_type type;
 };
 
 enum { KEEPALIVE = 30 * 1000 };
@@ -24,27 +25,41 @@ void sl_ws_dummyh(const struct websock_hdr *hdr, struct mbuf *mb, void *arg)
 }
 
 
-void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
-		      void *arg)
+static bool ws_auth(struct ws_conn *wsc, struct mbuf *mb, bool host)
 {
-	struct ws_conn *wsc = arg;
 	struct pl sessid;
-	char *json = NULL;
-	(void)hdr;
 
 	sessid.p = (const char *)mbuf_buf(mb);
 	sessid.l = mbuf_get_left(mb);
 
 	wsc->sess = session_lookup(&wsc->mix->sessl, &sessid);
-	if (!wsc->sess) {
-		websock_close(wsc->c, WEBSOCK_INTERNAL_ERROR,
-			      "Session not found");
-		mem_deref(wsc);
-		return;
-	}
+	if (!wsc->sess || !wsc->sess->user)
+		goto fail;
+
+	if (host && !wsc->sess->user->host)
+		goto fail;
 
 	mem_ref(wsc->sess);
 	mem_ref(wsc->sess->user);
+
+	return true;
+
+fail:
+	websock_close(wsc->c, WEBSOCK_INTERNAL_ERROR, "Not authorized");
+	mem_deref(wsc);
+	return false;
+}
+
+
+void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
+		      void *arg)
+{
+	struct ws_conn *wsc = arg;
+	char *json	    = NULL;
+	(void)hdr;
+
+	if (!ws_auth(wsc, mb, false))
+		return;
 
 	wsc->sess->connected = true;
 
@@ -54,9 +69,19 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 	}
 
 	if (0 == user_event_json(&json, USER_ADDED, wsc->sess)) {
-		sl_ws_send_event(wsc->sess, json);
+		sl_ws_send_event(WS_USERS, wsc->sess, json);
 		json = mem_deref(json);
 	}
+}
+
+
+void sl_ws_debug_auth(const struct websock_hdr *hdr, struct mbuf *mb,
+		      void *arg)
+{
+	struct ws_conn *wsc = arg;
+	(void)hdr;
+
+	ws_auth(wsc, mb, true);
 }
 
 
@@ -83,7 +108,7 @@ static void close_handler(int err, void *arg)
 		wsc->sess->user->video = false;
 
 		if (0 == user_event_json(&json, USER_DELETED, wsc->sess)) {
-			sl_ws_send_event(wsc->sess, json);
+			sl_ws_send_event(WS_USERS, wsc->sess, json);
 			json = mem_deref(json);
 		}
 
@@ -95,8 +120,9 @@ static void close_handler(int err, void *arg)
 }
 
 
-int sl_ws_open(struct http_conn *conn, const struct http_msg *msg,
-	       websock_recv_h *recvh, struct mix *mix)
+int sl_ws_open(struct http_conn *conn, enum ws_type type,
+	       const struct http_msg *msg, websock_recv_h *recvh,
+	       struct mix *mix)
 {
 	struct ws_conn *ws_conn;
 	int err;
@@ -105,7 +131,8 @@ int sl_ws_open(struct http_conn *conn, const struct http_msg *msg,
 	if (!ws_conn)
 		return ENOMEM;
 
-	ws_conn->mix = mix;
+	ws_conn->mix  = mix;
+	ws_conn->type = type;
 
 	err = websock_accept(&ws_conn->c, ws, conn, msg, KEEPALIVE, recvh,
 			     close_handler, ws_conn);
@@ -122,7 +149,7 @@ out:
 }
 
 
-void sl_ws_send_event(struct session *sess, char *json)
+void sl_ws_send_event(enum ws_type type, struct session *sess, char *json)
 {
 	struct le *le;
 
@@ -134,12 +161,14 @@ void sl_ws_send_event(struct session *sess, char *json)
 		struct ws_conn *ws_conn = le->data;
 		if (ws_conn->sess == sess)
 			continue;
+		if (ws_conn->type != type)
+			continue;
 		websock_send(ws_conn->c, WEBSOCK_TEXT, "%s", json);
 	}
 }
 
 
-void sl_ws_send_event_all(char *json)
+void sl_ws_send_event_all(enum ws_type type, char *json)
 {
 	struct le *le;
 
@@ -149,6 +178,8 @@ void sl_ws_send_event_all(char *json)
 	LIST_FOREACH(&wsl, le)
 	{
 		struct ws_conn *ws_conn = le->data;
+		if (ws_conn->type != type)
+			continue;
 		websock_send(ws_conn->c, WEBSOCK_TEXT, "%s", json);
 	}
 }
@@ -166,7 +197,7 @@ static void update_handler(void *arg)
 	re_snprintf(json, sizeof(json), "{\"type\": \"rec\", \"t\": %u}",
 		    secs);
 
-	sl_ws_send_event_all(json);
+	sl_ws_send_event_all(WS_USERS, json);
 
 out:
 	tmr_start(&tmr_update, 1000, update_handler, NULL);

@@ -47,7 +47,7 @@ int chat_save(struct user *user, struct mix *mix, const struct http_msg *msg)
 	if (err)
 		return err;
 
-	sl_ws_send_event_all(json);
+	sl_ws_send_event_all(WS_USERS, json);
 
 	mem_deref(json);
 
