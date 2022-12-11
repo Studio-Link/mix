@@ -110,8 +110,10 @@ export const Users: Users = {
                     if (user.id === api.session().user_id) {
                         this.hand_status.value = user.hand
                         this.speaker_status.value = data.speaker
-                        Webrtc.audio_mute(data.audio)
-                        Webrtc.video_mute(data.video)
+
+                        /* Only allow remote disable */
+                        if (!data.speaker)
+                            Webrtc.video_mute(true)
                     }
 
                     if (data.speaker) {
