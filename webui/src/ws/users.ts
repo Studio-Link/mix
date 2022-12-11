@@ -101,11 +101,13 @@ export const Users: Users = {
                         hand: data.hand
                     }
 
-                    if (user.id === api.session().user_id)
+                    if (user.id === api.session().user_id) {
                         this.hand_status.value = user.hand
+                        api.session().speaker = data.speaker
+                    }
 
                     if (data.speaker) {
-                        this.speakers.value?.push(user)
+                        this.speakers.value?.unshift(user)
                     } else {
                         this.listeners.value?.unshift(user)
                     }
