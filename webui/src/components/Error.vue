@@ -1,5 +1,5 @@
 <template>
-  <div v-if="Webrtc.errorText.value" class="fixed inset-x-0 bottom-0">
+  <div v-if="Webrtc.errorText.value" class="fixed inset-x-0 top-0">
     <div class="bg-red-700">
       <div class="mx-auto max-w-7xl py-3 px-3 sm:px-6 lg:px-8">
         <div class="flex flex-wrap items-center justify-between">

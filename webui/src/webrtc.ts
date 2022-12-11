@@ -1,4 +1,5 @@
 import api from './api'
+import { Users } from './ws/users'
 import { ref } from 'vue'
 import adapter from 'webrtc-adapter'
 
@@ -15,11 +16,12 @@ const constraints: any = {
         noiseSuppression: false,
         latency: 0.02, //20ms
         sampleRate: 48000,
-        deviceId: undefined
+        deviceId: undefined,
     },
     video: {
-        width: 1280, height: 720,
-        deviceId: undefined
+        width: 1280,
+        height: 720,
+        deviceId: undefined,
     },
 }
 
@@ -70,7 +72,7 @@ function handle_answer(descr: any) {
             console.log('set remote description -- success')
             Webrtc.state.value = WebrtcState.Listening
         },
-        function(error) {
+        function (error) {
             console.warn('setRemoteDescription: %s', error.toString())
         }
     )
@@ -81,17 +83,17 @@ function pc_offer() {
         iceRestart: false,
     }
     pc.createOffer(offerOptions)
-        .then(function(desc) {
+        .then(function (desc) {
             console.log('got local description: %s', desc.type)
 
             pc.setLocalDescription(desc).then(
                 () => { },
-                function(error) {
+                function (error) {
                     console.log('setLocalDescription: %s', error.toString())
                 }
             )
         })
-        .catch(function(error) {
+        .catch(function (error) {
             console.log('Failed to create session description: %s', error.toString())
         })
 }
@@ -104,7 +106,7 @@ function pc_setup() {
         console.log('webrtc/icecandidate: ' + event.candidate?.type + ' IP: ' + event.candidate?.candidate)
     }
 
-    pc.ontrack = function(event) {
+    pc.ontrack = function (event) {
         const track = event.track
         console.log('got remote track: kind=%s', track.kind)
 
@@ -169,32 +171,27 @@ function pc_setup() {
 }
 
 async function pc_media() {
-
-    avstream?.getVideoTracks()[0].stop();
-    avstream?.getAudioTracks()[0].stop();
+    avstream?.getVideoTracks()[0].stop()
+    avstream?.getAudioTracks()[0].stop()
 
     try {
         avstream = await navigator.mediaDevices.getUserMedia(constraints)
     } catch (e) {
         console.error('pc_media: permission denied...', e)
-        Webrtc.errorText.value = "Microphone/Camera permission denied!"
+        Webrtc.errorText.value = 'Microphone/Camera permission denied!'
         return
     }
-
-
 }
 
 async function pc_screen() {
     const gdmOptions = {
         video: true,
         audio: false,
-    };
+    }
     try {
-        screenstream = await navigator.mediaDevices.getDisplayMedia(
-            gdmOptions
-        );
+        screenstream = await navigator.mediaDevices.getDisplayMedia(gdmOptions)
     } catch (err) {
-        console.error("webrtc_video/setup_screen: " + err);
+        console.error('webrtc_video/setup_screen: ' + err)
     }
 }
 
@@ -235,8 +232,9 @@ export const Webrtc = {
     audio_input_id: ref<string | undefined>(undefined),
     audio_output_id: ref<string | undefined>(undefined),
     video_input_id: ref<string | undefined>(undefined),
-    muted: ref(true),
+    audio_muted: ref(true),
     echo: ref(false),
+    video_muted: ref(true),
 
     listen() {
         pc_setup()
@@ -258,7 +256,6 @@ export const Webrtc = {
         this.audio_input_id.value = avstream?.getAudioTracks()[0].getSettings().deviceId
 
         this.state.value = WebrtcState.ReadySpeaking
-        this.mic(true)
 
         return avstream
     },
@@ -266,27 +263,31 @@ export const Webrtc = {
     async change_audio(): Promise<MediaStream | null> {
         constraints.audio.deviceId = { exact: this.audio_input_id.value }
         await pc_media()
-        this.mic(this.muted.value)
-        console.log("audio changed")
+        this.audio_mute(this.audio_muted.value)
+        console.log('audio changed')
         return avstream
     },
 
     async change_video(): Promise<MediaStream | null> {
-        if (this.video_input_id.value === "disabled")
+        if (this.video_input_id.value === 'disabled') {
+            this.video_mute(true)
             return null
-        if (this.video_input_id.value === "screen") {
+        }
+        if (this.video_input_id.value === 'screen') {
             await pc_screen()
+            this.video_mute(false)
             return screenstream
         }
         constraints.video.deviceId = { exact: this.video_input_id.value }
         await pc_media()
-        console.log("video changed", constraints)
+        this.video_mute(false)
+        console.log('video changed', constraints)
         return avstream
     },
 
     async change_echo() {
         constraints.audio.echoCancellation = this.echo.value
-        console.log("echo changed", constraints)
+        console.log('echo changed', constraints)
         await pc_media()
         return avstream
     },
@@ -294,31 +295,43 @@ export const Webrtc = {
     async join() {
         if (avstream === null) return
 
-        if (this.video_input_id.value === "disabled") {
-            await api.video(false)
+        if (this.video_input_id.value === 'disabled') {
+            this.video_mute(true)
             await pc_replace_tracks(avstream.getAudioTracks()[0], avdummy.getVideoTracks()[0])
-        }
-        else if (this.video_input_id.value === "screen" && screenstream !== null) {
-            await api.video(true)
+        } else if (this.video_input_id.value === 'screen' && screenstream !== null) {
+            this.video_mute(false)
             await pc_replace_tracks(avstream.getAudioTracks()[0], screenstream.getVideoTracks()[0])
-        }
-        else {
-            await api.video(true)
+        } else {
+            this.video_mute(false)
             await pc_replace_tracks(avstream.getAudioTracks()[0], avstream.getVideoTracks()[0])
         }
+
+        this.audio_mute(false)
     },
 
-    mic(mute: boolean) {
+    audio_mute(mute: boolean) {
+        if (!Users.speaker_status.value) mute = true
+
         avstream?.getAudioTracks().forEach((track) => {
             track.enabled = !mute
-            this.muted.value = mute
+            this.audio_muted.value = mute
             api.audio(!mute)
-        });
+        })
+    },
+
+    video_mute(mute: boolean) {
+        if (!Users.speaker_status.value) mute = true
+
+        avstream?.getVideoTracks().forEach((track) => {
+            track.enabled = !mute
+            this.video_muted.value = mute
+            api.video(!mute)
+        })
     },
 
     logout() {
-        avstream?.getVideoTracks()[0].stop();
-        avstream?.getAudioTracks()[0].stop();
+        avstream?.getVideoTracks()[0].stop()
+        avstream?.getAudioTracks()[0].stop()
     },
 
     error(msg: string) {

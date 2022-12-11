@@ -7,14 +7,12 @@ interface Session {
     id: string
     auth: boolean
     host: boolean
-    speaker: boolean
     user_id: string | null
 }
 
 let sess: Session = JSON.parse(window.localStorage.getItem('sess')!)
 
 async function api_fetch(met: string, url: string, data: any) {
-
     // Default options are marked with *
     const resp = await fetch(config.host() + '/api/v1' + url, {
         method: met,
@@ -64,7 +62,8 @@ export default {
             return
         }
 
-        sess = { id: session_id, auth: false, host: false, speaker: false, user_id: null }
+        /* Readonly! Use ws/users for updated states */
+        sess = { id: session_id, auth: false, host: false, user_id: null }
 
         window.localStorage.setItem('sess', JSON.stringify(sess))
     },
@@ -78,11 +77,10 @@ export default {
         if (!resp?.ok) return
 
         sess.auth = true
-        let user = JSON.parse(await resp?.text())
+        const user = JSON.parse(await resp?.text())
 
         sess.user_id = user.id
         sess.host = user.host
-        sess.speaker = user.speaker
         window.localStorage.setItem('sess', JSON.stringify(sess))
 
         router.push({ name: 'Home' })
@@ -121,46 +119,34 @@ export default {
     },
 
     async video(enable: boolean) {
-        if (enable)
-            await api_fetch('PUT', '/webrtc/video/enable', null)
-        else
-            await api_fetch('PUT', '/webrtc/video/disable', null)
+        if (enable) await api_fetch('PUT', '/webrtc/video/enable', null)
+        else await api_fetch('PUT', '/webrtc/video/disable', null)
     },
 
     async audio(enable: boolean) {
-        if (enable)
-            await api_fetch('PUT', '/webrtc/audio/enable', null)
-        else
-            await api_fetch('PUT', '/webrtc/audio/disable', null)
+        if (enable) await api_fetch('PUT', '/webrtc/audio/enable', null)
+        else await api_fetch('PUT', '/webrtc/audio/disable', null)
     },
 
     is_host(): boolean {
         return sess.host
     },
 
-    is_speaker(): boolean {
-        return sess.speaker
-    },
-
     async record_switch() {
-        if (!sess.host)
-            return
+        if (!sess.host) return
 
         if (Users.record.value) {
             Users.record.value = false
-            Users.record_timer.value = "0:00:00"
+            Users.record_timer.value = '0:00:00'
             await api_fetch('PUT', '/record/disable', null)
-        }
-        else {
-            Users.record.value = true;
+        } else {
+            Users.record.value = true
             await api_fetch('PUT', '/record/enable', null)
         }
     },
 
     hand(enable: boolean) {
-        if (enable)
-            api_fetch('PUT', '/hand/enable', null)
-        else
-            api_fetch('PUT', '/hand/disable', null)
-    }
+        if (enable) api_fetch('PUT', '/hand/enable', null)
+        else api_fetch('PUT', '/hand/disable', null)
+    },
 }

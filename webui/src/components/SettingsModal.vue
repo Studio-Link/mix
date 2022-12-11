@@ -51,28 +51,32 @@
                     <div>
                       <label for="camera" class="block text-sm font-medium text-gray-700">Cam</label>
                       <select
-                        v-model="video_input_id"
                         id="cam"
+                        v-model="video_input_id"
                         name="cam"
                         class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                       >
                         <option value="disabled">Disabled</option>
                         <option value="screen">Screen</option>
                         <template v-for="item in Webrtc.deviceInfos.value">
-                          <option v-if="item.kind === 'videoinput'" :value="item.deviceId">{{ item.label }}</option>
+                          <option v-if="item.kind === 'videoinput'" :key="item.deviceId" :value="item.deviceId">
+                            {{ item.label }}
+                          </option>
                         </template>
                       </select>
                     </div>
                     <div>
                       <label for="microphone" class="block text-sm font-medium text-gray-700">Microphone</label>
                       <select
-                        v-model="audio_input_id"
                         id="micro"
+                        v-model="audio_input_id"
                         name="micro"
                         class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                       >
                         <template v-for="item in Webrtc.deviceInfos.value">
-                          <option v-if="item.kind === 'audioinput'" :value="item.deviceId">{{ item.label }}</option>
+                          <option v-if="item.kind === 'audioinput'" :key="item.deviceId" :value="item.deviceId">
+                            {{ item.label }}
+                          </option>
                         </template>
                       </select>
                     </div>
@@ -89,8 +93,8 @@
                     <div class="relative flex items-start">
                       <div class="flex items-center h-5">
                         <input
-                          v-model="echo"
                           id="echo_headset"
+                          v-model="echo"
                           name="echo_headset"
                           type="checkbox"
                           class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"

@@ -18,8 +18,9 @@ export default {
         navigator.mediaDevices
             .getUserMedia({
                 video: {
-                    width: { max: 640 } /* Workaround for big images */
-                }, audio: false
+                    width: { max: 640 } /* Workaround for big images */,
+                },
+                audio: false,
             })
             .then((stream) => {
                 videoStream = stream

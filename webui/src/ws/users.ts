@@ -1,5 +1,6 @@
 import { Ref, ref } from 'vue'
 import api from '../api'
+import { Webrtc } from '../webrtc'
 
 interface User {
     id: string
@@ -29,13 +30,13 @@ interface Users {
     record_timer: Ref<string>
     record: Ref<boolean>
     hand_status: Ref<boolean>
+    speaker_status: Ref<boolean>
 }
 
 function pad(num: number, size: number) {
-    var s = "0000" + num;
-    return s.substring(s.length - size);
+    const s = '0000' + num
+    return s.substring(s.length - size)
 }
-
 
 export const Users: Users = {
     speakers: ref([]),
@@ -46,6 +47,7 @@ export const Users: Users = {
     record_timer: ref('0:00:00'),
     record: ref(false),
     hand_status: ref(false),
+    speaker_status: ref(false),
 
     ws_close() {
         this.socket?.close()
@@ -75,6 +77,10 @@ export const Users: Users = {
                 this.speakers.value = []
                 this.listeners.value = []
                 for (const key in data.users) {
+                    if (data.users[key].id === api.session().user_id) {
+                        this.hand_status.value = data.users[key].hand
+                        this.speaker_status.value = data.users[key].speaker
+                    }
                     if (data.users[key].speaker) {
                         this.speakers.value?.push(data.users[key])
                     } else {
@@ -98,14 +104,25 @@ export const Users: Users = {
                         host: data.host,
                         video: data.video,
                         audio: data.audio,
-                        hand: data.hand
+                        hand: data.hand,
                     }
 
-                    if (user.id === api.session().user_id)
+                    if (user.id === api.session().user_id) {
                         this.hand_status.value = user.hand
+                        this.speaker_status.value = data.speaker
+
+                        /* Only allow remote disable */
+                        if (!data.speaker) {
+                            if (!Webrtc.audio_muted.value)
+                                Webrtc.audio_mute(true)
+
+                            if (!Webrtc.video_muted.value)
+                                Webrtc.video_mute(true)
+                        }
+                    }
 
                     if (data.speaker) {
-                        this.speakers.value?.push(user)
+                        this.speakers.value?.unshift(user)
                     } else {
                         this.listeners.value?.unshift(user)
                     }
@@ -117,25 +134,23 @@ export const Users: Users = {
                     user_id: data.user_id,
                     user_name: data.user_name,
                     time: data.time,
-                    msg: data.msg
+                    msg: data.msg,
                 }
                 this.chat_messages.value?.push(chat)
             }
 
             if (data.type === 'rec') {
                 let time = parseInt(data.t)
-                if (time)
-                    this.record.value = true
+                if (time) this.record.value = true
                 else this.record.value = false
 
-                const h = Math.floor(time / (60 * 60));
-                time = time % (60 * 60);
-                const m = Math.floor(time / 60);
-                time = time % 60;
-                const s = Math.floor(time);
+                const h = Math.floor(time / (60 * 60))
+                time = time % (60 * 60)
+                const m = Math.floor(time / 60)
+                time = time % 60
+                const s = Math.floor(time)
 
-                this.record_timer.value = pad(h, 1) + ":" + pad(m, 2) + ":" + pad(s, 2);
-
+                this.record_timer.value = pad(h, 1) + ':' + pad(m, 2) + ':' + pad(s, 2)
             }
         }
     },
