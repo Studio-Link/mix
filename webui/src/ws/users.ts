@@ -76,6 +76,10 @@ export const Users: Users = {
                 this.speakers.value = []
                 this.listeners.value = []
                 for (const key in data.users) {
+                    if (data.users[key].id === api.session().user_id) {
+                        this.hand_status.value = data.users[key].hand
+                        this.speaker_status.value = data.users[key].speaker
+                    }
                     if (data.users[key].speaker) {
                         this.speakers.value?.push(data.users[key])
                     } else {
