@@ -365,6 +365,10 @@ void session_video(struct session *sess, bool enable)
 
 	vidmix_disp_enable(sess->id, enable);
 
+	if (enable) {
+		stream_flush(media_get_stream(sess->mvideo));
+	}
+
 	session_user_updated(sess);
 }
 
