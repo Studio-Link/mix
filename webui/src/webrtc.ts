@@ -235,8 +235,9 @@ export const Webrtc = {
     audio_input_id: ref<string | undefined>(undefined),
     audio_output_id: ref<string | undefined>(undefined),
     video_input_id: ref<string | undefined>(undefined),
-    muted: ref(true),
+    audio_muted: ref(true),
     echo: ref(false),
+    video_muted: ref(true),
 
     listen() {
         pc_setup()
@@ -258,7 +259,6 @@ export const Webrtc = {
         this.audio_input_id.value = avstream?.getAudioTracks()[0].getSettings().deviceId
 
         this.state.value = WebrtcState.ReadySpeaking
-        this.mic(true)
 
         return avstream
     },
@@ -266,20 +266,24 @@ export const Webrtc = {
     async change_audio(): Promise<MediaStream | null> {
         constraints.audio.deviceId = { exact: this.audio_input_id.value }
         await pc_media()
-        this.mic(this.muted.value)
+        this.mic_mute(this.audio_muted.value)
         console.log("audio changed")
         return avstream
     },
 
     async change_video(): Promise<MediaStream | null> {
-        if (this.video_input_id.value === "disabled")
+        if (this.video_input_id.value === "disabled") {
+            this.video_mute(true)
             return null
+        }
         if (this.video_input_id.value === "screen") {
             await pc_screen()
+            this.video_mute(false)
             return screenstream
         }
         constraints.video.deviceId = { exact: this.video_input_id.value }
         await pc_media()
+        this.video_mute(false)
         console.log("video changed", constraints)
         return avstream
     },
@@ -295,24 +299,40 @@ export const Webrtc = {
         if (avstream === null) return
 
         if (this.video_input_id.value === "disabled") {
-            await api.video(false)
+            this.video_mute(true)
             await pc_replace_tracks(avstream.getAudioTracks()[0], avdummy.getVideoTracks()[0])
         }
         else if (this.video_input_id.value === "screen" && screenstream !== null) {
-            await api.video(true)
+            this.video_mute(false)
             await pc_replace_tracks(avstream.getAudioTracks()[0], screenstream.getVideoTracks()[0])
         }
         else {
-            await api.video(true)
+            this.video_mute(false)
             await pc_replace_tracks(avstream.getAudioTracks()[0], avstream.getVideoTracks()[0])
         }
+
+        this.mic_mute(false)
     },
 
-    mic(mute: boolean) {
+    mic_mute(mute: boolean) {
+        if (!api.is_speaker())
+            mute = true
+
         avstream?.getAudioTracks().forEach((track) => {
             track.enabled = !mute
-            this.muted.value = mute
+            this.audio_muted.value = mute
             api.audio(!mute)
+        });
+    },
+
+    video_mute(mute: boolean) {
+        if (!api.is_speaker())
+            mute = true
+
+        avstream?.getVideoTracks().forEach((track) => {
+            track.enabled = !mute
+            this.video_muted.value = mute
+            api.video(!mute)
         });
     },
 
