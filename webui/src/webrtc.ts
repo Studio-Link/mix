@@ -263,7 +263,7 @@ export const Webrtc = {
     async change_audio(): Promise<MediaStream | null> {
         constraints.audio.deviceId = { exact: this.audio_input_id.value }
         await pc_media()
-        this.mic_mute(this.audio_muted.value)
+        this.audio_mute(this.audio_muted.value)
         console.log('audio changed')
         return avstream
     },
@@ -306,10 +306,10 @@ export const Webrtc = {
             await pc_replace_tracks(avstream.getAudioTracks()[0], avstream.getVideoTracks()[0])
         }
 
-        this.mic_mute(false)
+        this.audio_mute(false)
     },
 
-    mic_mute(mute: boolean) {
+    audio_mute(mute: boolean) {
         if (!Users.speaker_status.value) mute = true
 
         avstream?.getAudioTracks().forEach((track) => {

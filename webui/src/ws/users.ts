@@ -1,5 +1,6 @@
 import { Ref, ref } from 'vue'
 import api from '../api'
+import { Webrtc } from '../webrtc'
 
 interface User {
     id: string
@@ -109,6 +110,8 @@ export const Users: Users = {
                     if (user.id === api.session().user_id) {
                         this.hand_status.value = user.hand
                         this.speaker_status.value = data.speaker
+                        Webrtc.audio_mute(data.audio)
+                        Webrtc.video_mute(data.video)
                     }
 
                     if (data.speaker) {

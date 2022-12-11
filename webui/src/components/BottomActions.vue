@@ -170,7 +170,7 @@ function hand_clicked() {
 function mic_clicked(mute: boolean) {
   if (Webrtc.state.value < WebrtcState.ReadySpeaking) {
     Users.settings_active.value = true
-  } else Webrtc.mic_mute(mute)
+  } else Webrtc.audio_mute(mute)
 }
 
 function video_clicked(mute: boolean) {
