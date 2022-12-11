@@ -113,8 +113,11 @@ export const Users: Users = {
 
                         /* Only allow remote disable */
                         if (!data.speaker) {
-                            Webrtc.audio_mute(true)
-                            Webrtc.video_mute(true)
+                            if (!Webrtc.audio_muted)
+                                Webrtc.audio_mute(true)
+
+                            if (!Webrtc.video_muted)
+                                Webrtc.video_mute(true)
                         }
                     }
 
