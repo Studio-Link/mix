@@ -128,6 +128,8 @@ static void peerconnection_estab_handler(struct media_track *media, void *arg)
 		stream_enable(media_get_stream(media), true);
 		aumix_mute(sess->id, false);
 	}
+
+	session_user_updated(sess);
 }
 
 
@@ -137,7 +139,7 @@ static void peerconnection_close_handler(int err, void *arg)
 
 	warning("mix: session closed (%m)\n", err);
 
-	session_close(sess, err);
+	session_user_updated(sess);
 }
 
 
@@ -340,6 +342,9 @@ int session_user_updated(struct session *sess)
 {
 	char *json = NULL;
 	int err;
+
+	if (!sess)
+		return EINVAL;
 
 	err = user_event_json(&json, USER_UPDATED, sess);
 	if (err)

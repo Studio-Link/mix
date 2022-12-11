@@ -48,7 +48,7 @@ struct session {
 	struct http_conn *conn_pending;
 	char id[SESSID_SZ]; /* Keep secret */
 	struct user *user;
-	bool connected;
+	bool connected; /* Websocket connected */
 	struct media_track *maudio;
 	struct media_track *mvideo;
 };

@@ -9,6 +9,7 @@ interface User {
     host: boolean
     video: boolean
     audio: boolean
+    webrtc: boolean
 }
 
 interface Chat {
@@ -105,6 +106,7 @@ export const Users: Users = {
                         video: data.video,
                         audio: data.audio,
                         hand: data.hand,
+                        webrtc: data.webrtc
                     }
 
                     if (user.id === api.session().user_id) {
