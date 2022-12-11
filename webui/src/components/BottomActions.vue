@@ -6,10 +6,10 @@
           <!-- Logout button -->
           <div>
             <button
-              @click="logout_clicked()"
               ref="logout"
               title="Logout"
               class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
+              @click="logout_clicked()"
             >
               <ArrowLeftOnRectangleIcon class="h-8 w-8 mx-auto" />
             </button>
@@ -31,8 +31,8 @@
             <div v-if="Webrtc.state.value >= WebrtcState.Listening">
               <button
                 v-if="Webrtc.audio_muted.value"
-                @click="mic_clicked(false)"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
+                @click="mic_clicked(false)"
               >
                 <svg
                   aria-hidden="true"
@@ -53,8 +53,8 @@
               </button>
               <button
                 v-if="!Webrtc.audio_muted.value"
-                @click="mic_clicked(true)"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
+                @click="mic_clicked(true)"
               >
                 <svg
                   aria-hidden="true"
@@ -78,16 +78,16 @@
             <div v-if="Webrtc.state.value >= WebrtcState.Listening">
               <button
                 v-if="Webrtc.video_muted.value"
-                @click="video_clicked(false)"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
+                @click="video_clicked(false)"
               >
                 <VideoCameraSlashIcon class="h-9 w-9" />
                 <span class="sr-only">Video disabled</span>
               </button>
               <button
                 v-if="!Webrtc.video_muted.value"
-                @click="video_clicked(true)"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
+                @click="video_clicked(true)"
               >
                 <VideoCameraIcon class="h-9 w-9" />
                 <span class="sr-only">Video enabled</span>
@@ -96,8 +96,8 @@
             <div v-if="Webrtc.state.value >= WebrtcState.ReadySpeaking">
               <button
                 ref="settings"
-                @click="settings_clicked()"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
+                @click="settings_clicked()"
               >
                 <Cog6ToothIcon class="h-10 w-10" />
               </button>
@@ -125,10 +125,10 @@
           <!-- Chat button -->
           <div>
             <button
-              @click="chat_clicked()"
               ref="chat"
               title="Chat"
               class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
+              @click="chat_clicked()"
             >
               <ChatBubbleOvalLeftEllipsisIcon class="h-9 w-9 mx-auto" />
             </button>
@@ -159,7 +159,7 @@ const hand_status = Users.hand_status
 
 function listen() {
   Webrtc.listen()
-  if (api.is_speaker()) Users.settings_active.value = true
+  if (Users.speaker_status.value) Users.settings_active.value = true
 }
 
 function hand_clicked() {
