@@ -42,7 +42,7 @@ Node.js v18.x LTS or v19.x (Current)
 https://github.com/nodesource/distributions/blob/master/README.md#debinstall
 
 
-### Archlinux
+### Arch Linux
 
 ```bash
 pacman -S curl wget ninja pkgconf clang cmake make git patch ca-certificates \
