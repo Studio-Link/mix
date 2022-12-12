@@ -19,11 +19,19 @@
                       :src="'/avatars/' + item.id + '.png'"
                       alt="Avatar Image"
                     />
-                    <span v-if="item.webrtc" title="Listening" class="absolute bottom-0 right-0 bg-green-700 rounded-lg text-gray-200 p-0.5"> 
-                    <SpeakerWaveIcon class="h-4 w-4"/>
+                    <span
+                      v-if="item.webrtc"
+                      title="Listening"
+                      class="absolute bottom-0 right-0 bg-green-700 rounded-lg text-gray-200 p-0.5"
+                    >
+                      <SpeakerWaveIcon class="h-4 w-4" />
                     </span>
-                    <span v-if="!item.webrtc" title="Not listening" class="absolute bottom-0 right-0 bg-red-700 rounded-lg text-gray-200 p-0.5"> 
-                    <SpeakerXMarkIcon class="h-4 w-4" />
+                    <span
+                      v-if="!item.webrtc"
+                      title="Not listening"
+                      class="absolute bottom-0 right-0 bg-red-700 rounded-lg text-gray-200 p-0.5"
+                    >
+                      <SpeakerXMarkIcon class="h-4 w-4" />
                     </span>
                     <span v-show="item.hand" class="absolute -top-1 -right-1 bg-indigo-600 rounded-lg text-gray-200">
                       <svg
@@ -47,9 +55,9 @@
                   v-if="api.is_host()"
                   @click="api.speaker(item.id)"
                   type="button"
-                  class="hidden group-hover:inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  class="hidden group-hover:inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >
-                  On Stage
+                  <MicrophoneIcon class="-ml-0.5 mr-1 h-4 w-4" aria-hidden="true" />On Stage
                 </button>
                 <div class="space-y-2">
                   <div class="text-sm font-medium">
@@ -68,5 +76,5 @@
 <script setup lang="ts">
 import { Users } from '../ws/users'
 import api from '../api'
-import { SpeakerWaveIcon, SpeakerXMarkIcon } from '@heroicons/vue/24/outline'
+import { SpeakerWaveIcon, SpeakerXMarkIcon, MicrophoneIcon } from '@heroicons/vue/24/outline'
 </script>
