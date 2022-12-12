@@ -1,5 +1,10 @@
 <template>
-  <div v-show="!PiP && Webrtc.state.value >= WebrtcState.Listening" @mouseover="nav = true" @mouseleave="nav = false" @touchstart.passive="nav = true">
+  <div
+    v-show="!PiP && Webrtc.state.value >= WebrtcState.Listening"
+    @mouseover="nav = true"
+    @mouseleave="nav = false"
+    @touchstart.passive="nav = true"
+  >
     <div v-show="nav" class="text-center mt-2 text-gray-500">
       <button @click="video!.width = video!.width + 128" class="text-lg" title="Zoom in">
         <svg
@@ -35,7 +40,7 @@
           ></path>
         </svg>
       </button>
-      <button v-if="hasFullscreen" @click="video!.requestFullscreen()" class="text-lg ml-8" title="Fullscreen">
+      <button v-if="hasFullscreen" @click="requestFullscreen(video)" class="text-lg ml-8" title="Fullscreen">
         <svg
           aria-hidden="true"
           focusable="false"
@@ -86,20 +91,46 @@ const PiP = ref(false)
 async function requestPiP() {
   try {
     await video.value?.requestPictureInPicture()
-    PiP.value = true
+    if (navigator.userAgent.indexOf('Safari') > -1) {
+      //Avoid safari setting PiP, since hiding the video stops it, only reduce size.
+      video.value && (video.value.width = 256)
+    } else {
+      PiP.value = true
+    }
+    nav.value = false
   } catch {
     console.log('PictureInPicture error')
   }
 }
 
+function requestFullscreen(element: any) {
+  if (element.requestFullscreen) {
+    element.requestFullscreen()
+    nav.value = false
+  } else if (element.webkitRequestFullscreen) {
+    element.webkitRequestFullscreen()
+    nav.value = false
+  }
+}
+
+function hasFullscreenSupport(element: any) {
+  if (element.requestFullscreen) {
+    return true
+  } else if (element.webkitRequestFullscreen) {
+    return true
+  }
+
+  return false
+}
+
 onMounted(() => {
   if (video.value?.requestPictureInPicture) hasPiP.value = true
-
-  if (video.value?.requestFullscreen) hasFullscreen.value = true
+  hasFullscreen.value = hasFullscreenSupport(video.value)
 
   video.value?.addEventListener('leavepictureinpicture', () => {
     // The video has left PiP mode.
     PiP.value = false
+    video.value?.play()
   })
 })
 </script>
