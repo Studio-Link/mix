@@ -99,7 +99,7 @@
                   v-if="api.is_host()"
                   @click="api.listener(item.id)"
                   type="button"
-                  class="hidden group-hover:inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  class="hidden group-hover:inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >
                   <SpeakerWaveIcon class="-ml-0.5 mr-1 h-4 w-4" aria-hidden="true" />
                   To Audience
@@ -108,7 +108,7 @@
                   v-if="!api.is_host() && item.id === api.session().user_id"
                   @click="api.listener(item.id)"
                   type="button"
-                  class="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  class="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >
                   <SpeakerWaveIcon class="-ml-0.5 mr-1 h-4 w-4" aria-hidden="true" />
                   Leave Stage
