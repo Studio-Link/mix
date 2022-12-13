@@ -80,7 +80,7 @@ server {
         add_header X-Content-Type-Options "nosniff";
         add_header Strict-Transport-Security max-age=15768000;
 
-        root /opt/slmix/webui/public;
+        root /opt/slmix/webui/dist;
 
         location /api {
                 proxy_pass http://127.0.0.1:9999;
