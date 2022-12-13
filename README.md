@@ -11,24 +11,6 @@ Next generation decentralized social network with voice/video and broadcasting s
 - RTMP Broadcasting
 - Server/Client Recording
 
-## Development
-
-Compile and start backend
-
-```sh
-$ make
-$ build/slmix
-```
-
-Start frontend
-
-```sh
-$ cd webui
-$ npm install
-$ npm run dev
-```
-
-
 
 ## Installation from Source
 
@@ -148,6 +130,23 @@ systemctl start slmix
 mix_token_host          TOKENREPLACEME # can start record
 mix_token_guests        TOKENREPLACEME # invite url 
 mix_token_download      TOKENREPLACEME # protected download folder 
+```
+
+## Development
+
+Compile and start backend
+
+```sh
+$ make
+$ build/slmix
+```
+
+Start frontend
+
+```sh
+$ cd webui
+$ npm install
+$ npm run dev
 ```
 
 ## License
