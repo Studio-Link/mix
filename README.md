@@ -134,6 +134,11 @@ LimitNOFILE=2048
 WantedBy=multi-user.target
 ```
 
+```bash
+systemctl enable slmix
+systemctl start slmix
+```
+
 ### Config - /opt/slmix/config
 
 ```
