@@ -33,13 +33,13 @@ webui:
 	cd webui && npm run build
 
 .PHONY: release
-release:
+release: external
 	make clean
 	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo
 	make build
 
 .PHONY: systemd
-systemd:
+systemd: external
 	make clean
 	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_SD_SOCK=ON
 	make build
