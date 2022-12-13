@@ -34,7 +34,7 @@ $ npm run dev
 ### Debian/Ubuntu
 
 ```bash
-apt install curl wget ninja pkg-config clang cmake make git patch ca-certificates \
+apt install curl wget ninja-build pkg-config clang cmake make git patch ca-certificates \
 	libgd-dev libopus-dev libz-dev libssl-dev libavformat-dev libavcodec-dev libflac-dev
 ```
 
@@ -55,7 +55,7 @@ pacman -S curl wget ninja pkgconf clang cmake make git patch ca-certificates \
 git clone https://github.com/Studio-Link/mix.git
 cd mix
 make release
-make webui
+cd webui && npm run install && npm run build
 ```
 
 ## License
