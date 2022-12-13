@@ -29,9 +29,12 @@ $ npm run dev
 ```
 
 
-## Requirements
 
-### Debian/Ubuntu
+## Installation from Source
+
+### Requirements
+
+#### Debian/Ubuntu
 
 ```bash
 apt install curl wget ninja-build pkg-config clang cmake make git patch ca-certificates \
@@ -42,14 +45,14 @@ Node.js v18.x LTS or v19.x (Current)
 https://github.com/nodesource/distributions/blob/master/README.md#debinstall
 
 
-### Arch Linux
+#### Arch Linux
 
 ```bash
 pacman -S curl wget ninja pkgconf clang cmake make git patch ca-certificates \
 	gd opus zlib ffmpeg flac nodejs npm
 ```
 
-## Installation from Source
+### Build
 
 ```bash
 git clone https://github.com/Studio-Link/mix.git /opt/slmix
