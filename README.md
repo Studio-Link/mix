@@ -63,7 +63,7 @@ cd webui && npm install && npm run build
 
 ### Nginx Config
 
-```
+```nginx
 server {
         listen 443 http2 ssl;
         listen [::]:443 http2 ssl;
@@ -116,8 +116,8 @@ server {
 }
 ```
 
-### Systemd
-```
+### Systemd (/etc/systemd/system/slmix.service)
+```/etc/systemd/system/slmix.service
 [Unit]
 Description=slmix
 After=syslog.target network.target
