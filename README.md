@@ -46,6 +46,14 @@ make release
 cd webui && npm install && npm run build
 ```
 
+### Config - /opt/slmix/config
+
+```
+mix_token_host          TOKENREPLACEME # can start record
+mix_token_guests        TOKENREPLACEME # invite url 
+mix_token_download      TOKENREPLACEME # protected download folder 
+```
+
 ### Nginx Config
 
 ```nginx
@@ -122,14 +130,6 @@ WantedBy=multi-user.target
 ```bash
 systemctl enable slmix
 systemctl start slmix
-```
-
-### Config - /opt/slmix/config
-
-```
-mix_token_host          TOKENREPLACEME # can start record
-mix_token_guests        TOKENREPLACEME # invite url 
-mix_token_download      TOKENREPLACEME # protected download folder 
 ```
 
 ## Development
