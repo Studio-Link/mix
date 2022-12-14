@@ -9,7 +9,9 @@
 *.swp
 
 /webui/dist
-/webui/public/avatars
+
+/webui/public/avatars/*
+!/webui/public/avatars/index.html
 
 /webui/public/download/*
 !/webui/public/download/index.html
