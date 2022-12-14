@@ -1,16 +1,6 @@
-# Studio Link - Mix
+# Studio Link - Mix Rooms
 
-Next generation decentralized social network with voice/video and broadcasting support.
-
-
-## Roadmap
-
-- OAuth2 support
-- ActivityPub
-- WebRTC
-- RTMP Broadcasting
-- Server/Client Recording
-
+Remote Podcasting and live video/audio conversation with your audience
 
 ## Installation from Source
 
