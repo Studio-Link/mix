@@ -57,3 +57,32 @@ external:
 .PHONY: cloc
 cloc:
 	cloc --exclude-dir='node_modules,external,build' .
+
+##############################################################################
+#
+# Sanitizers
+#
+
+.PHONY: run_san
+run_san:
+	ASAN_OPTIONS=fast_unwind_on_malloc=0 \
+	# TSAN_OPTIONS="suppressions=tsan.supp" \
+	make run
+
+.PHONY: asan
+asan:
+	make clean
+	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Debug \
+		-DCMAKE_C_FLAGS="-fsanitize=undefined,address \
+		-fno-omit-frame-pointer" \
+		-DHAVE_THREADS=
+	make build
+
+.PHONY: tsan
+tsan:
+	make clean
+	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Debug \
+		-DCMAKE_C_FLAGS="-fsanitize=undefined,thread \
+		-fno-omit-frame-pointer" \
+		-DHAVE_THREADS=
+	make build
