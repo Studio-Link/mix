@@ -2,6 +2,10 @@
 
 Remote Podcasting and live video/audio conversation with your audience
 
+## Hosted version
+
+You can use a hosted version at https://my.studio.link/mixrooms
+
 ## Installation from Source
 
 ### Requirements
