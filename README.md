@@ -45,7 +45,7 @@ groupadd slmix
 chown -R slmix:slmix /opt/slmix
 su - slmix
 make release
-cd webui && npm install && npm run build
+make webui
 ```
 
 ### Config - /opt/slmix/config
