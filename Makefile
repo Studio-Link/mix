@@ -33,6 +33,7 @@ webui:
 	cd webui && npm install && npm run build-only
 	rm -Rf webui/dist/avatars
 	rm -Rf webui/dist/download
+	mkdir -p webui/public/avatars
 	ln -s ../public/avatars webui/dist/
 	ln -s ../public/download webui/dist/
 
