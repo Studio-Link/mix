@@ -37,8 +37,8 @@ async function api_fetch(met: string, url: string, data: any) {
     if (!session_id && resp?.status! >= 400) {
         window.localStorage.removeItem('sessid')
         router.push({ name: 'Login' })
-        if (url !== '/client/connect')
-            location.reload()
+        // if (url !== '/client/connect')
+        //         location.reload()
     }
 
     return resp
