@@ -12,6 +12,15 @@ interface Session {
 
 let sess: Session = JSON.parse(window.localStorage.getItem('sess')!)
 
+function reloadPage() {
+    const reload = window.localStorage.getItem('reload')
+    if (reload)
+        return
+
+    window.localStorage.setItem('reload', 'true')
+    location.reload();
+}
+
 async function api_fetch(met: string, url: string, data: any) {
     // Default options are marked with *
     const resp = await fetch(config.host() + '/api/v1' + url, {
@@ -37,8 +46,8 @@ async function api_fetch(met: string, url: string, data: any) {
     if (!session_id && resp?.status! >= 400) {
         window.localStorage.removeItem('sessid')
         router.push({ name: 'Login' })
-        // if (url !== '/client/connect')
-        //         location.reload()
+        if (url !== '/client/connect')
+            reloadPage()
     }
 
     return resp
@@ -89,6 +98,7 @@ export default {
         sess.user_id = user.id
         sess.host = user.host
         window.localStorage.setItem('sess', JSON.stringify(sess))
+        window.localStorage.removeItem('reload')
 
         router.push({ name: 'Home' })
     },
