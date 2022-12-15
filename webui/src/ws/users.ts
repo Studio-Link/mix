@@ -63,7 +63,7 @@ export const Users: Users = {
         this.socket.onclose = (e) => {
             console.log('Websocket users closed', e.reason)
             if (e.code === 1011) {
-                api.logout()
+                api.logout(false)
             }
         }
 

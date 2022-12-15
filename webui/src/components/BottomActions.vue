@@ -188,6 +188,6 @@ function chat_clicked() {
 }
 
 function logout_clicked() {
-  api.logout()
+  api.logout(true)
 }
 </script>

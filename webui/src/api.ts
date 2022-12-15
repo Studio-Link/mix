@@ -37,6 +37,8 @@ async function api_fetch(met: string, url: string, data: any) {
     if (!session_id && resp?.status! >= 400) {
         window.localStorage.removeItem('sessid')
         router.push({ name: 'Login' })
+        if (url !== '/client/connect')
+            location.reload()
     }
 
     return resp
@@ -52,13 +54,18 @@ export default {
         return false
     },
 
-    async connect(token?: string) {
+    async connect(token?: string | null) {
+        if (!token)
+            token = window.localStorage.getItem('token')
+        else
+            window.localStorage.setItem('token', token)
+
         const resp = await api_fetch('POST', '/client/connect', token)
 
         const session_id = resp?.headers.get('Session-ID')
         if (!session_id) {
             window.localStorage.removeItem('sess')
-            // router.push({ name: 'LoginError' })
+            window.localStorage.removeItem('token')
             return
         }
 
@@ -106,10 +113,12 @@ export default {
         Users.websocket(config.ws_host(), sess.id)
     },
 
-    async logout() {
+    async logout(force: boolean) {
         Webrtc.logout()
         await api_fetch('DELETE', '/client', sess)
         window.localStorage.removeItem('sess')
+        if (force)
+            window.localStorage.removeItem('token')
         router.push({ name: 'Login' })
         Users.ws_close()
     },
