@@ -49,12 +49,18 @@ systemd: external
 	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_SD_SOCK=ON
 	make build
 
+.PHONY: unix
+unix: external
+	make clean
+	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_UNIX_SOCK=ON
+	make build
+
 external:
 	mkdir -p external
-	git clone https://github.com/baresip/re.git external/re && cd external/re && git checkout unix_sockets
+	git clone https://github.com/baresip/re.git external/re
 	git clone https://github.com/baresip/rem.git external/rem
-	git clone https://github.com/baresip/baresip.git external/baresip && \
-		cd external/baresip && \
+	git clone https://github.com/baresip/baresip.git external/baresip
+	cd external/baresip && \
 		patch -p1 < ../../patches/baresip_packet_dup_handler.patch && \
 		patch -p1 < ../../patches/baresip_stream_enable.patch && \
 		patch -p1 < ../../patches/baresip_video_remove_sendq_empty.patch
