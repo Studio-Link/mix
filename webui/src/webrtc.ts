@@ -72,7 +72,7 @@ function handle_answer(descr: any) {
             console.log('set remote description -- success')
             Webrtc.state.value = WebrtcState.Listening
         },
-        function (error) {
+        function(error) {
             console.warn('setRemoteDescription: %s', error.toString())
         }
     )
@@ -83,17 +83,17 @@ function pc_offer() {
         iceRestart: false,
     }
     pc.createOffer(offerOptions)
-        .then(function (desc) {
+        .then(function(desc) {
             console.log('got local description: %s', desc.type)
 
             pc.setLocalDescription(desc).then(
                 () => { },
-                function (error) {
+                function(error) {
                     console.log('setLocalDescription: %s', error.toString())
                 }
             )
         })
-        .catch(function (error) {
+        .catch(function(error) {
             console.log('Failed to create session description: %s', error.toString())
         })
 }
@@ -106,7 +106,44 @@ function pc_setup() {
         console.log('webrtc/icecandidate: ' + event.candidate?.type + ' IP: ' + event.candidate?.candidate)
     }
 
-    pc.ontrack = function (event) {
+    setInterval(() => {
+        pc.getStats(null).then((stats) => {
+            let statsOutput = "";
+            let oldJitterBufferDelay: any = new Object()
+            oldJitterBufferDelay['audio'] = 0
+            oldJitterBufferDelay['video'] = 0
+            let oldJitterBufferEmittedCount: any = new Object()
+            oldJitterBufferEmittedCount['audio'] = 0
+            oldJitterBufferEmittedCount['video'] = 0
+
+            stats.forEach((report) => {
+                if (report.type !== 'inbound-rtp')
+                    return
+
+                //     statsOutput += `<h2 class="text-xl mt-2">Report:
+                // ${report.type}</h2>\n<strong>ID:</strong> ${report.id}<br>\n` +
+                //         `<strong>Timestamp:</strong> ${report.timestamp}<br>\n`;
+                //
+                //     Object.keys(report).forEach((statName) => {
+                //         if (
+                //             statName !== "id"
+                //             && statName !== "timestamp" && statName !== "type") {
+                //             statsOutput += `<strong>${statName}:</strong>
+                //         ${report[statName]}<br>\n`;
+                //         }
+                //     });
+                let val = (report.jitterBufferDelay - oldJitterBufferDelay[report.kind]) / (report.jitterBufferEmittedCount - oldJitterBufferEmittedCount[report.kind])
+                let ms = Math.round(val * 1000)
+                oldJitterBufferDelay[report.kind] = report.jitterBufferDelay
+                oldJitterBufferEmittedCount[report.kind] = report.jitterBufferEmittedCount
+                statsOutput += `${report.kind}: ${ms}ms `
+            });
+
+            document.querySelector("#stats")!.innerHTML = statsOutput;
+        })
+    }, 1000)
+
+    pc.ontrack = function(event) {
         const track = event.track
         console.log('got remote track: kind=%s', track.kind)
 

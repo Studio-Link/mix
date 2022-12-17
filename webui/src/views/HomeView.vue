@@ -89,6 +89,7 @@
       <audio id="live" autoplay></audio>
       <Speakers />
       <Listeners />
+    <div id="stats"></div>
     </main>
     <Chat />
   </div>
