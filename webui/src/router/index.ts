@@ -5,9 +5,11 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
+      path: '/home/:token?',
+      alias: '/',
       name: 'Home',
       component: () => import('../views/HomeView.vue'),
+      props: true,
     },
     {
       path: '/login/:token?',
@@ -29,7 +31,7 @@ router.beforeEach(async (to) => {
     return { name: 'Login' }
   }
   if (auth && to.name === 'Login') {
-    return { name: 'Home' }
+    return `/home/${to.params['token']}`
   }
 })
 

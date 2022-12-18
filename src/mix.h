@@ -81,6 +81,8 @@ void pc_close(struct session *sess);
 int session_user_updated(struct session *sess);
 void session_video(struct session *sess, bool enable);
 int session_speaker(struct session *sess, bool enable);
+int session_auth(struct mix *mix, struct session *sess,
+		 const struct http_msg *msg);
 int session_new(struct mix *mix, struct session **sessp,
 		const struct http_msg *msg);
 int session_start(struct session *sess,

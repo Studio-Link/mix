@@ -4,11 +4,11 @@
       :class="{
         'bg-red-700 hover:bg-red-600': !Users.record.value,
         'bg-gray-600 hover:bg-gray-500': Users.record.value,
-        hidden: !Users.record.value && !api.is_host(),
+        hidden: !Users.record.value && !Users.host_status.value,
       }"
       class="inline-flex items-center rounded border border-transparent px-2.5 py-1.5 font-semibold text-white focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 uppercase"
       @click="api.record_switch()"
-      :disabled="!api.is_host()"
+      :disabled="!Users.host_status.value"
     >
       <span v-if="Users.record.value" class="font-mono">REC {{ Users.record_timer.value }}</span>
       <span v-if="!Users.record.value" class="font-mono">Record</span>
@@ -35,6 +35,11 @@ import Chat from '../components/Chat.vue'
 import { Users } from '../ws/users'
 import api from '../api'
 import { onMounted } from 'vue'
+
+const props = defineProps({ token: String })
+api.reauth(props?.token)
+
+console.log('home')
 
 onMounted(() => {
   api.websocket()

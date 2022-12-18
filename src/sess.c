@@ -188,15 +188,55 @@ int session_start(struct session *sess,
 }
 
 
+int session_auth(struct mix *mix, struct session *sess,
+		 const struct http_msg *msg)
+{
+	struct pl token = PL_INIT;
+
+	if (!msg || !mix || !sess || !sess->user)
+		return EINVAL;
+
+	re_regex((char *)mbuf_buf(msg->mb), mbuf_get_left(msg->mb),
+		 "[a-zA-Z0-9]+", &token);
+
+	if (!token.l)
+		return 0;
+
+	if (str_isset(mix->token_host) &&
+	    0 == pl_strcmp(&token, mix->token_host)) {
+
+		info("sess: host token\n");
+		sess->user->speaker = true;
+		sess->user->host    = true;
+	}
+	else if (str_isset(mix->token_guests) &&
+		 0 == pl_strcmp(&token, mix->token_guests)) {
+
+		info("sess: guest token\n");
+		sess->user->speaker = true;
+	}
+	else if (str_isset(mix->token_listeners) &&
+		 0 == pl_strcmp(&token, mix->token_listeners)) {
+
+		info("sess: listener token\n");
+		sess->user->speaker = false;
+	}
+	else {
+		return EAUTH;
+	}
+
+	session_user_updated(sess);
+
+	return 0;
+}
+
+
 int session_new(struct mix *mix, struct session **sessp,
 		const struct http_msg *msg)
 {
 	struct session *sess;
 	struct user *user;
-	struct pl token = PL_INIT;
-
-	re_regex((char *)mbuf_buf(msg->mb), mbuf_get_left(msg->mb),
-		 "[a-zA-Z0-9]+", &token);
+	int err;
 
 	info("sess: create\n");
 	sess = mem_zalloc(sizeof(*sess), destructor);
@@ -209,38 +249,19 @@ int session_new(struct mix *mix, struct session **sessp,
 		return ENOMEM;
 	}
 
-	if (token.l > 0) {
-		if (str_isset(mix->token_host) &&
-		    0 == pl_strcmp(&token, mix->token_host)) {
-
-			info("sess: host token\n");
-			user->speaker = true;
-			user->host    = true;
-		}
-		else if (str_isset(mix->token_guests) &&
-			 0 == pl_strcmp(&token, mix->token_guests)) {
-
-			info("sess: guest token\n");
-			user->speaker = true;
-		}
-		else if (str_isset(mix->token_listeners) &&
-			 0 == pl_strcmp(&token, mix->token_listeners)) {
-
-			info("sess: listener token\n");
-			user->speaker = false;
-		}
-		else {
-			return EAUTH;
-		}
-	}
-
 	/* generate a unique session and user id */
 	rand_str(sess->id, sizeof(sess->id));
 	rand_str(user->id, sizeof(user->id));
+	list_append(&mix->sessl, &sess->le, sess);
+
 	sess->user = user;
 	sess->mix  = mix;
 
-	list_append(&mix->sessl, &sess->le, sess);
+	err = session_auth(mix, sess, msg);
+	if (err) {
+		mem_deref(sess);
+		return err;
+	}
 
 	*sessp = sess;
 

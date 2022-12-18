@@ -178,6 +178,22 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/reauth") &&
+	    0 == pl_strcasecmp(&msg->met, "POST")) {
+
+		err = session_auth(mix, sess, msg);
+		if (err == EAUTH) {
+			http_sreply(conn, 401, "Unauthorized", "text/html", "",
+				    0, NULL);
+			return;
+		}
+		if (err)
+			goto err;
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/name") &&
 	    0 == pl_strcasecmp(&msg->met, "POST")) {
 
@@ -444,7 +460,7 @@ int slmix_http_listen(struct http_sock **sock, struct mix *mix)
 #ifdef SLMIX_UNIX_SOCK
 	struct sa srv;
 	re_sock_t fd;
-	err = sa_set_str(&srv, "unix:/run/slmix.sock", 0);
+	err = sa_set_str(&srv, "unix:/tmp/slmix.sock", 0);
 	if (err)
 		return err;
 
