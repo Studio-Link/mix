@@ -3,7 +3,7 @@
 
 enum {
 	SESSID_SZ  = 32,
-	USERID_SZ  = 32,
+	USERID_SZ  = 16,
 	NAME_SZ	   = 32,
 	TOKEN_SZ   = 32,
 	CHAT_MSGSZ = 1024
@@ -14,6 +14,7 @@ enum user_event { USER_ADDED, USER_UPDATED, USER_DELETED, CHAT_ADDED };
 struct mix {
 	struct list sessl;
 	struct list chatl;
+	uint16_t next_speaker_id;
 	const struct mnat *mnat;
 	const struct menc *menc;
 	struct http_sock *httpsock;
@@ -28,6 +29,7 @@ struct mix {
 struct user {
 	char id[USERID_SZ];
 	char name[NAME_SZ];
+	uint16_t speaker_id;
 	bool speaker;
 	bool host;
 	bool video;
@@ -51,6 +53,7 @@ struct session {
 	bool connected; /* Websocket connected */
 	struct media_track *maudio;
 	struct media_track *mvideo;
+	struct mix *mix;
 };
 
 /******************************************************************************
