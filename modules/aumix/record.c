@@ -14,13 +14,13 @@
 #include <baresip.h>
 #include "aumix.h"
 
+
 static struct {
 	struct list tracks;
 	bool run;
 	mtx_t *lock;
 	thrd_t thread;
 	struct aubuf *ab;
-	char filename[512];
 } record = {.tracks = LIST_INIT, .run = false};
 
 struct record_entry {
@@ -93,6 +93,7 @@ static int record_track(struct auframe *af)
 	struct le *le;
 	struct track *track = NULL;
 	uint64_t offset;
+	int err;
 
 	LIST_FOREACH(&record.tracks, le)
 	{
@@ -111,10 +112,14 @@ static int record_track(struct auframe *af)
 		track->last = record_msecs;
 
 		/* TODO: add user->name */
-		re_snprintf(record.filename, sizeof(record.filename),
+		re_snprintf(track->file, sizeof(track->file),
 			    "%s/audio_id%u.flac", record_folder, track->id);
 
-		flac_init(&track->flac, af, record.filename);
+		err = flac_init(&track->flac, af, track->file);
+		if (err) {
+			mem_deref(track);
+			return err;
+		}
 
 		list_append(&record.tracks, &track->le, track);
 	}
@@ -131,6 +136,7 @@ static int record_track(struct auframe *af)
 static int record_thread(void *arg)
 {
 	struct auframe af;
+	int err;
 	(void)arg;
 
 	int16_t *sampv;
@@ -149,10 +155,14 @@ static int record_thread(void *arg)
 		sys_msleep(4);
 		while (aubuf_cur_size(record.ab) > sampc) {
 			aubuf_read_auframe(record.ab, &af);
-			record_track(&af);
+			err = record_track(&af);
+			if (err)
+				goto out;
 		}
 	}
 
+out:
+	record_msecs = 0;
 	mem_deref(sampv);
 
 	return 0;
@@ -203,51 +213,71 @@ void aumix_record(struct auframe *af)
 }
 
 
+struct ffmpeg_work {
+	char *folder;
+	struct mbuf *mb;
+	int cnt;
+};
+
+
 static int ffmpeg_final(void *arg)
 {
-	char *folder = arg;
-	char *cmd;
+	struct ffmpeg_work *work = arg;
+	char *cmd = NULL;
 	int err;
 
-	if (!folder)
+	if (!work || !work->folder)
 		return EINVAL;
 
-	/* Audio/Video MP4 conversion */
+	/* Audio FLAC conversion */
 	err = re_sdprintf(
 		&cmd,
-		"cd %s && ffmpeg -f s16le -ar %d -ac %d -i audio.pcm -i "
-		"video.h264 -c:v copy -c:a aac record.mp4",
-		folder, SRATE, CH);
+		"cd %s && ffmpeg %b -filter_complex amix=inputs=%d audio.flac",
+		work->folder, mbuf_buf(work->mb), mbuf_get_left(work->mb),
+		work->cnt);
 	if (err)
 		goto out;
 
-	system(cmd);
+	warning("%s\n", cmd);
+	/* system(cmd); */
 	mem_deref(cmd);
 
-	/* Audio FLAC conversion */
+	/* Audio/Video MP4 conversion */
 	err = re_sdprintf(&cmd,
-			  "cd %s && ffmpeg -f s16le -ar %d -ac %d -i "
-			  "audio.pcm audio.flac",
-			  folder, SRATE, CH);
+			  "cd %s && ffmpeg -i audio.flac -i video.h264 "
+			  "-c:v copy -c:a aac record.mp4",
+			  work->folder);
 	if (err)
 		goto out;
 
-	system(cmd);
+	warning("%s\n", cmd);
+	/* system(cmd); */
 	mem_deref(cmd);
 
 out:
-	mem_deref(folder);
+	mem_deref(work);
 
 	return err;
+}
+
+
+static void ffmpeg_destruct(void *arg)
+{
+	struct ffmpeg_work *work = arg;
+
+	mem_deref(work->folder);
+	mem_deref(work->mb);
 }
 
 
 void vidmix_record_close(void);
 void aumix_record_close(void)
 {
+	struct le *le;
+	struct ffmpeg_work *work;
+
 	if (!record.run)
 		return;
-	char *folder = NULL;
 
 	vidmix_record_close();
 
@@ -255,15 +285,32 @@ void aumix_record_close(void)
 	info("aumix: record close\n");
 	thrd_join(record.thread, NULL);
 
-	record_msecs = 0;
-	list_flush(&record.tracks);
-
 	mem_deref(record.ab);
 	mem_deref(record.lock);
 
-	chmod(record.filename, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	work = mem_zalloc(sizeof(struct ffmpeg_work), ffmpeg_destruct);
+	if (!work)
+		goto out;
 
-	str_dup(&folder, record_folder);
+	work->mb = mbuf_alloc(512);
+	if (!work->mb) {
+		mem_deref(work);
+		goto out;
+	}
 
-	/* re_thread_async(ffmpeg_final, NULL, folder); */
+	LIST_FOREACH(&record.tracks, le)
+	{
+		struct track *track = le->data;
+
+		mbuf_printf(work->mb, "-i %s ", track->file);
+		work->cnt++;
+	}
+
+	mbuf_set_pos(work->mb, 0);
+
+	str_dup(&work->folder, record_folder);
+	re_thread_async(ffmpeg_final, NULL, work);
+
+out:
+	list_flush(&record.tracks);
 }

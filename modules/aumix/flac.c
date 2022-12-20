@@ -1,5 +1,6 @@
 #include <FLAC/metadata.h>
 #include <FLAC/stream_encoder.h>
+#include <string.h>
 
 #include <re.h>
 #include <rem.h>
@@ -28,12 +29,14 @@ static void flac_destruct(void *arg)
 int flac_init(struct flac **flacp, struct auframe *af, char *file)
 {
 
+	struct flac *flac;
 	FLAC__bool ret;
 	FLAC__StreamEncoderInitStatus init;
 	FLAC__StreamMetadata_VorbisComment_Entry entry;
 
 
-	struct flac *flac;
+	if (!flacp || !af || !file)
+		return EINVAL;
 
 	flac = mem_zalloc(sizeof(struct flac), flac_destruct);
 	if (!flac)
@@ -57,7 +60,6 @@ int flac_init(struct flac **flacp, struct auframe *af, char *file)
 		warning("record: FLAC__stream_encoder_set\n");
 		return EINVAL;
 	}
-
 
 	/* METADATA */
 	flac->m[0] =
@@ -104,21 +106,47 @@ int flac_record(struct flac *flac, struct auframe *af, uint64_t offset)
 	FLAC__StreamEncoderState state;
 	FLAC__bool ret;
 
+	if (!flac || !af || !af->ch)
+		return EINVAL;
+
 	if (offset > 24 * 3600 * 1000) {
 		warning("flac_record: ignoring high >24h offset (%llu)\n",
 			offset);
 		offset = 0;
 	}
-	/* TODO: process offset */
 
-	int16_t *sampv = (int16_t *)af->sampv;
-	for (size_t i = 0; i < af->sampc; i++) {
-		flac->pcm[i] = sampv[i];
+	if (offset < 2 * PTIME) /* FIXME */
+		offset = 0;
+
+	if (offset) {
+		warning("flac_record: offset %llu\n", offset);
+		memset(flac->pcm, 0, af->sampc);
+		uint64_t offsampc = af->srate * af->ch * offset / 1000;
+
+		while (offsampc) {
+			ret = FLAC__stream_encoder_process_interleaved(
+				flac->enc, flac->pcm,
+				(uint32_t)af->sampc / af->ch);
+			if (!ret)
+				goto err;
+
+			if (offsampc >= af->sampc)
+				offsampc -= af->sampc;
+			else {
+				ret = FLAC__stream_encoder_process_interleaved(
+					flac->enc, flac->pcm,
+					(uint32_t)offsampc / af->ch);
+				if (!ret)
+					goto err;
+				offsampc = 0;
+			}
+		}
 	}
 
-	if (!af->ch) {
-		warning("invalid channels\n");
-		return EINVAL;
+	int16_t *sampv = (int16_t *)af->sampv;
+
+	for (size_t i = 0; i < af->sampc; i++) {
+		flac->pcm[i] = sampv[i];
 	}
 
 	ret = FLAC__stream_encoder_process_interleaved(
@@ -126,6 +154,8 @@ int flac_record(struct flac *flac, struct auframe *af, uint64_t offset)
 	if (ret)
 		return 0;
 
+
+err:
 	state = FLAC__stream_encoder_get_state(flac->enc);
 	warning("record: FLAC ENCODE ERROR: %s\n",
 		FLAC__StreamEncoderStateString[state]);
