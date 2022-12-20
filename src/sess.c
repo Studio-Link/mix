@@ -86,6 +86,9 @@ static void peerconnection_estab_handler(struct media_track *media, void *arg)
 	struct session *sess = arg;
 	int err		     = 0;
 
+	if (!sess->user)
+		return;
+
 	info("mix: stream established: '%s'\n",
 	     media_kind_name(mediatrack_kind(media)));
 
@@ -124,12 +127,7 @@ static void peerconnection_estab_handler(struct media_track *media, void *arg)
 		return;
 	}
 
-	if (sess->user->speaker) {
-		stream_enable(media_get_stream(media), true);
-		aumix_mute(sess->user->id, false);
-	}
-
-	session_user_updated(sess);
+	session_speaker(sess, sess->user->speaker);
 }
 
 
@@ -388,7 +386,7 @@ int session_speaker(struct session *sess, bool enable)
 		sess->user->speaker_id = ++sess->mix->next_speaker_id;
 
 	sess->user->speaker = enable;
-	aumix_mute(sess->user->id, !enable);
+	aumix_mute(sess->user->id, !enable, sess->user->speaker_id);
 	stream_enable(media_get_stream(sess->mvideo), enable);
 	sess->user->hand = false;
 
