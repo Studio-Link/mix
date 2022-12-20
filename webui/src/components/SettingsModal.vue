@@ -30,7 +30,7 @@
               <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div class="sm:flex sm:items-start">
                   <div
-                    class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10"
+                    class="mx-auto hidden sm:flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10"
                   >
                     <Cog6ToothIcon class="h-6 w-6 text-gray-800" aria-hidden="true" />
                   </div>
@@ -39,6 +39,7 @@
                       Audio/Video Settings</DialogTitle
                     >
                     <video
+                      v-show="video_select !== 'Disabled'"
                       ref="video_echo"
                       playsinline
                       autoplay
@@ -49,6 +50,37 @@
                     ></video>
 
                     <div>
+                      <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-medium text-gray-900">Choose a video option</h2>
+                      </div>
+
+                      <RadioGroup v-model="video_select" class="mt-2">
+                        <RadioGroupLabel class="sr-only"> Choose a video option </RadioGroupLabel>
+                        <div class="grid grid-cols-3 gap-3">
+                          <RadioGroupOption
+                            as="template"
+                            v-for="option in videoOptions"
+                            :key="option"
+                            :value="option"
+                            v-slot="{ active, checked }"
+                          >
+                            <div
+                              :class="[
+                                active ? 'ring-2 ring-offset-2 ring-indigo-500' : '',
+                                checked
+                                  ? 'bg-indigo-600 border-transparent text-white hover:bg-indigo-700'
+                                  : 'bg-white border-gray-200 text-gray-900 hover:bg-gray-50',
+                                'cursor-pointer border rounded-md py-2 px-3 flex items-center justify-center text-sm font-medium uppercase sm:flex-1',
+                              ]"
+                            >
+                              <RadioGroupLabel as="span">{{ option }} </RadioGroupLabel>
+                            </div>
+                          </RadioGroupOption>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    <div v-if="video_select === 'Camera'">
                       <label for="camera" class="block text-sm font-medium text-gray-700">Cam</label>
                       <select
                         id="cam"
@@ -56,8 +88,6 @@
                         name="cam"
                         class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                       >
-                        <option value="disabled">Disabled</option>
-                        <option value="screen">Screen</option>
                         <template v-for="item in Webrtc.deviceInfos.value">
                           <option v-if="item.kind === 'videoinput'" :key="item.deviceId" :value="item.deviceId">
                             {{ item.label }}
@@ -80,14 +110,19 @@
                         </template>
                       </select>
                     </div>
-                    <div class="hidden">
+                    <div v-if="audio_output_id">
                       <label for="headset" class="block text-sm font-medium text-gray-700">Headset</label>
                       <select
+                        v-model="audio_output_id"
                         id="headset"
                         name="headset"
                         class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                       >
-                        <option>Default</option>
+                        <template v-for="item in Webrtc.deviceInfos.value">
+                          <option v-if="item.kind === 'audiooutput'" :key="item.deviceId" :value="item.deviceId">
+                            {{ item.label }}
+                          </option>
+                        </template>
                       </select>
                     </div>
                     <div class="relative flex items-start">
@@ -129,21 +164,29 @@
 
 <script setup lang="ts">
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
+import { RadioGroup, RadioGroupLabel, RadioGroupOption } from '@headlessui/vue'
 import { Cog6ToothIcon } from '@heroicons/vue/24/outline'
 import { Users } from '../ws/users'
 import { Webrtc, WebrtcState } from '../webrtc'
-import { ref, watch, onUpdated } from 'vue'
+import { ref, watch } from 'vue'
 
 const open = Users.settings_active
+const videoOptions = ['Disabled', 'Camera', 'Screen']
+const video_select = Webrtc.video_select
 const audio_input_id = Webrtc.audio_input_id
+const audio_output_id = Webrtc.audio_output_id
 const video_input_id = Webrtc.video_input_id
 const echo = Webrtc.echo
 const video_echo = ref<HTMLVideoElement>()
 
+watch(video_select, async () => {
+  if (video_echo.value) video_echo.value.srcObject = await Webrtc.change_video()
+})
+
 watch(audio_input_id, async (newValue, oldValue) => {
   if (oldValue === undefined) return //prevent first auto change
   console.log('new audio device: ', newValue)
-  if (video_input_id.value !== 'disabled' && video_echo.value) {
+  if (video_select.value !== 'Disabled' && video_echo.value) {
     video_echo.value.srcObject = await Webrtc.change_audio()
   }
 })
@@ -158,15 +201,19 @@ watch(echo, async () => {
   if (video_echo.value) video_echo.value.srcObject = await Webrtc.change_echo()
 })
 
-onUpdated(async () => {
-  if (open.value) {
-    if (Webrtc.state.value < WebrtcState.ReadySpeaking) {
-      const avstream = await Webrtc.init_avdevices()
-      if (video_echo.value) video_echo.value.srcObject = avstream
-    } else {
-      const avstream = await Webrtc.change_video()
-      if (video_echo.value) video_echo.value.srcObject = avstream
-    }
+watch(audio_output_id, async () => {
+  await Webrtc.change_audio_out()
+})
+
+watch(open, async () => {
+  if (!open.value) return
+
+  if (Webrtc.state.value < WebrtcState.ReadySpeaking) {
+    const avstream = await Webrtc.init_avdevices()
+    if (video_echo.value) video_echo.value.srcObject = avstream
+  } else {
+    const avstream = await Webrtc.change_video()
+    if (video_echo.value) video_echo.value.srcObject = avstream
   }
 })
 
