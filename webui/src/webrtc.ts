@@ -5,7 +5,8 @@ import adapter from 'webrtc-adapter'
 
 // --- Private Webrtc API ---
 let pc: RTCPeerConnection
-let avdummy: MediaStream
+let audio: RTCRtpTransceiver | null = null
+let video: RTCRtpTransceiver | null = null
 let avstream: MediaStream | null = null
 let screenstream: MediaStream | null = null
 
@@ -38,30 +39,6 @@ const configuration: RTCConfiguration = {
     ],
 }
 
-/** Start AVdummy **/
-const silence = () => {
-    const ctx = new AudioContext()
-    const oscillator = ctx.createOscillator()
-    const dst = ctx.createMediaStreamDestination()
-    oscillator.connect(dst)
-    oscillator.start()
-    return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false })
-}
-
-const black = ({ width = 640, height = 360 } = {}) => {
-    const canvas = Object.assign(document.createElement('canvas'), { width, height })
-    //Chrome workaround: needs canvas frame change to start webrtc rtp
-    canvas.getContext('2d')?.fillRect(0, 0, width, height)
-    setTimeout(() => {
-        canvas.getContext('2d')?.fillRect(0, 0, width, height)
-    }, 2000)
-    const stream = canvas.captureStream()
-    return Object.assign(stream.getVideoTracks()[0], { enabled: false })
-}
-
-const AVSilence = (...args: any) => new MediaStream([black(...args), silence()])
-/** End AVdummy **/
-
 function handle_answer(descr: any) {
     if (!descr) return
 
@@ -72,7 +49,7 @@ function handle_answer(descr: any) {
             console.log('set remote description -- success')
             Webrtc.state.value = WebrtcState.Listening
         },
-        function (error) {
+        function(error) {
             console.warn('setRemoteDescription: %s', error.toString())
         }
     )
@@ -83,17 +60,17 @@ function pc_offer() {
         iceRestart: false,
     }
     pc.createOffer(offerOptions)
-        .then(function (desc) {
+        .then(function(desc) {
             console.log('got local description: %s', desc.type)
 
             pc.setLocalDescription(desc).then(
                 () => { },
-                function (error) {
+                function(error) {
                     console.log('setLocalDescription: %s', error.toString())
                 }
             )
         })
-        .catch(function (error) {
+        .catch(function(error) {
             console.log('Failed to create session description: %s', error.toString())
         })
 }
@@ -106,7 +83,7 @@ function pc_setup() {
         console.log('webrtc/icecandidate: ' + event.candidate?.type + ' IP: ' + event.candidate?.candidate)
     }
 
-    pc.ontrack = function (event) {
+    pc.ontrack = function(event) {
         const track = event.track
         console.log('got remote track: kind=%s', track.kind)
 
@@ -163,9 +140,8 @@ function pc_setup() {
         console.log('ICE Candidate Error: ' + event.errorCode + ' ' + event.errorText + ' ' + event.url)
     }
 
-    /* Add dummy tracks */
-    avdummy = AVSilence()
-    avdummy.getTracks().forEach((track) => pc.addTrack(track, avdummy))
+    audio = pc.addTransceiver('audio');
+    video = pc.addTransceiver('video');
 
     pc_offer()
 }
@@ -181,9 +157,12 @@ async function pc_media() {
         Webrtc.errorText.value = 'Microphone/Camera permission denied!'
         return
     }
+
+
 }
 
 async function pc_screen() {
+    screenstream?.getVideoTracks()[0].stop()
     const gdmOptions = {
         video: true,
         audio: false,
@@ -195,25 +174,49 @@ async function pc_screen() {
     }
 }
 
-async function pc_replace_tracks(audio_track: MediaStreamTrack, video_track: MediaStreamTrack | null) {
-    const audio = pc.getSenders().find((s) => s.track?.kind === 'audio')
-    const video = pc.getSenders().find((s) => s.track?.kind === 'video')
-
+async function pc_replace_tracks(audio_track: MediaStreamTrack | null, video_track: MediaStreamTrack | null) {
     if (!audio || !video) {
-        console.log('pc_replace_tracks: no audio or video tracks found')
+        console.log('pc_replace_tracks: no active audio or video tracks found')
         return
     }
 
-    if (video_track) {
-        await Promise.all([audio.replaceTrack(audio_track), video.replaceTrack(video_track)])
+    if (audio_track && video_track) {
+        await Promise.all([audio.sender.replaceTrack(audio_track), video.sender.replaceTrack(video_track)])
         console.log('pc_replace_tracks: audio and video')
 
         return
     }
 
-    await Promise.all([audio.replaceTrack(audio_track)])
-    console.log('pc_replace_tracks: audio')
+    if (audio_track) {
+        await Promise.all([audio.sender.replaceTrack(audio_track)])
+        console.log('pc_replace_tracks: audio')
+        return
+    }
+
+    if (video_track) {
+        await Promise.all([video.sender.replaceTrack(video_track)])
+        console.log('pc_replace_tracks: video')
+        return
+    }
 }
+
+async function audio_output(device: string | undefined) {
+    let audio_out: any = document.querySelector("audio#live");
+
+    if (
+        typeof audio_out === "undefined" ||
+        typeof audio_out?.setSinkId === "undefined"
+    ) {
+        console.log(
+            "webrtc: audio element not found or setSinkId not supported"
+        );
+        return;
+    }
+
+    await audio_out?.setSinkId(device);
+    console.log("webrtc: changed output");
+}
+
 
 export enum WebrtcState {
     Error = 0,
@@ -232,6 +235,7 @@ export const Webrtc = {
     audio_input_id: ref<string | undefined>(undefined),
     audio_output_id: ref<string | undefined>(undefined),
     video_input_id: ref<string | undefined>(undefined),
+    video_select: ref<string>('Disabled'),
     audio_muted: ref(true),
     echo: ref(false),
     video_muted: ref(true),
@@ -250,10 +254,13 @@ export const Webrtc = {
 
         this.deviceInfos.value.forEach((device) => {
             console.log(`${device.kind}: ${device.label} id = ${device.deviceId}`)
+            if (device.kind === 'audiooutput')
+                this.audio_output_id.value = 'default'
         })
 
         this.video_input_id.value = avstream?.getVideoTracks()[0].getSettings().deviceId
         this.audio_input_id.value = avstream?.getAudioTracks()[0].getSettings().deviceId
+
 
         this.state.value = WebrtcState.ReadySpeaking
 
@@ -268,12 +275,16 @@ export const Webrtc = {
         return avstream
     },
 
+    async change_audio_out() {
+        await audio_output(this.audio_output_id.value)
+    },
+
     async change_video(): Promise<MediaStream | null> {
-        if (this.video_input_id.value === 'disabled') {
+        if (this.video_select.value === 'Disabled') {
             this.video_mute(true)
             return null
         }
-        if (this.video_input_id.value === 'screen') {
+        if (this.video_select.value === 'Screen') {
             await pc_screen()
             this.video_mute(false)
             return screenstream
@@ -295,10 +306,9 @@ export const Webrtc = {
     async join() {
         if (avstream === null) return
 
-        if (this.video_input_id.value === 'disabled') {
+        if (this.video_select.value === 'Disabled') {
             this.video_mute(true)
-            await pc_replace_tracks(avstream.getAudioTracks()[0], avdummy.getVideoTracks()[0])
-        } else if (this.video_input_id.value === 'screen' && screenstream !== null) {
+        } else if (this.video_select.value === 'Screen' && screenstream !== null) {
             this.video_mute(false)
             await pc_replace_tracks(avstream.getAudioTracks()[0], screenstream.getVideoTracks()[0])
         } else {
