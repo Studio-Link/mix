@@ -95,8 +95,21 @@
                         </template>
                       </select>
                     </div>
+                    <div v-if="video_select === 'Camera'">
+                      <label for="resolution" class="block text-sm font-medium text-gray-700">Video resolution</label>
+                      <select
+                        id="resolution"
+                        v-model="video_resolution"
+                        name="resolution"
+                        class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                      >
+                        <option value="720p">High Quality (720p HD)</option>
+                        <option value="360p">Normal Quality (360p SD)</option>
+                        <option value="180p">Low Quality (180p LD)</option>
+                      </select>
+                    </div>
                     <div>
-                      <label for="microphone" class="block text-sm font-medium text-gray-700">Microphone</label>
+                      <label for="micro" class="block text-sm font-medium text-gray-700">Microphone</label>
                       <select
                         id="micro"
                         v-model="audio_input_id"
@@ -173,6 +186,7 @@ import { ref, watch } from 'vue'
 const open = Users.settings_active
 const videoOptions = ['Disabled', 'Camera', 'Screen']
 const video_select = Webrtc.video_select
+const video_resolution = Webrtc.video_resolution
 const audio_input_id = Webrtc.audio_input_id
 const audio_output_id = Webrtc.audio_output_id
 const video_input_id = Webrtc.video_input_id
@@ -194,6 +208,12 @@ watch(audio_input_id, async (newValue, oldValue) => {
 watch(video_input_id, async (newValue, oldValue) => {
   if (oldValue === undefined) return //prevent first auto change
   console.log('new video device: ', newValue)
+  if (video_echo.value) video_echo.value.srcObject = await Webrtc.change_video()
+})
+
+watch(video_resolution, async (newValue, oldValue) => {
+  if (oldValue === undefined) return //prevent first auto change
+  console.log('new video resolution: ', newValue)
   if (video_echo.value) video_echo.value.srcObject = await Webrtc.change_video()
 })
 

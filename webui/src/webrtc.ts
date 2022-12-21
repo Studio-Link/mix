@@ -20,8 +20,8 @@ const constraints: any = {
         deviceId: undefined,
     },
     video: {
-        width: 1280,
-        height: 720,
+        width: 640,
+        height: 360,
         deviceId: undefined,
     },
 }
@@ -236,6 +236,7 @@ export const Webrtc = {
     audio_output_id: ref<string | undefined>(undefined),
     video_input_id: ref<string | undefined>(undefined),
     video_select: ref<string>('Disabled'),
+    video_resolution: ref<string>('360p'),
     audio_muted: ref(true),
     echo: ref(false),
     video_muted: ref(true),
@@ -289,6 +290,22 @@ export const Webrtc = {
             this.video_mute(false)
             return screenstream
         }
+
+        if (this.video_resolution.value === '720p') {
+            constraints.video.width = 1280
+            constraints.video.height = 720
+        }
+
+        if (this.video_resolution.value === '360p') {
+            constraints.video.width = 640
+            constraints.video.height = 360
+        }
+
+        if (this.video_resolution.value === '180p') {
+            constraints.video.width = 320
+            constraints.video.height = 180
+        }
+
         constraints.video.deviceId = { exact: this.video_input_id.value }
         await pc_media()
         this.video_mute(false)
