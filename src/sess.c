@@ -329,6 +329,8 @@ void session_close(struct session *sess, int err)
 		info("mix: session '%s' closed\n", sess->id);
 
 	sess->pc = mem_deref(sess->pc);
+	sess->maudio = NULL;
+	sess->mvideo = NULL;
 
 	if (err) {
 		http_ereply(sess->conn_pending, 500, "Session closed");
