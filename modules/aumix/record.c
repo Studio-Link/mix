@@ -97,10 +97,12 @@ static int record_track(struct auframe *af)
 
 	LIST_FOREACH(&record.tracks, le)
 	{
-		track = le->data;
+		struct track *t = le->data;
 
-		if (track->id == af->id)
+		if (t->id == af->id) {
+			track = t;
 			break;
+		}
 	}
 
 	if (!track) {
