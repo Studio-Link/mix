@@ -379,7 +379,7 @@ void session_video(struct session *sess, bool enable)
 
 int session_speaker(struct session *sess, bool enable)
 {
-	if (!sess || !sess->user)
+	if (!sess || !sess->mix || !sess->user)
 		return EINVAL;
 
 	if (enable && !sess->user->speaker_id)
