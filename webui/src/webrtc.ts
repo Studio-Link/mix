@@ -5,8 +5,7 @@ import adapter from 'webrtc-adapter'
 
 // --- Private Webrtc API ---
 let pc: RTCPeerConnection
-let audio: RTCRtpTransceiver | null = null
-let video: RTCRtpTransceiver | null = null
+let avdummy: MediaStream
 let avstream: MediaStream | null = null
 let screenstream: MediaStream | null = null
 
@@ -38,6 +37,31 @@ const configuration: RTCConfiguration = {
         },
     ],
 }
+
+
+/** Start AVdummy **/
+const silence = () => {
+    const ctx = new AudioContext()
+    const oscillator = ctx.createOscillator()
+    const dst = ctx.createMediaStreamDestination()
+    oscillator.connect(dst)
+    oscillator.start()
+    return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false })
+}
+
+const black = ({ width = 640, height = 360 } = {}) => {
+    const canvas = Object.assign(document.createElement('canvas'), { width, height })
+    //Chrome workaround: needs canvas frame change to start webrtc rtp
+    canvas.getContext('2d')?.fillRect(0, 0, width, height)
+    setTimeout(() => {
+        canvas.getContext('2d')?.fillRect(0, 0, width, height)
+    }, 2000)
+    const stream = canvas.captureStream()
+    return Object.assign(stream.getVideoTracks()[0], { enabled: false })
+}
+
+const AVSilence = (...args: any) => new MediaStream([black(...args), silence()])
+/** End AVdummy **/
 
 function handle_answer(descr: any) {
     if (!descr) return
@@ -140,8 +164,8 @@ function pc_setup() {
         console.log('ICE Candidate Error: ' + event.errorCode + ' ' + event.errorText + ' ' + event.url)
     }
 
-    audio = pc.addTransceiver('audio');
-    video = pc.addTransceiver('video');
+    avdummy = AVSilence()
+    avdummy.getTracks().forEach((track) => pc.addTrack(track, avdummy))
 
     pc_offer()
 }
@@ -175,26 +199,30 @@ async function pc_screen() {
 }
 
 async function pc_replace_tracks(audio_track: MediaStreamTrack | null, video_track: MediaStreamTrack | null) {
+
+    const audio = pc.getSenders().find((s) => s.track?.kind === 'audio')
+    const video = pc.getSenders().find((s) => s.track?.kind === 'video')
+
     if (!audio || !video) {
         console.log('pc_replace_tracks: no active audio or video tracks found')
         return
     }
 
     if (audio_track && video_track) {
-        await Promise.all([audio.sender.replaceTrack(audio_track), video.sender.replaceTrack(video_track)])
+        await Promise.all([audio.replaceTrack(audio_track), video.replaceTrack(video_track)])
         console.log('pc_replace_tracks: audio and video')
 
         return
     }
 
     if (audio_track) {
-        await Promise.all([audio.sender.replaceTrack(audio_track)])
+        await Promise.all([audio.replaceTrack(audio_track)])
         console.log('pc_replace_tracks: audio')
         return
     }
 
     if (video_track) {
-        await Promise.all([video.sender.replaceTrack(video_track)])
+        await Promise.all([video.replaceTrack(video_track)])
         console.log('pc_replace_tracks: video')
         return
     }
