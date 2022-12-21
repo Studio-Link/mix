@@ -233,8 +233,9 @@ static int ffmpeg_final(void *arg)
 
 	/* Audio FLAC conversion */
 	err = re_sdprintf(
-		&cmd, "ffmpeg %b -filter_complex amix=inputs=%d audio.flac",
-		mbuf_buf(work->mb), mbuf_get_left(work->mb), work->cnt);
+		&cmd, "ffmpeg %b -filter_complex amix=inputs=%d %s/audio.flac",
+		mbuf_buf(work->mb), mbuf_get_left(work->mb), work->cnt,
+		work->folder);
 	if (err)
 		goto out;
 
