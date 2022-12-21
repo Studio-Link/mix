@@ -240,8 +240,7 @@ static int ffmpeg_final(void *arg)
 	if (err)
 		goto out;
 
-	warning("%s\n", cmd);
-	/* system(cmd); */
+	system(cmd);
 	mem_deref(cmd);
 
 	/* Audio/Video MP4 conversion */
@@ -252,8 +251,7 @@ static int ffmpeg_final(void *arg)
 	if (err)
 		goto out;
 
-	warning("%s\n", cmd);
-	/* system(cmd); */
+	system(cmd);
 	mem_deref(cmd);
 
 out:
