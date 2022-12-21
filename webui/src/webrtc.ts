@@ -325,6 +325,7 @@ export const Webrtc = {
 
         if (this.video_select.value === 'Disabled') {
             this.video_mute(true)
+            await pc_replace_tracks(avstream.getAudioTracks()[0], null)
         } else if (this.video_select.value === 'Screen' && screenstream !== null) {
             this.video_mute(false)
             await pc_replace_tracks(avstream.getAudioTracks()[0], screenstream.getVideoTracks()[0])
