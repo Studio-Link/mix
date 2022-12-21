@@ -225,7 +225,7 @@ struct ffmpeg_work {
 static int ffmpeg_final(void *arg)
 {
 	struct ffmpeg_work *work = arg;
-	char *cmd = NULL;
+	char *cmd		 = NULL;
 	int err;
 
 	if (!work || !work->folder)
@@ -233,10 +233,8 @@ static int ffmpeg_final(void *arg)
 
 	/* Audio FLAC conversion */
 	err = re_sdprintf(
-		&cmd,
-		"cd %s && ffmpeg %b -filter_complex amix=inputs=%d audio.flac",
-		work->folder, mbuf_buf(work->mb), mbuf_get_left(work->mb),
-		work->cnt);
+		&cmd, "ffmpeg %b -filter_complex amix=inputs=%d audio.flac",
+		mbuf_buf(work->mb), mbuf_get_left(work->mb), work->cnt);
 	if (err)
 		goto out;
 
