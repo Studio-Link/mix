@@ -119,7 +119,7 @@ int flac_record(struct flac *flac, struct auframe *af, uint64_t offset)
 		offset = 0;
 
 	if (offset) {
-		warning("flac_record: offset %llu\n", offset);
+		info("flac_record: offset %llu id %u\n", offset, af->id);
 		memset(flac->pcm, 0, af->sampc * sizeof(FLAC__int32));
 		uint64_t offsampc = af->srate * af->ch * offset / 1000;
 
