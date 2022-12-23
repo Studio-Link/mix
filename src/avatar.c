@@ -61,8 +61,6 @@ static int work(void *arg)
 		goto err;
 	}
 
-	rand_str(avatar->sess->user->id, sizeof(avatar->sess->user->id));
-
 	if (!getcwd(path, sizeof(path))) {
 		warning("avatar: getcwd failed\n");
 		err = errno;

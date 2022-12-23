@@ -86,14 +86,17 @@ static void peerconnection_estab_handler(struct media_track *media, void *arg)
 	struct session *sess = arg;
 	int err		     = 0;
 
+	if (!sess->user)
+		return;
+
 	info("mix: stream established: '%s'\n",
 	     media_kind_name(mediatrack_kind(media)));
 
 	switch (mediatrack_kind(media)) {
 
 	case MEDIA_KIND_AUDIO:
-		audio_set_devicename(media_get_audio(media), sess->id,
-				     sess->id);
+		audio_set_devicename(media_get_audio(media), sess->user->id,
+				     sess->user->id);
 		err = mediatrack_start_audio(media, baresip_ausrcl(),
 					     baresip_aufiltl());
 		if (err) {
@@ -105,8 +108,8 @@ static void peerconnection_estab_handler(struct media_track *media, void *arg)
 		break;
 
 	case MEDIA_KIND_VIDEO:
-		video_set_devicename(media_get_video(media), sess->id,
-				     sess->id);
+		video_set_devicename(media_get_video(media), sess->user->id,
+				     sess->user->id);
 		err = mediatrack_start_video(media);
 		if (err) {
 			warning("mix: could not start video (%m)\n", err);
@@ -124,12 +127,7 @@ static void peerconnection_estab_handler(struct media_track *media, void *arg)
 		return;
 	}
 
-	if (sess->user->speaker) {
-		stream_enable(media_get_stream(media), true);
-		aumix_mute(sess->id, false);
-	}
-
-	session_user_updated(sess);
+	session_speaker(sess, sess->user->speaker);
 }
 
 
@@ -229,9 +227,11 @@ int session_new(struct mix *mix, struct session **sessp,
 		}
 	}
 
-	/* generate a unique session id */
+	/* generate a unique session and user id */
 	rand_str(sess->id, sizeof(sess->id));
+	rand_str(user->id, sizeof(user->id));
 	sess->user = user;
+	sess->mix  = mix;
 
 	list_append(&mix->sessl, &sess->le, sess);
 
@@ -329,6 +329,8 @@ void session_close(struct session *sess, int err)
 		info("mix: session '%s' closed\n", sess->id);
 
 	sess->pc = mem_deref(sess->pc);
+	sess->maudio = NULL;
+	sess->mvideo = NULL;
 
 	if (err) {
 		http_ereply(sess->conn_pending, 500, "Session closed");
@@ -359,7 +361,6 @@ int session_user_updated(struct session *sess)
 
 void session_video(struct session *sess, bool enable)
 {
-
 	if (!sess || !sess->user)
 		return;
 
@@ -368,7 +369,7 @@ void session_video(struct session *sess, bool enable)
 
 	sess->user->video = enable;
 
-	vidmix_disp_enable(sess->id, enable);
+	vidmix_disp_enable(sess->user->id, enable);
 
 	if (enable) {
 		stream_flush(media_get_stream(sess->mvideo));
@@ -380,18 +381,21 @@ void session_video(struct session *sess, bool enable)
 
 int session_speaker(struct session *sess, bool enable)
 {
-	if (!sess || !sess->user)
+	if (!sess || !sess->mix || !sess->user)
 		return EINVAL;
 
+	if (enable && !sess->user->speaker_id)
+		sess->user->speaker_id = ++sess->mix->next_speaker_id;
+
 	sess->user->speaker = enable;
-	aumix_mute(sess->id, !enable);
+	aumix_mute(sess->user->id, !enable, sess->user->speaker_id);
 	stream_enable(media_get_stream(sess->mvideo), enable);
 	sess->user->hand = false;
 
 	if (!enable) {
 		/* only disable for privacy reasons */
 		sess->user->video = false;
-		vidmix_disp_enable(sess->id, false);
+		vidmix_disp_enable(sess->user->id, false);
 	}
 
 	return session_user_updated(sess);
