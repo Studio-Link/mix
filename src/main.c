@@ -219,6 +219,9 @@ int main(int argc, char *const argv[])
 	config->audio.channels_play = 1;
 	config->audio.channels_src  = 1;
 
+	config->avt.rtcp_mux = true;
+	config->avt.rtp_stats = true;
+
 	slmix_config(&mix);
 
 	err = baresip_init(config);
