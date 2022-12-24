@@ -42,6 +42,14 @@ make release
 make webui
 ```
 
+### Update
+```bash
+su - slmix
+make cleaner
+make release
+make webui
+```
+
 ### Config - /opt/slmix/config
 
 ```
