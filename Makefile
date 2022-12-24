@@ -1,6 +1,6 @@
 .PHONY: build
 build: external
-	@[ -f "build/build.ninja" ] || cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+	@[ -f "build/build.ninja" ] || cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-gdwarf-4"
 	@cmake --build build --parallel
 
 .PHONY: avatars
@@ -63,8 +63,7 @@ external:
 	cd external/baresip && \
 		patch -p1 < ../../patches/baresip_packet_dup_handler.patch && \
 		patch -p1 < ../../patches/baresip_stream_enable.patch && \
-		patch -p1 < ../../patches/baresip_video_remove_sendq_empty.patch && \
-		patch -p1 < ../../patches/2365.patch
+		patch -p1 < ../../patches/baresip_video_remove_sendq_empty.patch
 
 .PHONY: cloc
 cloc:
