@@ -163,8 +163,29 @@ static void http_req_handler(struct http_conn *conn,
 	 * API Requests with session
 	 */
 
-	/* Every requests from here must provide a valid session */
 	sess = session_lookup_hdr(&mix->sessl, msg);
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/log/info")) {
+		info("webui: %b\n", mbuf_buf(msg->mb), mbuf_get_left(msg->mb));
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/log/warning")) {
+		warning("webui/warn: %b\n", mbuf_buf(msg->mb),
+			mbuf_get_left(msg->mb));
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/log/error")) {
+		warning("webui/err: %b\n", mbuf_buf(msg->mb),
+			mbuf_get_left(msg->mb));
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	/* Every requests from here must provide a valid session */
 	if (!sess) {
 		http_sreply(conn, 404, "Session Not Found", "text/html", "", 0,
 			    NULL);

@@ -158,4 +158,8 @@ export default {
         if (enable) api_fetch('PUT', '/hand/enable', null)
         else api_fetch('PUT', '/hand/disable', null)
     },
+
+    async log(args: any, type: string) {
+        api_fetch('PUT', '/log/'+type, args)
+    }
 }
