@@ -88,7 +88,7 @@
                         name="cam"
                         class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                       >
-                        <template v-for="item in Webrtc.deviceInfos.value">
+                        <template v-for="item in Webrtc.deviceInfosVideo.value">
                           <option v-if="item.kind === 'videoinput'" :key="item.deviceId" :value="item.deviceId">
                             {{ item.label }}
                           </option>
@@ -116,7 +116,7 @@
                         name="micro"
                         class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                       >
-                        <template v-for="item in Webrtc.deviceInfos.value">
+                        <template v-for="item in Webrtc.deviceInfosAudio.value">
                           <option v-if="item.kind === 'audioinput'" :key="item.deviceId" :value="item.deviceId">
                             {{ item.label }}
                           </option>
@@ -131,7 +131,7 @@
                         name="headset"
                         class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                       >
-                        <template v-for="item in Webrtc.deviceInfos.value">
+                        <template v-for="item in Webrtc.deviceInfosAudio.value">
                           <option v-if="item.kind === 'audiooutput'" :key="item.deviceId" :value="item.deviceId">
                             {{ item.label }}
                           </option>
@@ -200,9 +200,7 @@ watch(video_select, async () => {
 watch(audio_input_id, async (newValue, oldValue) => {
   if (oldValue === undefined) return //prevent first auto change
   console.log('new audio device: ', newValue)
-  if (video_select.value !== 'Disabled' && video_echo.value) {
-    video_echo.value.srcObject = await Webrtc.change_audio()
-  }
+  await Webrtc.change_audio()
 })
 
 watch(video_input_id, async (newValue, oldValue) => {
@@ -218,7 +216,7 @@ watch(video_resolution, async (newValue, oldValue) => {
 })
 
 watch(echo, async () => {
-  if (video_echo.value) video_echo.value.srcObject = await Webrtc.change_echo()
+  await Webrtc.change_echo()
 })
 
 watch(audio_output_id, async () => {
@@ -229,12 +227,12 @@ watch(open, async () => {
   if (!open.value) return
 
   if (Webrtc.state.value < WebrtcState.ReadySpeaking) {
-    const avstream = await Webrtc.init_avdevices()
-    if (video_echo.value) video_echo.value.srcObject = avstream
-  } else {
-    const avstream = await Webrtc.change_video()
-    if (video_echo.value) video_echo.value.srcObject = avstream
+    await Webrtc.init_avdevices()
   }
+})
+
+watch(video_echo, async () => {
+  if (video_echo.value) video_echo.value.srcObject = Webrtc.videostream()
 })
 
 function join() {
