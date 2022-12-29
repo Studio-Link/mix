@@ -95,9 +95,7 @@ static void close_handler(int err, void *arg)
 		}
 
 		vidmix_disp_enable(wsc->sess->id, false);
-		wsc->sess->pc = mem_deref(wsc->sess->pc);
-		wsc->sess->maudio = NULL;
-		wsc->sess->mvideo = NULL;
+		pc_close(wsc->sess);
 	}
 
 	mem_deref(wsc);

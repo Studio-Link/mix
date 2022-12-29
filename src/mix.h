@@ -77,6 +77,7 @@ int slmix_http_listen(struct http_sock **sock, struct mix *mix);
 /******************************************************************************
  * sess.c
  */
+void pc_close(struct session *sess);
 int session_user_updated(struct session *sess);
 void session_video(struct session *sess, bool enable);
 int session_speaker(struct session *sess, bool enable);
