@@ -20,7 +20,15 @@ static void destructor(void *data)
 }
 
 
-static void peerconnection_gather_handler(void *arg)
+void pc_close(struct session *sess)
+{
+	sess->pc     = mem_deref(sess->pc);
+	sess->maudio = NULL;
+	sess->mvideo = NULL;
+}
+
+
+static void pc_gather_handler(void *arg)
 {
 	struct session *sess = arg;
 	struct mbuf *mb_sdp  = NULL;
@@ -81,7 +89,7 @@ out:
 }
 
 
-static void peerconnection_estab_handler(struct media_track *media, void *arg)
+static void pc_estab_handler(struct media_track *media, void *arg)
 {
 	struct session *sess = arg;
 	int err		     = 0;
@@ -131,7 +139,7 @@ static void peerconnection_estab_handler(struct media_track *media, void *arg)
 }
 
 
-static void peerconnection_close_handler(int err, void *arg)
+static void pc_close_handler(int err, void *arg)
 {
 	struct session *sess = arg;
 
@@ -151,13 +159,12 @@ int session_start(struct session *sess,
 	if (!sess)
 		return EINVAL;
 
-	if (sess->pc)
-		return EALREADY;
+	/* Close old connection */
+	pc_close(sess);
 
 	err = peerconnection_new(&sess->pc, pc_config, mnat, menc,
-				 peerconnection_gather_handler,
-				 peerconnection_estab_handler,
-				 peerconnection_close_handler, sess);
+				 pc_gather_handler, pc_estab_handler,
+				 pc_close_handler, sess);
 	if (err) {
 		warning("mix: session alloc failed (%m)\n", err);
 		return err;
@@ -328,9 +335,7 @@ void session_close(struct session *sess, int err)
 	else
 		info("mix: session '%s' closed\n", sess->id);
 
-	sess->pc = mem_deref(sess->pc);
-	sess->maudio = NULL;
-	sess->mvideo = NULL;
+	pc_close(sess);
 
 	if (err) {
 		http_ereply(sess->conn_pending, 500, "Session closed");
@@ -371,9 +376,8 @@ void session_video(struct session *sess, bool enable)
 
 	vidmix_disp_enable(sess->user->id, enable);
 
-	if (enable) {
+	if (enable)
 		stream_flush(media_get_stream(sess->mvideo));
-	}
 
 	session_user_updated(sess);
 }
@@ -392,8 +396,8 @@ int session_speaker(struct session *sess, bool enable)
 	stream_enable(media_get_stream(sess->mvideo), enable);
 	sess->user->hand = false;
 
+	/* only allow disable for privacy reasons */
 	if (!enable) {
-		/* only disable for privacy reasons */
 		sess->user->video = false;
 		vidmix_disp_enable(sess->user->id, false);
 	}
