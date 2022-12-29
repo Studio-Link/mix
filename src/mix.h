@@ -117,6 +117,7 @@ void sl_ws_send_event_all(char *json);
 void sl_ws_dummyh(const struct websock_hdr *hdr, struct mbuf *mb, void *arg);
 void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 		      void *arg);
+void sl_ws_session_close(struct session *sess);
 
 
 /******************************************************************************

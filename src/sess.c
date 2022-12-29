@@ -336,6 +336,7 @@ void session_close(struct session *sess, int err)
 		info("mix: session '%s' closed\n", sess->id);
 
 	pc_close(sess);
+	sl_ws_session_close(sess);
 
 	if (err) {
 		http_ereply(sess->conn_pending, 500, "Session closed");
