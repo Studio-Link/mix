@@ -16,6 +16,25 @@ enum { KEEPALIVE = 30 * 1000 };
 static struct tmr tmr_update;
 
 
+void sl_ws_session_close(struct session *sess)
+{
+	struct le *le;
+	if (!sess)
+		return;
+
+	LIST_FOREACH(&wsl, le)
+	{
+		struct ws_conn *wsc = le->data;
+
+		if (sess != wsc->sess)
+			continue;
+
+		mem_deref(wsc);
+		return;
+	}
+}
+
+
 void sl_ws_dummyh(const struct websock_hdr *hdr, struct mbuf *mb, void *arg)
 {
 	(void)hdr;
