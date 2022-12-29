@@ -9,10 +9,27 @@
             <p class="mt-1 text-base text-gray-500">Please check the URL in the address bar and try again.</p>
           </div>
           <div class="mt-10 flex space-x-3 sm:border-l sm:border-transparent sm:pl-6">
-            <a href="/" class="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Go back home</a>
+            <a
+              href="/"
+              class="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              >Retry</a
+            >
+            <button
+              @click="logout_clicked()"
+              class="inline-flex items-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+              Logout
+            </button>
           </div>
         </div>
       </main>
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import api from '../api'
+function logout_clicked() {
+  api.logout(false)
+}
+</script>
