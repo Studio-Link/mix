@@ -2,6 +2,7 @@ import config from './config'
 import { Webrtc } from './webrtc'
 import router from './router'
 import { Users } from './ws/users'
+import { Error } from './error'
 
 interface Session {
     id: string
@@ -26,11 +27,11 @@ async function api_fetch(met: string, url: string, data: any) {
         referrerPolicy: 'no-referrer',
         body: data ? JSON.stringify(data) : null,
     }).catch((error) => {
-        Webrtc.error('API Network error: ' + error.toString())
+        Error.error('API Network error: ' + error.toString())
     })
 
     if (resp?.status! >= 400) {
-        Webrtc.error('API error: ' + resp?.status + ' ' + resp?.headers.get('Status-Reason'))
+        Error.error('API error: ' + resp?.status + ' ' + resp?.headers.get('Status-Reason'))
     }
 
     const session_id = resp?.headers.get('Session-ID')
@@ -76,7 +77,7 @@ export default {
     },
 
     async login(name: string, image: string) {
-        Webrtc.error('')
+        Error.reset()
         let resp = await api_fetch('POST', '/client/name', name)
         if (!resp?.ok) return
 
