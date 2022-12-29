@@ -1,5 +1,6 @@
 import { Ref, ref } from 'vue'
 import api from '../api'
+import { Error } from '../error'
 import { Webrtc } from '../webrtc'
 
 interface User {
@@ -62,8 +63,11 @@ export const Users: Users = {
 
         this.socket.onclose = (e) => {
             console.log('Websocket users closed', e.reason)
-            if (e.code === 1011) {
+            if (e.code === 1007) {
                 api.logout(false)
+            }
+            if (e.code === 1011) {
+                Error.fatal('Already connected! Please close remaining windows.')
             }
         }
 
