@@ -367,7 +367,7 @@ export const Webrtc = {
             this.video_input_id.value = videostream?.getVideoTracks()[0].getSettings().deviceId
         }
 
-        this.video_mute(false)
+        this.video_mute(this.video_muted.value)
         console.log('video changed', constraintsVideo)
         return videostream
     },
