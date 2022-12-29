@@ -2,6 +2,7 @@ import api from './api'
 import { Users } from './ws/users'
 import { ref } from 'vue'
 import adapter from 'webrtc-adapter'
+import { Error } from './error'
 
 // --- Private Webrtc API ---
 let pc: RTCPeerConnection
@@ -182,7 +183,7 @@ async function pc_media_audio() {
         audiostream = await navigator.mediaDevices.getUserMedia(constraintsAudio)
     } catch (e) {
         console.error('pc_media_audio: permission denied...', e)
-        Webrtc.errorText.value = 'Microphone permission denied!'
+        Error.error('Microphone permission denied!')
         return
     }
 }
@@ -195,7 +196,7 @@ async function pc_media_video() {
     } catch (e) {
         videostream = null
         console.error('pc_media_video: permission denied...', e)
-        Webrtc.errorText.value = 'Camera permission denied!'
+        Error.error('Camera permission denied!')
         return
     }
 }
@@ -210,7 +211,7 @@ async function pc_screen() {
         screenstream = await navigator.mediaDevices.getDisplayMedia(gdmOptions)
     } catch (err) {
         console.error('webrtc_video/setup_screen: ' + err)
-        Webrtc.errorText.value = 'Screen permission denied!'
+        Error.error('Screen permission denied!')
     }
 }
 
@@ -274,7 +275,6 @@ export enum WebrtcState {
 // --- Public Webrtc API ---
 export const Webrtc = {
     state: ref(WebrtcState.Offline),
-    errorText: ref(''),
     deviceInfosAudio: ref<MediaDeviceInfo[] | undefined>([]),
     deviceInfosVideo: ref<MediaDeviceInfo[] | undefined>([]),
     audio_input_id: ref<string | undefined>(undefined),
@@ -426,15 +426,5 @@ export const Webrtc = {
     logout() {
         videostream?.getVideoTracks()[0].stop()
         audiostream?.getAudioTracks()[0].stop()
-    },
-
-    error(msg: string) {
-        this.errorText.value = msg
-        this.state.value = WebrtcState.Error
-    },
-
-    error_reset() {
-        this.errorText.value = ''
-        this.state.value = WebrtcState.Offline
     },
 }
