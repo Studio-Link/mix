@@ -367,7 +367,7 @@ export const Webrtc = {
             this.video_input_id.value = videostream?.getVideoTracks()[0].getSettings().deviceId
         }
 
-        this.video_mute(this.video_muted.value)
+        this.video_mute(false, true)
         console.log('video changed', constraintsVideo)
         return videostream
     },
@@ -413,13 +413,18 @@ export const Webrtc = {
         })
     },
 
-    video_mute(mute: boolean) {
+    video_mute(mute: boolean, local?: boolean) {
+        if (this.video_select.value === 'Disabled')
+            mute = true
+
         if (!Users.speaker_status.value) mute = true
 
         videostream?.getVideoTracks().forEach((track) => {
             track.enabled = !mute
-            this.video_muted.value = mute
-            api.video(!mute)
+            if (!local) {
+                this.video_muted.value = mute
+                api.video(!mute)
+            }
         })
     },
 

@@ -232,7 +232,7 @@ watch(open, async () => {
 })
 
 watch(video_echo, async () => {
-  if (video_echo.value) video_echo.value.srcObject = Webrtc.videostream()
+  if (video_echo.value) video_echo.value.srcObject = await Webrtc.change_video()
 })
 
 function join() {
