@@ -37,7 +37,7 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 
 	wsc->sess = session_lookup(&wsc->mix->sessl, &sessid);
 	if (!wsc->sess) {
-		websock_close(wsc->c, WEBSOCK_INTERNAL_ERROR,
+		websock_close(wsc->c, WEBSOCK_INVALID_PAYLOAD,
 			      "Session not found");
 		mem_deref(wsc);
 		return;
@@ -45,6 +45,13 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 
 	mem_ref(wsc->sess);
 	mem_ref(wsc->sess->user);
+
+	if (wsc->sess->connected) {
+		websock_close(wsc->c, WEBSOCK_INTERNAL_ERROR,
+			      "Session in use");
+		mem_deref(wsc);
+		return;
+	}
 
 	wsc->sess->connected = true;
 

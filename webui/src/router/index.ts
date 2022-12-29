@@ -15,6 +15,11 @@ const router = createRouter({
       props: true,
       component: () => import('../views/LoginView.vue'),
     },
+    {
+      path: '/fatal',
+      name: 'FatalError',
+      component: () => import('../views/FatalErrorView.vue'),
+    },
   ],
 })
 
