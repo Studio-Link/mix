@@ -331,7 +331,8 @@ export const Webrtc = {
             await pc_screen()
             this.video_mute(false)
             if (screenstream !== null) {
-                await pc_replace_tracks(null, screenstream.getVideoTracks()[0])
+                if (this.state.value >= WebrtcState.ReadySpeaking)
+                    await pc_replace_tracks(null, screenstream.getVideoTracks()[0])
                 videostream?.getVideoTracks()[0].stop()
             }
             return screenstream
@@ -390,7 +391,12 @@ export const Webrtc = {
         }
 
         if (this.state.value < WebrtcState.ReadySpeaking) {
-            if (videostream && audiostream) {
+            if (this.video_select.value === 'Screen' && audiostream && screenstream) {
+                await pc_replace_tracks(audiostream.getAudioTracks()[0], screenstream.getVideoTracks()[0])
+                this.audio_mute(false)
+                this.video_mute(false)
+            }
+            else if (videostream && audiostream) {
                 await pc_replace_tracks(audiostream.getAudioTracks()[0], videostream.getVideoTracks()[0])
                 this.audio_mute(false)
                 this.video_mute(false)
