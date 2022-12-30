@@ -81,7 +81,7 @@ static void destructor(void *arg)
 }
 
 
-static void frame_handler(uint32_t ts, const struct vidframe *frame, void *arg)
+static void frame_handler(uint64_t ts, const struct vidframe *frame, void *arg)
 {
 	struct vidsrc_st *st = arg;
 	struct le *le;
