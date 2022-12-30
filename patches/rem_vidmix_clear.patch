@@ -1,0 +1,17 @@
+diff --git a/src/vidmix/vidmix.c b/src/vidmix/vidmix.c
+index c603ccf..8813a4b 100644
+--- a/src/vidmix/vidmix.c
++++ b/src/vidmix/vidmix.c
+@@ -217,10 +217,8 @@ static int vidmix_thread(void *arg)
+ 
+ 		mtx_lock(&mix->rwlock);
+ 
+-		if (src->clear) {
+-			clear_frame(src->frame_tx);
+-			src->clear = false;
+-		}
++		/* always clear first */
++		clear_frame(src->frame_tx);
+ 
+ 		for (le=mix->srcl.head, n=0; le; le=le->next) {
+ 

@@ -1,8 +1,8 @@
 diff --git a/modules/avcodec/encode.c b/modules/avcodec/encode.c
-index 8ce4eb8b..0021e76c 100644
+index b45cd094..6c92be76 100644
 --- a/modules/avcodec/encode.c
 +++ b/modules/avcodec/encode.c
-@@ -382,6 +382,7 @@ int avcodec_encode_update(struct videnc_state **vesp,
+@@ -385,6 +385,7 @@ int avcodec_encode_update(struct videnc_state **vesp,
  	return err;
  }
  
@@ -10,7 +10,7 @@ index 8ce4eb8b..0021e76c 100644
  
  int avcodec_encode(struct videnc_state *st, bool update,
  		   const struct vidframe *frame, uint64_t timestamp)
-@@ -389,6 +390,7 @@ int avcodec_encode(struct videnc_state *st, bool update,
+@@ -392,6 +393,7 @@ int avcodec_encode(struct videnc_state *st, bool update,
  	AVFrame *pict = NULL;
  	AVFrame *hw_frame = NULL;
  	AVPacket *pkt = NULL;
@@ -18,7 +18,7 @@ index 8ce4eb8b..0021e76c 100644
  	int i, err = 0, ret;
  	uint64_t ts;
  
-@@ -440,10 +442,11 @@ int avcodec_encode(struct videnc_state *st, bool update,
+@@ -443,10 +445,11 @@ int avcodec_encode(struct videnc_state *st, bool update,
  		pict->linesize[i] = frame->linesize[i];
  	}
  
@@ -31,7 +31,7 @@ index 8ce4eb8b..0021e76c 100644
  	}
  
  	pict->color_range = AVCOL_RANGE_MPEG;
-@@ -492,6 +495,10 @@ int avcodec_encode(struct videnc_state *st, bool update,
+@@ -495,6 +498,10 @@ int avcodec_encode(struct videnc_state *st, bool update,
  
  	ts = video_calc_rtp_timestamp_fix(pkt->pts);
  
