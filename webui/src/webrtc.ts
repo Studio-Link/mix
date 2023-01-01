@@ -327,14 +327,16 @@ export const Webrtc = {
             videostream?.getVideoTracks()[0].stop()
             return null
         }
+
         if (this.video_select.value === 'Screen') {
+            videostream?.getVideoTracks()[0].stop()
             await pc_screen()
-            this.video_mute(false)
             if (screenstream !== null) {
                 if (this.state.value >= WebrtcState.ReadySpeaking)
                     await pc_replace_tracks(null, screenstream.getVideoTracks()[0])
                 videostream?.getVideoTracks()[0].stop()
             }
+            this.video_mute(false)
             return screenstream
         }
 
@@ -425,6 +427,18 @@ export const Webrtc = {
 
         if (!Users.speaker_status.value) mute = true
 
+        if (this.video_select.value === 'Screen') {
+            screenstream?.getVideoTracks().forEach((track) => {
+                track.enabled = !mute
+                if (!local) {
+                    this.video_muted.value = mute
+                    api.video(!mute)
+                }
+            })
+
+            return
+        }
+
         videostream?.getVideoTracks().forEach((track) => {
             track.enabled = !mute
             if (!local) {
@@ -436,6 +450,7 @@ export const Webrtc = {
 
     logout() {
         videostream?.getVideoTracks()[0].stop()
+        screenstream?.getVideoTracks()[0].stop()
         audiostream?.getAudioTracks()[0].stop()
     },
 }
