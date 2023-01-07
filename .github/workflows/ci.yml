@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  webui:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '19'
+        cache: 'npm'
+        cache-dependency-path: 'webui/package-lock.json'
+    - name: build 
+      run: |
+        cd webui && npm install && npm run build && cd ..
+        zip -r webui.zip webui/dist
+    - uses: actions/upload-artifact@v3
+      with:
+        name: webui
+        path: webui.zip
+        retention-days: 1
+
+  ccheck:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: ccheck
+      run: |
+        make ccheck
+
+  test:
+    runs-on: ${{ matrix.os }}
+    needs: webui
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: install clang-14 and ninja
+      if: ${{ runner.os == 'Linux' }}
+      run: |
+        wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+        sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-14 main"
+        sudo apt-get update
+        sudo apt-get install -y clang-tools-14 clang-14 clang-tidy-14 ninja-build cppcheck gdb
+
+    - name: install libs
+      if: ${{ runner.os == 'Linux' }}
+      run: |
+        sudo apt-get install -y libgd-dev libopus-dev libz-dev libssl-dev libavformat-dev libavcodec-dev libflac-dev
+
+    - uses: actions/download-artifact@v3
+      with:
+        name: webui
+
+    - name: unzip webui
+      run: rm -Rf webui && unzip webui.zip
+
+    - name: make StudioLink - Linux
+      if: ${{ runner.os == 'Linux' }}
+      run: CC=clang-14 make
+
+    - name: clang-tidy
+      if: ${{ runner.os == 'Linux' }}
+      run: |
+        clang-tidy-14 -p build -checks=cert-\*,-cert-dcl37-c,-cert-dcl51-cpp,-clang-analyzer-valist.Uninitialized libsl/src/*.c
+        clang-tidy-14 -p build -checks=cert-\*,-cert-dcl37-c,-cert-dcl51-cpp,-clang-analyzer-valist.Uninitialized test/src/*.c
+
+    - name: clang scan-build
+      if: ${{ runner.os == 'Linux' }}
+      run: make clean && scan-build-14 --status-bugs make
+
+  analyze:
+    name: CodeQL Analyze
+    runs-on: ubuntu-latest
+    needs: webui
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: install and ninja
+      run: |
+        sudo apt-get update && sudo apt-get install -y ninja-build
+
+    - name: install sound libs
+      if: ${{ runner.os == 'Linux' }}
+      run: |
+        sudo apt-get install -y libgd-dev libopus-dev libz-dev libssl-dev libavformat-dev libavcodec-dev libflac-dev
+
+    - uses: actions/cache@v3
+      with:
+        path: third_party
+        key: ${{ runner.os }}-gcc-${{ hashFiles('versions.mk') }}
+
+    - uses: actions/download-artifact@v3
+      with:
+        name: webui
+
+    - name: unzip webui
+      run: rm -Rf webui && unzip webui.zip
+    
+    - run: make && make clean
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: cpp
+        queries: security-extended
+
+    - run: |
+        make
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2

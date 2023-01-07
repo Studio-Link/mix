@@ -22,6 +22,10 @@ cleaner: clean
 .PHONY: fresh
 fresh: clean build
 
+.PHONY: ccheck
+ccheck:
+	tests/ccheck.py src modules
+
 .PHONY: update
 update: external
 	cd external/re && git pull

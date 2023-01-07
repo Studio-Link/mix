@@ -89,3 +89,22 @@ def step_impl10(context, user):
     resp = requests.delete(context.base_url + '/api/v1/client',
                            headers=headers)
     assert resp.ok, f'Error: {resp.status_code}'
+
+
+@given('"{user}" posts chat message "{msg}"')
+def step_impl11(context, user, msg):
+    headers = {'Session-ID': context.sessid[user]}
+    resp = requests.post(context.base_url + '/api/v1/chat',
+                         headers=headers,
+                         data=msg)
+    assert resp.ok, f'Error: {resp.status_code}'
+
+
+@then('"{user}" WebSocket receives chat message "{msg}" from "{author}"')
+def step_impl12(context, user, msg, author):
+    response = context.ws[user].recv()
+    resp = json.loads(response)
+    assert resp["type"] == 'chat', f'type: {resp}'
+    assert resp["event"] == 'chat_added', f'event: {resp}'
+    assert resp["user_name"] == author, f'name: {resp}'
+    assert resp["msg"] == msg, f'msg: {resp}'
