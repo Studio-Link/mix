@@ -19,6 +19,7 @@ static struct tmr tmr_update;
 void sl_ws_session_close(struct session *sess)
 {
 	struct le *le;
+
 	if (!sess)
 		return;
 
@@ -88,20 +89,10 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 
 static void conn_destroy(void *arg)
 {
-	struct ws_conn *ws_conn = arg;
-	mem_deref(ws_conn->c);
-	if (ws_conn->sess)
-		mem_deref(ws_conn->sess->user);
-	mem_deref(ws_conn->sess);
-	list_unlink(&ws_conn->le);
-}
-
-
-static void close_handler(int err, void *arg)
-{
 	struct ws_conn *wsc = arg;
 	char *json	    = NULL;
-	(void)err;
+
+	mem_deref(wsc->c);
 
 	if (wsc->sess && wsc->sess->user) {
 		wsc->sess->connected   = false;
@@ -116,6 +107,19 @@ static void close_handler(int err, void *arg)
 		vidmix_disp_enable(wsc->sess->id, false);
 		pc_close(wsc->sess);
 	}
+
+	if (wsc->sess)
+		mem_deref(wsc->sess->user);
+
+	mem_deref(wsc->sess);
+	list_unlink(&wsc->le);
+}
+
+
+static void close_handler(int err, void *arg)
+{
+	struct ws_conn *wsc = arg;
+	(void)err;
 
 	mem_deref(wsc);
 }
