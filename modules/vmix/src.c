@@ -7,7 +7,7 @@
 #include <re.h>
 #include <rem.h>
 #include <baresip.h>
-#include "vidmix.h"
+#include "vmix.h"
 
 static struct vidpacket vp     = {.buf = NULL, .size = 0, .timestamp = 0};
 static struct mbuf *packet_dup = NULL;
@@ -29,15 +29,15 @@ static inline void vmix_unlock(void)
 
 
 /* delegate main src thread */
-static void vidmix_delegate(void)
+static void vmix_delegate(void)
 {
 	struct vidsrc_st *st;
 
 	vmix_lock();
-	if (!vidmix_srcl.head)
+	if (!vmix_srcl.head)
 		goto out;
 
-	st = vidmix_srcl.head->data;
+	st = vmix_srcl.head->data;
 	if (!st)
 		goto out;
 	vmix_unlock();
@@ -56,7 +56,7 @@ out:
 static void destructor(void *arg)
 {
 	struct vidsrc_st *st = arg;
-	bool delegate	     = vidmix_srcl.head == &st->le2;
+	bool delegate	     = vmix_srcl.head == &st->le2;
 
 	mtx_lock(st->lock);
 	st->run = false;
@@ -77,7 +77,7 @@ static void destructor(void *arg)
 	mem_deref(st->lock);
 
 	if (delegate)
-		vidmix_delegate();
+		vmix_delegate();
 }
 
 
@@ -103,11 +103,11 @@ static void frame_handler(uint64_t ts, const struct vidframe *frame, void *arg)
 	if (!vp.buf)
 		return;
 
-	if (!vidmix_srcl.head)
+	if (!vmix_srcl.head)
 		return;
 
 	vmix_lock();
-	le = vidmix_srcl.head->next;
+	le = vmix_srcl.head->next;
 	vmix_unlock();
 	while (le) {
 		st = le->data;
@@ -126,7 +126,7 @@ static void frame_handler(uint64_t ts, const struct vidframe *frame, void *arg)
 	}
 
 	/* record */
-	vidmix_record(vp.buf, vp.size, &reset);
+	vmix_record(vp.buf, vp.size, &reset);
 
 	/* prevent sending packets multiple times */
 	vp.buf = NULL;
@@ -166,7 +166,7 @@ out:
 }
 
 
-int vidmix_src_alloc(struct vidsrc_st **stp, const struct vidsrc *vs,
+int vmix_src_alloc(struct vidsrc_st **stp, const struct vidsrc *vs,
 		     struct vidsrc_prm *prm, const struct vidsz *size,
 		     const char *fmt, const char *dev, vidsrc_frame_h *frameh,
 		     vidsrc_packet_h *packeth, vidsrc_error_h *errorh,
@@ -194,7 +194,7 @@ int vidmix_src_alloc(struct vidsrc_st **stp, const struct vidsrc *vs,
 	if (err)
 		goto out;
 
-	err = vidmix_source_alloc(&st->vidmix_src, vidmix_mix, size, st->fps,
+	err = vidmix_source_alloc(&st->vidmix_src, vmix_mix, size, st->fps,
 				  false, frame_handler, st);
 	if (err)
 		goto out;
@@ -204,16 +204,16 @@ int vidmix_src_alloc(struct vidsrc_st **stp, const struct vidsrc *vs,
 		goto out;
 
 	/* find a vidisp device with same name */
-	st->vidisp = vidmix_disp_find(dev);
+	st->vidisp = vmix_disp_find(dev);
 	if (st->vidisp) {
 		st->vidisp->vidsrc = st;
 	}
 
 	warning("vidmix: src_alloc (%f fps)\n", st->fps);
-	hash_append(vidmix_src, hash_joaat_str(dev), &st->le, st);
+	hash_append(vmix_src, hash_joaat_str(dev), &st->le, st);
 
 	vmix_lock();
-	list_append(&vidmix_srcl, &st->le2, st);
+	list_append(&vmix_srcl, &st->le2, st);
 	vmix_unlock();
 
 	vidmix_source_toggle_selfview(st->vidmix_src);
@@ -221,7 +221,7 @@ int vidmix_src_alloc(struct vidsrc_st **stp, const struct vidsrc *vs,
 	reset = true;
 
 	/* only start once */
-	if (vidmix_srcl.head == &st->le2) {
+	if (vmix_srcl.head == &st->le2) {
 		vidmix_source_start(st->vidmix_src);
 		mtx_lock(st->lock);
 		st->run = true;
@@ -246,14 +246,14 @@ static bool list_apply_handler(struct le *le, void *arg)
 }
 
 
-struct vidsrc_st *vidmix_src_find(const char *device)
+struct vidsrc_st *vmix_src_find(const char *device)
 {
-	return list_ledata(hash_lookup(vidmix_src, hash_joaat_str(device),
+	return list_ledata(hash_lookup(vmix_src, hash_joaat_str(device),
 				       list_apply_handler, (void *)device));
 }
 
 
-void vidmix_src_input(struct vidsrc_st *st, const struct vidframe *frame,
+void vmix_src_input(struct vidsrc_st *st, const struct vidframe *frame,
 		      uint64_t timestamp)
 {
 	(void)timestamp;
@@ -265,7 +265,7 @@ void vidmix_src_input(struct vidsrc_st *st, const struct vidframe *frame,
 }
 
 
-int vidmix_src_init(void)
+int vmix_src_init(void)
 {
 	packet_dup = mbuf_alloc(1024);
 	if (!packet_dup) {
@@ -276,7 +276,7 @@ int vidmix_src_init(void)
 }
 
 
-void vidmix_src_close(void)
+void vmix_src_close(void)
 {
 	vmix_mutex = mem_deref(vmix_mutex);
 	packet_dup = mem_deref(packet_dup);

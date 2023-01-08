@@ -6,7 +6,7 @@
 #include <re.h>
 #include <rem.h>
 #include <baresip.h>
-#include "aumix.h"
+#include "amix.h"
 
 static struct auplay *auplay = NULL;
 static struct ausrc *ausrc   = NULL;
@@ -42,7 +42,7 @@ struct auplay_st {
 	mtx_t *lock;
 };
 
-static int16_t aumix_level(const int16_t *sampv, size_t frames)
+static int16_t amix_level(const int16_t *sampv, size_t frames)
 {
 	int pos	      = 0;
 	int16_t max_l = 0, max_r = 0;
@@ -238,8 +238,8 @@ out:
 }
 
 
-void aumix_mute(char *device, bool mute, uint16_t id);
-void aumix_mute(char *device, bool mute, uint16_t id)
+void amix_mute(char *device, bool mute, uint16_t id);
+void amix_mute(char *device, bool mute, uint16_t id)
 {
 	struct le *le;
 
@@ -289,15 +289,15 @@ static int mix_debug(struct re_printf *pf, void *arg)
 }
 
 
-int aumix_record_enable(bool enable, char *token);
-int aumix_record_enable(bool enable, char *token)
+int amix_record_enable(bool enable, char *token);
+int amix_record_enable(bool enable, char *token)
 {
 	int err = 0;
 
 	if (enable)
-		err = aumix_record_start(token);
+		err = amix_record_start(token);
 	else
-		aumix_record_close();
+		amix_record_close();
 
 	return err;
 }
@@ -342,16 +342,16 @@ static int module_init(void)
 	err = cmd_register(baresip_commands(), cmdv, ARRAY_SIZE(cmdv));
 	IF_ERR_GOTO_OUT(err);
 
-	err = ausrc_register(&ausrc, baresip_ausrcl(), "aumix", src_alloc);
+	err = ausrc_register(&ausrc, baresip_ausrcl(), "amix", src_alloc);
 	IF_ERR_GOTO_OUT(err);
 
-	err = auplay_register(&auplay, baresip_auplayl(), "aumix", play_alloc);
+	err = auplay_register(&auplay, baresip_auplayl(), "amix", play_alloc);
 	IF_ERR_GOTO_OUT(err)
 
 	err = aumix_alloc(&aumix, SRATE, CH, PTIME);
 	IF_ERR_GOTO_OUT(err);
 
-	aumix_recordh(aumix, aumix_record);
+	aumix_recordh(aumix, amix_record);
 
 	list_init(&auplayl);
 	list_init(&ausrcl);
@@ -377,8 +377,8 @@ static int module_close(void)
 }
 
 
-EXPORT_SYM const struct mod_export DECL_EXPORTS(aumix) = {
-	"aumix",
+EXPORT_SYM const struct mod_export DECL_EXPORTS(amix) = {
+	"amix",
 	"audio",
 	module_init,
 	module_close,

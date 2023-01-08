@@ -1,6 +1,6 @@
-project(vidmix)
+project(amix)
 
-set(SRCS vidmix.c src.c disp.c record.c)
+set(SRCS amix.c record.c flac.c)
 
 if(STATIC)
     add_library(${PROJECT_NAME} OBJECT ${SRCS})
@@ -8,3 +8,4 @@ else()
     add_library(${PROJECT_NAME} MODULE ${SRCS})
 endif()
 
+target_link_libraries(${PROJECT_NAME} PRIVATE FLAC)

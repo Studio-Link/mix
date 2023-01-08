@@ -121,10 +121,10 @@ void sl_ws_session_close(struct session *sess);
 
 
 /******************************************************************************
- * external modules (aumix, vidmix etc.)
+ * external modules (amix, vmix etc.)
  * @TODO: convert to registered functions or shared header
  */
-void aumix_mute(char *device, bool mute, uint16_t id);
-int aumix_record_enable(bool enable, char *token);
-uint64_t aumix_record_msecs(void);
-void vidmix_disp_enable(const char *device, bool enable);
+void amix_mute(char *device, bool mute, uint16_t id);
+int amix_record_enable(bool enable, char *token);
+uint64_t amix_record_msecs(void);
+void vmix_disp_enable(const char *device, bool enable);

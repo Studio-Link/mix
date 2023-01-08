@@ -6,7 +6,7 @@
 #include <re.h>
 #include <rem.h>
 #include <baresip.h>
-#include "vidmix.h"
+#include "vmix.h"
 
 
 static void destructor(void *arg)
@@ -21,7 +21,7 @@ static void destructor(void *arg)
 }
 
 
-int vidmix_disp_alloc(struct vidisp_st **stp, const struct vidisp *vd,
+int vmix_disp_alloc(struct vidisp_st **stp, const struct vidisp *vd,
 		      struct vidisp_prm *prm, const char *dev,
 		      vidisp_resize_h *resizeh, void *arg)
 {
@@ -43,7 +43,7 @@ int vidmix_disp_alloc(struct vidisp_st **stp, const struct vidisp *vd,
 		goto out;
 
 	/* find the vidsrc with the same device-name */
-	st->vidsrc = vidmix_src_find(dev);
+	st->vidsrc = vmix_src_find(dev);
 	if (!st->vidsrc || !st->vidsrc->vidmix_src) {
 		err = ENOKEY;
 		goto out;
@@ -51,7 +51,7 @@ int vidmix_disp_alloc(struct vidisp_st **stp, const struct vidisp *vd,
 
 	st->vidsrc->vidisp = st;
 	/* vidmix_source_enable(st->vidsrc->vidmix_src, false); */
-	hash_append(vidmix_disp, hash_joaat_str(dev), &st->le, st);
+	hash_append(vmix_disp, hash_joaat_str(dev), &st->le, st);
 
 out:
 	if (err)
@@ -71,7 +71,7 @@ static bool list_apply_handler(struct le *le, void *arg)
 }
 
 
-int vidmix_disp_display(struct vidisp_st *st, const char *title,
+int vmix_disp_display(struct vidisp_st *st, const char *title,
 			const struct vidframe *frame, uint64_t timestamp)
 {
 	int err = 0;
@@ -81,7 +81,7 @@ int vidmix_disp_display(struct vidisp_st *st, const char *title,
 		return EINVAL;
 
 	if (st->vidsrc)
-		vidmix_src_input(st->vidsrc, frame, timestamp);
+		vmix_src_input(st->vidsrc, frame, timestamp);
 	else {
 		debug("vidmix: display: dropping frame (%u x %u)\n",
 		      frame->size.w, frame->size.h);
@@ -91,15 +91,15 @@ int vidmix_disp_display(struct vidisp_st *st, const char *title,
 }
 
 
-void vidmix_disp_enable(const char *device, bool enable);
-void vidmix_disp_enable(const char *device, bool enable)
+void vmix_disp_enable(const char *device, bool enable);
+void vmix_disp_enable(const char *device, bool enable)
 {
 	struct vidsrc_st *src;
 
 	if (!device)
 		return;
 
-	src = vidmix_src_find(device);
+	src = vmix_src_find(device);
 	if (!src)
 		return;
 
@@ -107,8 +107,8 @@ void vidmix_disp_enable(const char *device, bool enable)
 }
 
 
-struct vidisp_st *vidmix_disp_find(const char *device)
+struct vidisp_st *vmix_disp_find(const char *device)
 {
-	return list_ledata(hash_lookup(vidmix_disp, hash_joaat_str(device),
+	return list_ledata(hash_lookup(vmix_disp, hash_joaat_str(device),
 				       list_apply_handler, (void *)device));
 }
