@@ -36,3 +36,4 @@ Feature: Login/Logout
         And "Alice" logouts
         And "Bob" WebSocket receives "Alice" delete
         And "Bob" closes WebSocket
+        And "Alice" closes WebSocket

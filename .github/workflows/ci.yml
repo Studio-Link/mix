@@ -68,6 +68,11 @@ jobs:
       if: ${{ runner.os == 'Linux' }}
       run: CC=clang-14 make
 
+    - name: bdd tests
+      run: |
+        cd tests/bdd && python -m venv env && env/bin/pip install -r requirements.txt
+        make test
+
     - name: clang-tidy
       if: ${{ runner.os == 'Linux' }}
       run: |
