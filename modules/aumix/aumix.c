@@ -47,7 +47,7 @@ static int16_t aumix_level(const int16_t *sampv, size_t frames)
 	int pos	      = 0;
 	int16_t max_l = 0, max_r = 0;
 
-	for (uint16_t frame = 0; frame < frames; frame++) {
+	for (size_t frame = 0; frame < frames; frame++) {
 		if (sampv[pos] > max_l)
 			max_l = sampv[pos];
 		if (CH <= 1) {
