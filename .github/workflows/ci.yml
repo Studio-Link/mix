@@ -61,9 +61,6 @@ jobs:
       with:
         name: webui
 
-    - name: unzip webui
-      run: rm -Rf webui && unzip webui.zip
-
     - name: make StudioLink - Linux
       if: ${{ runner.os == 'Linux' }}
       run: CC=clang-14 make
