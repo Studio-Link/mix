@@ -64,7 +64,7 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 	if ((now - last_modified) < 500)
 		return;
 
-	// "aumix,talk,11_audio"
+	/* "aumix,talk,11_audio" */
 	pl_set_str(&r, prm);
 	re_regex(r.p, r.l, "[^,]+,[^,]+,[^_]+_[~]*", &module, &event, &sess_id,
 		 NULL);

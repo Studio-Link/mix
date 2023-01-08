@@ -4,6 +4,8 @@
  * Copyright (C) 2022 Sebastian Reimers
  */
 
+#define _POSIX_SOURCE 1
+
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>
@@ -55,8 +57,10 @@ static int timestamp_print(struct re_printf *pf, const struct tm *tm)
 
 static void mkdir_folder(char *token)
 {
-	time_t tnow   = time(0);
-	struct tm *tm = localtime(&tnow);
+	time_t tnow = time(NULL);
+	struct tm tm;
+
+	localtime_r(&tnow, &tm);
 
 	(void)re_snprintf(record_folder, sizeof(record_folder),
 			  "webui/public/download/%s", token);
@@ -64,7 +68,7 @@ static void mkdir_folder(char *token)
 	fs_mkdir(record_folder, 0755);
 
 	(void)re_snprintf(record_folder, sizeof(record_folder), "%s/%H",
-			  record_folder, timestamp_print, tm);
+			  record_folder, timestamp_print, &tm);
 
 	fs_mkdir(record_folder, 0755);
 }
