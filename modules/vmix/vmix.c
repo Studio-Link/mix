@@ -6,7 +6,7 @@
 #include <re.h>
 #include <rem.h>
 #include <baresip.h>
-#include "vidmix.h"
+#include "vmix.h"
 
 
 /**
@@ -30,11 +30,11 @@
 static struct vidisp *vidisp;
 static struct vidsrc *vidsrc;
 
-struct hash *vidmix_src;
-struct list vidmix_srcl;
-struct hash *vidmix_disp;
+struct hash *vmix_src;
+struct list vmix_srcl;
+struct hash *vmix_disp;
 
-struct vidmix *vidmix_mix;
+struct vidmix *vmix_mix;
 
 
 /*
@@ -77,12 +77,12 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 
 	re_snprintf(device, sizeof(device), "%r_video", &sess_id);
 
-	st = vidmix_src_find(device);
+	st = vmix_src_find(device);
 
 	if (!st)
 		return;
 
-	LIST_FOREACH(&vidmix_srcl, le)
+	LIST_FOREACH(&vmix_srcl, le)
 	{
 		struct vidsrc_st *vst = le->data;
 		vidmix_source_set_focus(vst->vidmix_src, st->vidmix_src, true);
@@ -97,24 +97,24 @@ static int module_init(void)
 {
 	int err;
 
-	err = hash_alloc(&vidmix_src, 32);
-	err |= hash_alloc(&vidmix_disp, 32);
+	err = hash_alloc(&vmix_src, 32);
+	err |= hash_alloc(&vmix_disp, 32);
 	IF_ERR_GOTO_OUT(err);
 
-	list_init(&vidmix_srcl);
+	list_init(&vmix_srcl);
 
-	err = vidmix_src_init();
+	err = vmix_src_init();
 	IF_ERR_GOTO_OUT(err);
 
-	err = vidisp_register(&vidisp, baresip_vidispl(), "vidmix",
-			      vidmix_disp_alloc, NULL, vidmix_disp_display, 0);
+	err = vidisp_register(&vidisp, baresip_vidispl(), "vmix",
+			      vmix_disp_alloc, NULL, vmix_disp_display, 0);
 	IF_ERR_GOTO_OUT(err);
 
-	err = vidsrc_register(&vidsrc, baresip_vidsrcl(), "vidmix",
-			      vidmix_src_alloc, NULL);
+	err = vidsrc_register(&vidsrc, baresip_vidsrcl(), "vmix",
+			      vmix_src_alloc, NULL);
 	IF_ERR_GOTO_OUT(err);
 
-	err = vidmix_alloc(&vidmix_mix);
+	err = vidmix_alloc(&vmix_mix);
 	IF_ERR_GOTO_OUT(err);
 
 	err = uag_event_register(ua_event_handler, NULL);
@@ -125,25 +125,25 @@ out:
 
 static int module_close(void)
 {
-	vidmix_record_close();
-	list_flush(&vidmix_srcl);
+	vmix_record_close();
+	list_flush(&vmix_srcl);
 	uag_event_unregister(ua_event_handler);
 	vidsrc = mem_deref(vidsrc);
 	vidisp = mem_deref(vidisp);
 
-	vidmix_src  = mem_deref(vidmix_src);
-	vidmix_disp = mem_deref(vidmix_disp);
+	vmix_src  = mem_deref(vmix_src);
+	vmix_disp = mem_deref(vmix_disp);
 
-	vidmix_mix = mem_deref(vidmix_mix);
+	vmix_mix = mem_deref(vmix_mix);
 
-	vidmix_src_close();
+	vmix_src_close();
 
 	return 0;
 }
 
 
-EXPORT_SYM const struct mod_export DECL_EXPORTS(vidmix) = {
-	"vidmix",
+EXPORT_SYM const struct mod_export DECL_EXPORTS(vmix) = {
+	"vmix",
 	"video",
 	module_init,
 	module_close,

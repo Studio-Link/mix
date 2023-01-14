@@ -5,7 +5,7 @@
 #include <re.h>
 #include <rem.h>
 #include <baresip.h>
-#include "aumix.h"
+#include "amix.h"
 
 struct flac {
 	FLAC__StreamEncoder *enc;

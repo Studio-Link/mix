@@ -6,12 +6,12 @@ static const char *modv[] = {
 	"dtls_srtp",
 
 	/* audio */
-	"aumix",
+	"amix",
 	"opus",
 	"auresamp",
 
 	/* video */
-	"vidmix",
+	"vmix",
 	"avcodec",
 };
 
@@ -90,7 +90,7 @@ static int slmix_getopt(int argc, char *const argv[])
 		"\n");
 
 	(void)re_printf("Mix v%s"
-			" Copyright (C) 2013 - 2022"
+			" Copyright (C) 2013 - 2023"
 			" Sebastian Reimers\n\n",
 			SLMIX_VERSION);
 

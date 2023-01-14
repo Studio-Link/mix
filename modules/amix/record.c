@@ -14,7 +14,7 @@
 #include <re.h>
 #include <rem.h>
 #include <baresip.h>
-#include "aumix.h"
+#include "amix.h"
 
 
 static struct {
@@ -35,8 +35,8 @@ static char record_folder[256] = {0};
 static uint64_t record_msecs   = 0;
 
 
-uint64_t aumix_record_msecs(void);
-uint64_t aumix_record_msecs(void)
+uint64_t amix_record_msecs(void);
+uint64_t amix_record_msecs(void)
 {
 	if (!record_msecs)
 		return 0;
@@ -175,8 +175,8 @@ out:
 }
 
 
-int vidmix_record_start(char *record_folder);
-int aumix_record_start(char *token)
+int vmix_record_start(char *record_folder);
+int amix_record_start(char *token)
 {
 	int err;
 
@@ -200,7 +200,7 @@ int aumix_record_start(char *token)
 	record.run = true;
 	info("aumix: record started\n");
 
-	vidmix_record_start(record_folder);
+	vmix_record_start(record_folder);
 
 	thread_create_name(&record.thread, "aumix record", record_thread,
 			   NULL);
@@ -209,7 +209,7 @@ int aumix_record_start(char *token)
 }
 
 
-void aumix_record(struct auframe *af)
+void amix_record(struct auframe *af)
 {
 	if (!record.run || !af->id)
 		return;
@@ -273,8 +273,8 @@ static void ffmpeg_destruct(void *arg)
 }
 
 
-void vidmix_record_close(void);
-void aumix_record_close(void)
+void vmix_record_close(void);
+void amix_record_close(void)
 {
 	struct le *le;
 	struct ffmpeg_work *work;
@@ -282,7 +282,7 @@ void aumix_record_close(void)
 	if (!record.run)
 		return;
 
-	vidmix_record_close();
+	vmix_record_close();
 
 	record.run = false;
 	info("aumix: record close\n");

@@ -104,7 +104,7 @@ static void conn_destroy(void *arg)
 			json = mem_deref(json);
 		}
 
-		vidmix_disp_enable(wsc->sess->id, false);
+		vmix_disp_enable(wsc->sess->id, false);
 		pc_close(wsc->sess);
 	}
 
@@ -188,7 +188,7 @@ static void update_handler(void *arg)
 {
 	(void)arg;
 	char json[512];
-	uint64_t secs = aumix_record_msecs() / 1000;
+	uint64_t secs = amix_record_msecs() / 1000;
 
 	if (!secs)
 		goto out;

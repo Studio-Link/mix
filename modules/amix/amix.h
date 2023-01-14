@@ -1,7 +1,7 @@
 enum { PTIME = 20, SRATE = 48000, CH = 1, MAX_LEVEL = 500 };
-void aumix_record(struct auframe *af);
-void aumix_record_close(void);
-int aumix_record_start(char *token);
+void amix_record(struct auframe *af);
+void amix_record_close(void);
+int amix_record_start(char *token);
 
 struct flac;
 int flac_init(struct flac **flacp, struct auframe *af, char *file);

@@ -233,7 +233,7 @@ static void http_req_handler(struct http_conn *conn,
 		if (!sess->user || !sess->user->host)
 			goto err;
 
-		aumix_record_enable(true, mix->token_download);
+		amix_record_enable(true, mix->token_download);
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;
@@ -245,7 +245,7 @@ static void http_req_handler(struct http_conn *conn,
 		if (!sess->user || !sess->user->host)
 			goto err;
 
-		aumix_record_enable(false, mix->token_download);
+		amix_record_enable(false, mix->token_download);
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;

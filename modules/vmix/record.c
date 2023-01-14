@@ -10,7 +10,7 @@
 #include <re.h>
 #include <rem.h>
 #include <baresip.h>
-#include "vidmix.h"
+#include "vmix.h"
 
 static struct {
 	FILE *f;
@@ -67,7 +67,7 @@ static void *record_thread(void *arg)
 }
 
 
-int vidmix_record_start(char *record_folder)
+int vmix_record_start(char *record_folder)
 {
 	int err;
 
@@ -105,7 +105,7 @@ static void entry_destruct(void *arg)
 }
 
 
-int vidmix_record(const uint8_t *buf, size_t size, bool *update)
+int vmix_record(const uint8_t *buf, size_t size, bool *update)
 {
 	struct record_entry *e;
 	int err;
@@ -152,7 +152,7 @@ out:
 }
 
 
-void vidmix_record_close(void)
+void vmix_record_close(void)
 {
 	if (!record.run)
 		return;

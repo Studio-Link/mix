@@ -375,7 +375,7 @@ void session_video(struct session *sess, bool enable)
 
 	sess->user->video = enable;
 
-	vidmix_disp_enable(sess->user->id, enable);
+	vmix_disp_enable(sess->user->id, enable);
 
 	if (enable)
 		stream_flush(media_get_stream(sess->mvideo));
@@ -393,14 +393,14 @@ int session_speaker(struct session *sess, bool enable)
 		sess->user->speaker_id = ++sess->mix->next_speaker_id;
 
 	sess->user->speaker = enable;
-	aumix_mute(sess->user->id, !enable, sess->user->speaker_id);
+	amix_mute(sess->user->id, !enable, sess->user->speaker_id);
 	stream_enable(media_get_stream(sess->mvideo), enable);
 	sess->user->hand = false;
 
 	/* only allow disable for privacy reasons */
 	if (!enable) {
 		sess->user->video = false;
-		vidmix_disp_enable(sess->user->id, false);
+		vmix_disp_enable(sess->user->id, false);
 	}
 
 	return session_user_updated(sess);
