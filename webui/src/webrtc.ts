@@ -26,8 +26,8 @@ const constraintsAudio: any = {
 const constraintsVideo: any = {
     audio: false,
     video: {
-        width: 640,
-        height: 360,
+        width: 1280,
+        height: 720,
         deviceId: undefined,
     },
 }
@@ -68,6 +68,34 @@ const black = ({ width = 640, height = 360 } = {}) => {
 
 const AVSilence = (...args: any) => new MediaStream([black(...args), silence()])
 /** End AVdummy **/
+
+/* Limits bandwidth in in [kbps] */
+async function updateBandwidthRestriction(bandwidth: number) {
+
+    if ((adapter.browserDetails.browser === 'chrome' ||
+        adapter.browserDetails.browser === 'safari' ||
+        (adapter.browserDetails.browser === 'firefox' &&
+            adapter.browserDetails.version! >= 64)) &&
+        'RTCRtpSender' in window &&
+        'setParameters' in window.RTCRtpSender.prototype) {
+
+        const sender = pc.getSenders().find((s) => s.track?.kind === 'video')
+        if (!sender)
+            return
+
+        const parameters = sender.getParameters();
+        if (!parameters.encodings) {
+            parameters.encodings = [{}];
+        }
+        if (bandwidth === 0) {
+            delete parameters.encodings[0].maxBitrate;
+        } else {
+            parameters.encodings[0].maxBitrate = bandwidth * 1000;
+        }
+        await sender.setParameters(parameters)
+        return;
+    }
+}
 
 function handle_answer(descr: any) {
     if (!descr) return
@@ -281,7 +309,7 @@ export const Webrtc = {
     audio_output_id: ref<string | undefined>(undefined),
     video_input_id: ref<string | undefined>(undefined),
     video_select: ref<string>('Disabled'),
-    video_resolution: ref<string>('360p'),
+    video_resolution: ref<string>('720p'),
     audio_muted: ref(true),
     echo: ref(false),
     video_muted: ref(true),
@@ -343,16 +371,19 @@ export const Webrtc = {
         if (this.video_resolution.value === '720p') {
             constraintsVideo.video.width = 1280
             constraintsVideo.video.height = 720
+            updateBandwidthRestriction(2000)
         }
 
         if (this.video_resolution.value === '360p') {
             constraintsVideo.video.width = 640
             constraintsVideo.video.height = 360
+            updateBandwidthRestriction(1000)
         }
 
-        if (this.video_resolution.value === '180p') {
-            constraintsVideo.video.width = 320
-            constraintsVideo.video.height = 180
+        if (this.video_resolution.value === '360pl') {
+            constraintsVideo.video.width = 640
+            constraintsVideo.video.height = 360
+            updateBandwidthRestriction(500)
         }
 
         if (this.video_input_id.value !== 'undefined')

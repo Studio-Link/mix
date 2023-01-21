@@ -105,7 +105,7 @@
                       >
                         <option value="720p">High Quality (720p HD)</option>
                         <option value="360p">Normal Quality (360p SD)</option>
-                        <option value="180p">Low Quality (180p LD)</option>
+                        <option value="360pl">Low Bandwidth (360p SD)</option>
                       </select>
                     </div>
                     <div>
