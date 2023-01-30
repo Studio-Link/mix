@@ -1,8 +1,8 @@
 diff --git a/include/baresip.h b/include/baresip.h
-index ca60de75..e32da758 100644
+index 1510249f..508d9ea6 100644
 --- a/include/baresip.h
 +++ b/include/baresip.h
-@@ -1429,6 +1429,7 @@ const char *stream_peer(const struct stream *strm);
+@@ -1431,6 +1431,7 @@ const char *stream_peer(const struct stream *strm);
  int  stream_bundle_init(struct stream *strm, bool offerer);
  int  stream_debug(struct re_printf *pf, const struct stream *s);
  void stream_enable_rtp_timeout(struct stream *strm, uint32_t timeout_ms);
@@ -11,22 +11,22 @@ index ca60de75..e32da758 100644
  
  /*
 diff --git a/src/core.h b/src/core.h
-index 2b45f069..759b3de0 100644
+index 56fa4c19..914861d2 100644
 --- a/src/core.h
 +++ b/src/core.h
-@@ -298,7 +298,6 @@ int  stream_resend(struct stream *s, uint16_t seq, bool ext, bool marker,
+@@ -299,7 +299,6 @@ int  stream_resend(struct stream *s, uint16_t seq, bool ext, bool marker,
  		  int pt, uint32_t ts, struct mbuf *mb);
  
  /* Receive */
 -void stream_flush(struct stream *s);
- int  stream_decode(struct stream *s);
  int  stream_ssrc_rx(const struct stream *strm, uint32_t *ssrc);
  
+ 
 diff --git a/src/stream.c b/src/stream.c
-index 57c832e2..727e09c8 100644
+index 8e70f0ad..eead4303 100644
 --- a/src/stream.c
 +++ b/src/stream.c
-@@ -354,7 +354,7 @@ static void rtp_handler(const struct sa *src, const struct rtp_header *hdr,
+@@ -357,7 +357,7 @@ static void rtp_handler(const struct sa *src, const struct rtp_header *hdr,
  
  	MAGIC_CHECK(s);
  
@@ -35,7 +35,7 @@ index 57c832e2..727e09c8 100644
  		return;
  
  	if (rtp_pt_is_rtcp(hdr->pt)) {
-@@ -1167,8 +1167,7 @@ void stream_flush(struct stream *s)
+@@ -1177,8 +1177,7 @@ void stream_flush(struct stream *s)
  	if (s->rx.jbuf)
  		jbuf_flush(s->rx.jbuf);
  
