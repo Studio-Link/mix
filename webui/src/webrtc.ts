@@ -483,5 +483,6 @@ export const Webrtc = {
         videostream?.getVideoTracks()[0].stop()
         screenstream?.getVideoTracks()[0].stop()
         audiostream?.getAudioTracks()[0].stop()
+        this.state.value = WebrtcState.Offline
     },
 }
