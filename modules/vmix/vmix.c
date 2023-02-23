@@ -6,6 +6,7 @@
 #include <re.h>
 #include <rem.h>
 #include <baresip.h>
+#include <re_atomic.h>
 #include "vmix.h"
 
 
