@@ -103,7 +103,7 @@ static void entry_destruct(void *arg)
 }
 
 
-int vmix_record(const uint8_t *buf, size_t size, bool *update)
+int vmix_record(const uint8_t *buf, size_t size, RE_ATOMIC bool *update)
 {
 	struct record_entry *e;
 	int err;
@@ -115,7 +115,7 @@ int vmix_record(const uint8_t *buf, size_t size, bool *update)
 		return ESHUTDOWN;
 
 	if (!record.started) {
-		*update		  = true;
+		re_atomic_rlx_set(update, true);
 		record.started	  = true;
 		record.start_time = tmr_jiffies();
 		return 0;

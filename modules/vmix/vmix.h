@@ -54,7 +54,7 @@ void vmix_src_input(struct vidsrc_st *st,
 
 
 int vmix_record_start(char *record_folder);
-int vmix_record(const uint8_t *buf, size_t size, bool *update);
+int vmix_record(const uint8_t *buf, size_t size, RE_ATOMIC bool *update);
 void vmix_record_close(void);
 
 

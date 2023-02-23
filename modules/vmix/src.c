@@ -12,7 +12,7 @@
 
 static struct vidpacket vp     = {.buf = NULL, .size = 0, .timestamp = 0};
 static struct mbuf *packet_dup = NULL;
-static bool reset	       = false;
+static RE_ATOMIC bool reset    = false;
 static bool is_keyframe	       = false;
 static mtx_t *vmix_mutex;
 
@@ -132,8 +132,8 @@ int packet_dup_handler(uint64_t ts, uint8_t *buf, size_t size, int keyframe)
 	if (!buf)
 		return 0;
 
-	if (reset) {
-		reset = false;
+	if (re_atomic_rlx(&reset)) {
+		re_atomic_rlx_set(&reset, false);
 		err   = ECONNRESET;
 		goto out;
 	}
@@ -204,7 +204,7 @@ int vmix_src_alloc(struct vidsrc_st **stp, const struct vidsrc *vs,
 
 	vidmix_source_toggle_selfview(st->vidmix_src);
 
-	reset = true;
+	re_atomic_rlx_set(&reset, true);
 
 	/* only start once */
 	if (vmix_srcl.head == &st->le) {
