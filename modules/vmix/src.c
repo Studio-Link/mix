@@ -7,14 +7,15 @@
 #include <re.h>
 #include <rem.h>
 #include <baresip.h>
+#include <re_atomic.h>
 #include "vmix.h"
 
 static struct vidpacket vp     = {.buf = NULL, .size = 0, .timestamp = 0};
 static struct mbuf *packet_dup = NULL;
 static bool reset	       = false;
 static bool is_keyframe	       = false;
-
 static mtx_t *vmix_mutex;
+
 
 static inline void vmix_lock(void)
 {
@@ -43,9 +44,7 @@ static void vmix_delegate(void)
 	vmix_unlock();
 
 	vidmix_source_start(st->vidmix_src);
-	mtx_lock(st->lock);
-	st->run = true;
-	mtx_unlock(st->lock);
+	re_atomic_rlx_set(&st->run, true);
 
 	return;
 out:
@@ -56,25 +55,22 @@ out:
 static void destructor(void *arg)
 {
 	struct vidsrc_st *st = arg;
-	bool delegate	     = vmix_srcl.head == &st->le2;
+	bool delegate	     = vmix_srcl.head == &st->le;
 
-	mtx_lock(st->lock);
-	st->run = false;
-	mtx_unlock(st->lock);
+	re_atomic_rlx_set(&st->run, false);
 
 	if (st->vidisp)
 		st->vidisp->vidsrc = NULL;
 
+	list_unlink(&st->he);
+	mem_deref(st->device);
+
+	vidmix_source_enable(st->vidmix_src, false);
+	vidmix_source_stop(st->vidmix_src);
 	vmix_lock();
 	list_unlink(&st->le);
 	vmix_unlock();
-
-	mem_deref(st->device);
-	vidmix_source_enable(st->vidmix_src, false);
-	vidmix_source_stop(st->vidmix_src);
-	list_unlink(&st->le2);
 	mem_deref(st->vidmix_src);
-	mem_deref(st->lock);
 
 	if (delegate)
 		vmix_delegate();
@@ -89,12 +85,8 @@ static void frame_handler(uint64_t ts, const struct vidframe *frame, void *arg)
 	if (!st || !st->frameh)
 		return;
 
-	mtx_lock(st->lock);
-	if (!st->run) {
-		mtx_unlock(st->lock);
+	if (!re_atomic_rlx(&st->run))
 		return;
-	}
-	mtx_unlock(st->lock);
 
 	/* frameh can return without calling dup_handler if not all network
 	 * packets are send */
@@ -108,24 +100,23 @@ static void frame_handler(uint64_t ts, const struct vidframe *frame, void *arg)
 
 	vmix_lock();
 	le = vmix_srcl.head->next;
-	vmix_unlock();
 	while (le) {
 		st = le->data;
 		if (!st)
 			break;
 
 		/* wait until keyframe arrive if src is not running */
-		if (!st->run && !is_keyframe) {
+		if (!re_atomic_rlx(&st->run) && !is_keyframe) {
 			le = le->next;
 			continue;
 		}
 
-		st->run = true;
+		re_atomic_rlx_set(&st->run, true);
 		st->packeth(&vp, st->arg);
 		le = le->next;
 	}
+	vmix_unlock();
 
-	/* record */
 	vmix_record(vp.buf, vp.size, &reset);
 
 	/* prevent sending packets multiple times */
@@ -167,10 +158,9 @@ out:
 
 
 int vmix_src_alloc(struct vidsrc_st **stp, const struct vidsrc *vs,
-		     struct vidsrc_prm *prm, const struct vidsz *size,
-		     const char *fmt, const char *dev, vidsrc_frame_h *frameh,
-		     vidsrc_packet_h *packeth, vidsrc_error_h *errorh,
-		     void *arg)
+		   struct vidsrc_prm *prm, const struct vidsz *size,
+		   const char *fmt, const char *dev, vidsrc_frame_h *frameh,
+		   vidsrc_packet_h *packeth, vidsrc_error_h *errorh, void *arg)
 {
 	struct vidsrc_st *st;
 	int err;
@@ -199,10 +189,6 @@ int vmix_src_alloc(struct vidsrc_st **stp, const struct vidsrc *vs,
 	if (err)
 		goto out;
 
-	err = mutex_alloc(&st->lock);
-	if (err)
-		goto out;
-
 	/* find a vidisp device with same name */
 	st->vidisp = vmix_disp_find(dev);
 	if (st->vidisp) {
@@ -210,10 +196,10 @@ int vmix_src_alloc(struct vidsrc_st **stp, const struct vidsrc *vs,
 	}
 
 	warning("vidmix: src_alloc (%f fps)\n", st->fps);
-	hash_append(vmix_src, hash_joaat_str(dev), &st->le, st);
+	hash_append(vmix_src, hash_joaat_str(dev), &st->he, st);
 
 	vmix_lock();
-	list_append(&vmix_srcl, &st->le2, st);
+	list_append(&vmix_srcl, &st->le, st);
 	vmix_unlock();
 
 	vidmix_source_toggle_selfview(st->vidmix_src);
@@ -221,11 +207,9 @@ int vmix_src_alloc(struct vidsrc_st **stp, const struct vidsrc *vs,
 	reset = true;
 
 	/* only start once */
-	if (vmix_srcl.head == &st->le2) {
+	if (vmix_srcl.head == &st->le) {
 		vidmix_source_start(st->vidmix_src);
-		mtx_lock(st->lock);
-		st->run = true;
-		mtx_unlock(st->lock);
+		re_atomic_rlx_set(&st->run, true);
 	}
 
 out:
@@ -254,7 +238,7 @@ struct vidsrc_st *vmix_src_find(const char *device)
 
 
 void vmix_src_input(struct vidsrc_st *st, const struct vidframe *frame,
-		      uint64_t timestamp)
+		    uint64_t timestamp)
 {
 	(void)timestamp;
 

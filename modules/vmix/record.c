@@ -10,6 +10,7 @@
 #include <re.h>
 #include <rem.h>
 #include <baresip.h>
+#include <re_atomic.h>
 #include "vmix.h"
 
 static struct {
@@ -48,10 +49,7 @@ static void *record_thread(void *arg)
 		mtx_unlock(record.lock);
 		while (le) {
 			struct record_entry *e = le->data;
-			if (!e) {
-				le = le->next;
-				continue;
-			}
+
 			ret = fwrite(e->mb->buf, e->size, 1, record.f);
 			if (!ret) {
 				warning("vidmix/record: fwrite error\n");

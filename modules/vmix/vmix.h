@@ -6,8 +6,8 @@
 
 
 struct vidsrc_st {
+	struct le he;
 	struct le le;
-	struct le le2;
 	struct vidisp_st *vidisp;
 	double fps;
 	char *device;
@@ -15,8 +15,7 @@ struct vidsrc_st {
 	vidsrc_frame_h *frameh;
 	struct vidmix_source *vidmix_src;
 	void *arg;
-	bool run;
-	mtx_t *lock;
+	RE_ATOMIC bool run;
 };
 
 
