@@ -1,0 +1,84 @@
+diff --git a/src/video.c b/src/video.c
+index eec6a35c..fed8c1b0 100644
+--- a/src/video.c
++++ b/src/video.c
+@@ -100,6 +100,7 @@ struct vtx {
+ 	double efps;                       /**< Estimated frame-rate      */
+ 	uint64_t ts_base;                  /**< First RTP timestamp sent  */
+ 	uint64_t ts_last;                  /**< Last RTP timestamp sent   */
++	uint64_t ts_latency;               /**< RTP timestamp latency     */
+ 
+ 	/** Statistics */
+ 	struct {
+@@ -174,6 +175,7 @@ struct vidqent {
+ 	bool marker;
+ 	uint8_t pt;
+ 	uint32_t ts;
++	uint64_t ts64;
+ 	uint64_t jfs_nack;
+ 	uint16_t seq;
+ 	struct mbuf *mb;
+@@ -194,7 +196,7 @@ static void vidqent_destructor(void *arg)
+ 
+ 
+ static int vidqent_alloc(struct vidqent **qentp, struct stream *strm,
+-			 bool marker, uint8_t pt, uint32_t ts,
++			 bool marker, uint8_t pt, uint32_t ts, uint64_t ts64,
+ 			 const uint8_t *hdr, size_t hdr_len,
+ 			 const uint8_t *pld, size_t pld_len)
+ {
+@@ -213,6 +215,7 @@ static int vidqent_alloc(struct vidqent **qentp, struct stream *strm,
+ 	qent->marker = marker;
+ 	qent->pt     = pt;
+ 	qent->ts     = ts;
++	qent->ts64   = ts64;
+ 
+ 	qent->mb = mbuf_alloc(RTP_PRESZ + hdr_len + pld_len + RTP_TRAILSZ);
+ 	if (!qent->mb) {
+@@ -276,6 +279,7 @@ static void vidqueue_poll(struct vtx *vtx, uint64_t jfs, uint64_t prev_jfs)
+ 	struct le *le;
+ 	struct mbuf *mbd;
+ 	uint64_t jfs_nack = jfs + NACK_QUEUE_TIME;
++	static uint64_t jfs_latency = 0;
+ 
+ 	if (!vtx)
+ 		return;
+@@ -295,6 +299,20 @@ static void vidqueue_poll(struct vtx *vtx, uint64_t jfs, uint64_t prev_jfs)
+ 	burst = min(burst, BURST_MAX);
+ 	sent  = 0;
+ 
++	uint64_t head_ts = ((struct vidqent *)vtx->sendq.head->data)->ts64;
++	uint64_t tail_ts = ((struct vidqent *)vtx->sendq.tail->data)->ts64;
++
++	vtx->ts_latency = tail_ts - head_ts;
++
++	if (vtx->ts_latency > (3600 * 5) && /* (3600 = 40ms) */
++	    (jfs - jfs_latency) > (1000 * 100)) {
++		warning("video_poll: %p: vtx latency: %f (overall %f)\n", vtx,
++			video_calc_seconds(vtx->ts_latency),
++			video_calc_seconds(video_calc_rtp_timestamp_fix(jfs) -
++					   head_ts));
++		jfs_latency = jfs;
++	}
++
+ 	while (le) {
+ 		struct vidqent *qent = le->data;
+ 
+@@ -315,6 +333,8 @@ static void vidqueue_poll(struct vtx *vtx, uint64_t jfs, uint64_t prev_jfs)
+ 		le = le->next;
+ 
+ 		if (sent > burst) {
++			warning("video_poll: %p: burst break %zu\n", vtx,
++				burst);
+ 			break;
+ 		}
+ 	}
+@@ -422,7 +442,7 @@ static int packet_handler(bool marker, uint64_t ts,
+ 	rtp_ts = vtx->ts_offset + (ts & 0xffffffff);
+ 
+ 	err = vidqent_alloc(&qent, strm, marker, stream_pt_enc(strm), rtp_ts,
+-			    hdr, hdr_len, pld, pld_len);
++			    ts, hdr, hdr_len, pld, pld_len);
+ 	if (err)
+ 		return err;
+ 
