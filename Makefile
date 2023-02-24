@@ -50,7 +50,8 @@ external:
 		patch -p1 < ../../patches/baresip_stream_enable.patch && \
 		patch -p1 < ../../patches/baresip_video_poll_pr2465.patch && \
 		patch -p1 < ../../patches/baresip_video_remove_sendq_empty.patch && \
-		patch -p1 < ../../patches/baresip_video_latency.patch
+		patch -p1 < ../../patches/baresip_video_latency.patch && \
+		patch -p1 < ../../patches/baresip_video_burst_size.patch
 
 
 ##############################################################################
