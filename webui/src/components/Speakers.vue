@@ -44,13 +44,18 @@ function canvasLoop() {
 
 function canvasFrame() {
   const video = <HTMLVideoElement | null>document.querySelector('video#live')
-  const rows = Users.speakers.value?.length
+  const n = Users.speakers.value?.length
   const width = 1920
   const height = 1080
+  let rows = 0
 
-  if (!rows) {
+  if (!n) {
     canvasLoop()
     return
+  }
+
+  for (rows = 1; ; rows++) {
+    if (n <= rows * rows) break
   }
 
   Users.speakers.value?.forEach((speaker, idx) => {
@@ -70,12 +75,12 @@ function canvasFrame() {
       return
     }
 
-    const w = width / rows
-    const h = height / rows
+    const w = Math.floor(width / rows)
+    const h = Math.floor(height / rows)
     const x = w * (idx % rows)
     const y = h * Math.floor(idx / rows)
 
-    ctx.drawImage(video, x, y, w, h, 0, 0, canvas.width, canvas.height)
+    ctx.drawImage(video, x + (w - h) / 2, y, h, h, 0, 0, canvas.width, canvas.height)
   })
 
   canvasLoop()
