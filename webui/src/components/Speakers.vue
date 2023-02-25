@@ -73,7 +73,7 @@ function canvasFrame() {
     const w = width / rows
     const h = height / rows
     const x = w * (idx % rows)
-    const y = h * (idx / rows)
+    const y = h * Math.floor(idx / rows)
 
     ctx.drawImage(video, x, y, w, h, 0, 0, canvas.width, canvas.height)
   })
