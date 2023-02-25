@@ -17,7 +17,8 @@ const surface = ref<HTMLDivElement | null>(null)
 const heightc = ref(0)
 const widthc = ref(0)
 const colsc = ref('grid-cols-1')
-let resizeEnd = <NodeJS.Timeout | undefined>undefined
+let resizeTimer = <NodeJS.Timeout | undefined>undefined
+let loopTimer = <NodeJS.Timeout | undefined>undefined
 
 function resize() {
   if (!surface.value) return
@@ -35,7 +36,8 @@ function resize() {
 }
 
 function canvasLoop() {
-  setTimeout(() => {
+  clearTimeout(loopTimer)
+  loopTimer = setTimeout(() => {
     requestAnimationFrame(canvasFrame)
   }, 1000 / 25)
 }
@@ -81,8 +83,8 @@ function canvasFrame() {
 
 onMounted(() => {
   addEventListener('resize', () => {
-    clearTimeout(resizeEnd)
-    resizeEnd = setTimeout(resize, 100)
+    clearTimeout(resizeTimer)
+    resizeTimer = setTimeout(resize, 100)
   })
   resize()
   canvasLoop()
@@ -90,7 +92,7 @@ onMounted(() => {
 
 onUpdated(() => {
   /*@FIXME: avoid duplicate resize events, maybe only if speakers.length change*/
-  clearTimeout(resizeEnd)
-  resizeEnd = setTimeout(resize, 100)
+  clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(resize, 100)
 })
 </script>
