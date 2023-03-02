@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed left-0 top-0 m-3 space-x-2 text-xs">
+  <div class="fixed z-30 left-0 top-0 m-3 space-x-2 text-xs">
     <button
       :class="{
         'bg-red-700 hover:bg-red-600': !Users.record.value,
