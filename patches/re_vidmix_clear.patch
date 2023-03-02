@@ -1,7 +1,7 @@
-diff --git a/src/vidmix/vidmix.c b/src/vidmix/vidmix.c
+diff --git a/rem/vidmix/vidmix.c b/rem/vidmix/vidmix.c
 index c603ccf..8813a4b 100644
---- a/src/vidmix/vidmix.c
-+++ b/src/vidmix/vidmix.c
+--- a/rem/vidmix/vidmix.c
++++ b/rem/vidmix/vidmix.c
 @@ -217,10 +217,8 @@ static int vidmix_thread(void *arg)
  
  		mtx_lock(&mix->rwlock);

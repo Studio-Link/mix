@@ -40,15 +40,13 @@ unix: external
 
 external:
 	mkdir -p external
-	git clone -b v2.12.0 https://github.com/baresip/re.git external/re
-	git clone -b v2.12.0 https://github.com/baresip/rem.git external/rem
-	git clone -b v2.12.0 https://github.com/baresip/baresip.git external/baresip
-	cd external/rem && \
-		patch -p1 < ../../patches/rem_vidmix_clear.patch
+	git clone -b main https://github.com/baresip/re.git external/re
+	git clone -b main https://github.com/baresip/baresip.git external/baresip
+	cd external/re && \
+		patch -p1 < ../../patches/re_vidmix_clear.patch
 	cd external/baresip && \
 		patch -p1 < ../../patches/baresip_packet_dup_handler.patch && \
 		patch -p1 < ../../patches/baresip_stream_enable.patch && \
-		patch -p1 < ../../patches/baresip_video_poll_pr2465.patch && \
 		patch -p1 < ../../patches/baresip_video_remove_sendq_empty.patch && \
 		patch -p1 < ../../patches/baresip_video_latency.patch && \
 		patch -p1 < ../../patches/baresip_video_burst_size.patch

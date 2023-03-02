@@ -75,7 +75,6 @@ set(APP_MODULES amix vmix)
 set(MODULES ice dtls_srtp turn opus avcodec fakevideo auresamp)
 
 add_subdirectory(external/re)
-add_subdirectory(external/rem)
 add_subdirectory(external/baresip)
 
 find_package(re CONFIG REQUIRED)
@@ -102,6 +101,6 @@ set(SRCS
 #
 
 add_executable(${PROJECT_NAME} ${SRCS})
-target_link_libraries(${PROJECT_NAME} PRIVATE baresip rem re gd ${LINKLIBS})
+target_link_libraries(${PROJECT_NAME} PRIVATE baresip re gd ${LINKLIBS})
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${RE_DEFINITIONS} ${MIX_DEFS}
   SLMIX_VERSION="${PROJECT_VERSION}")
