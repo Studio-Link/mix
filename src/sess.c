@@ -124,6 +124,7 @@ static void pc_estab_handler(struct media_track *media, void *arg)
 		}
 		sess->mvideo = media;
 		stream_enable(media_get_stream(media), false);
+		stream_enable_tx(media_get_stream(media), true);
 		break;
 
 	default:
@@ -395,6 +396,7 @@ int session_speaker(struct session *sess, bool enable)
 	sess->user->speaker = enable;
 	amix_mute(sess->user->id, !enable, sess->user->speaker_id);
 	stream_enable(media_get_stream(sess->mvideo), enable);
+	stream_enable_tx(media_get_stream(sess->mvideo), true);
 	sess->user->hand = false;
 
 	/* only allow disable for privacy reasons */
