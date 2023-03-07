@@ -41,16 +41,16 @@ unix: external
 external:
 	mkdir -p external
 	git clone --depth 1 -b main https://github.com/baresip/re.git external/re
-	git clone --depth 1 -b main \
+	git clone --depth 1 -b video_tx_paced_sending \
 		https://github.com/baresip/baresip.git external/baresip
 	cd external/re && \
 		patch -p1 < ../../patches/re_vidmix_clear.patch
 	cd external/baresip && \
 		patch -p1 < ../../patches/baresip_packet_dup_handler.patch && \
 		patch -p1 < ../../patches/baresip_stream_enable.patch && \
-		patch -p1 < ../../patches/baresip_video_remove_sendq_empty.patch && \
-		patch -p1 < ../../patches/baresip_video_latency.patch && \
-		patch -p1 < ../../patches/baresip_video_burst_size.patch
+		patch -p1 < ../../patches/baresip_video_remove_sendq_empty.patch
+		#patch -p1 < ../../patches/baresip_video_burst_size.patch
+		#patch -p1 < ../../patches/baresip_video_latency.patch && \
 
 
 ##############################################################################
