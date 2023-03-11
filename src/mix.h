@@ -125,6 +125,6 @@ void sl_ws_session_close(struct session *sess);
  * @TODO: convert to registered functions or shared header
  */
 void amix_mute(char *device, bool mute, uint16_t id);
-int amix_record_enable(bool enable, char *token);
+int amix_record_enable(bool enable, char *token, bool audio_only);
 uint64_t amix_record_msecs(void);
 void vmix_disp_enable(const char *device, bool enable);

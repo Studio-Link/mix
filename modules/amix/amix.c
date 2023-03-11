@@ -289,15 +289,18 @@ static int mix_debug(struct re_printf *pf, void *arg)
 }
 
 
-int amix_record_enable(bool enable, char *token);
-int amix_record_enable(bool enable, char *token)
+void vmix_record_close(void);
+int amix_record_enable(bool enable, char *token, bool audio_only);
+int amix_record_enable(bool enable, char *token, bool audio_only)
 {
 	int err = 0;
 
 	if (enable)
-		err = amix_record_start(token);
-	else
+		err = amix_record_start(token, audio_only);
+	else {
+		vmix_record_close();
 		amix_record_close();
+	}
 
 	return err;
 }

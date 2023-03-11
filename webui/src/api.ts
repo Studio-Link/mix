@@ -1,7 +1,7 @@
 import config from './config'
 import { Webrtc } from './webrtc'
 import router from './router'
-import { Users } from './ws/users'
+import { Users, RecordType } from './ws/users'
 import { Error } from './error'
 
 interface Session {
@@ -142,7 +142,7 @@ export default {
         return sess.host
     },
 
-    async record_switch() {
+    async record_switch(type: RecordType) {
         if (!sess.host) return
 
         if (Users.record.value) {
@@ -151,7 +151,14 @@ export default {
             await api_fetch('PUT', '/record/disable', null)
         } else {
             Users.record.value = true
-            await api_fetch('PUT', '/record/enable', null)
+            if (type === RecordType.AudioOnly) {
+                Users.record_type.value = RecordType.AudioOnly
+                await api_fetch('PUT', '/record/audio/enable', null)
+            }
+            else {
+                Users.record_type.value = RecordType.AudioVideo
+                await api_fetch('PUT', '/record/enable', null)
+            }
         }
     },
 

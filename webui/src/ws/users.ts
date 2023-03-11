@@ -20,6 +20,11 @@ interface Chat {
     msg: string
 }
 
+export enum RecordType {
+    AudioVideo,
+    AudioOnly
+}
+
 interface Users {
     socket?: WebSocket
     ws_close(): void
@@ -31,6 +36,7 @@ interface Users {
     settings_active: Ref<boolean>
     record_timer: Ref<string>
     record: Ref<boolean>
+    record_type: Ref<RecordType>
     hand_status: Ref<boolean>
     speaker_status: Ref<boolean>
 }
@@ -48,6 +54,7 @@ export const Users: Users = {
     settings_active: ref(false),
     record_timer: ref('0:00:00'),
     record: ref(false),
+    record_type: ref(RecordType.AudioVideo),
     hand_status: ref(false),
     speaker_status: ref(false),
 

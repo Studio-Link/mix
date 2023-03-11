@@ -176,7 +176,7 @@ out:
 
 
 int vmix_record_start(char *record_folder);
-int amix_record_start(char *token)
+int amix_record_start(char *token, bool audio_only)
 {
 	int err;
 
@@ -200,7 +200,8 @@ int amix_record_start(char *token)
 	record.run = true;
 	info("aumix: record started\n");
 
-	vmix_record_start(record_folder);
+	if (!audio_only)
+		vmix_record_start(record_folder);
 
 	thread_create_name(&record.thread, "aumix record", record_thread,
 			   NULL);
@@ -273,7 +274,6 @@ static void ffmpeg_destruct(void *arg)
 }
 
 
-void vmix_record_close(void);
 void amix_record_close(void)
 {
 	struct le *le;
@@ -281,8 +281,6 @@ void amix_record_close(void)
 
 	if (!record.run)
 		return;
-
-	vmix_record_close();
 
 	record.run = false;
 	info("aumix: record close\n");

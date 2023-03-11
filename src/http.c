@@ -233,7 +233,19 @@ static void http_req_handler(struct http_conn *conn,
 		if (!sess->user || !sess->user->host)
 			goto err;
 
-		amix_record_enable(true, mix->token_download);
+		amix_record_enable(true, mix->token_download, false);
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/record/audio/enable") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+		/* check permission */
+		if (!sess->user || !sess->user->host)
+			goto err;
+
+		amix_record_enable(true, mix->token_download, true);
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;
@@ -245,7 +257,7 @@ static void http_req_handler(struct http_conn *conn,
 		if (!sess->user || !sess->user->host)
 			goto err;
 
-		amix_record_enable(false, mix->token_download);
+		amix_record_enable(false, mix->token_download, false);
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;
