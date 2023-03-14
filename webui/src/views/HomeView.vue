@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed right-0 top-0 m-3 space-x-2 text-xs z-10">
+  <div class="fixed right-0 top-0 m-3 space-x-2 text-xs z-30">
     <RecButton />
   </div>
   <div class="flex">
