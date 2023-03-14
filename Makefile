@@ -40,8 +40,9 @@ unix: external
 
 external:
 	mkdir -p external
-	git clone -b main https://github.com/baresip/re.git external/re
-	git clone -b main https://github.com/baresip/baresip.git external/baresip
+	git clone --depth 1 -b main https://github.com/baresip/re.git external/re
+	git clone --depth 1 -b main \
+		https://github.com/baresip/baresip.git external/baresip
 	cd external/re && \
 		patch -p1 < ../../patches/re_vidmix_clear.patch
 	cd external/baresip && \

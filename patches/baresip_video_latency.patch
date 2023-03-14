@@ -1,16 +1,16 @@
 diff --git a/src/video.c b/src/video.c
-index eec6a35c..84261653 100644
+index 58bcf53..fadafeb 100644
 --- a/src/video.c
 +++ b/src/video.c
-@@ -100,6 +100,7 @@ struct vtx {
- 	double efps;                       /**< Estimated frame-rate      */
- 	uint64_t ts_base;                  /**< First RTP timestamp sent  */
+@@ -102,6 +102,7 @@ struct vtx {
  	uint64_t ts_last;                  /**< Last RTP timestamp sent   */
+ 	thrd_t thrd;                       /**< Tx-Thread                 */
+ 	RE_ATOMIC bool run;                /**< Tx-Thread is active       */
 +	uint64_t ts_latency;               /**< RTP timestamp latency     */
  
  	/** Statistics */
  	struct {
-@@ -174,6 +175,7 @@ struct vidqent {
+@@ -175,6 +176,7 @@ struct vidqent {
  	bool marker;
  	uint8_t pt;
  	uint32_t ts;
@@ -18,7 +18,7 @@ index eec6a35c..84261653 100644
  	uint64_t jfs_nack;
  	uint16_t seq;
  	struct mbuf *mb;
-@@ -194,7 +196,7 @@ static void vidqent_destructor(void *arg)
+@@ -195,7 +197,7 @@ static void vidqent_destructor(void *arg)
  
  
  static int vidqent_alloc(struct vidqent **qentp, struct stream *strm,
@@ -27,7 +27,7 @@ index eec6a35c..84261653 100644
  			 const uint8_t *hdr, size_t hdr_len,
  			 const uint8_t *pld, size_t pld_len)
  {
-@@ -213,6 +215,7 @@ static int vidqent_alloc(struct vidqent **qentp, struct stream *strm,
+@@ -214,6 +216,7 @@ static int vidqent_alloc(struct vidqent **qentp, struct stream *strm,
  	qent->marker = marker;
  	qent->pt     = pt;
  	qent->ts     = ts;
@@ -35,7 +35,7 @@ index eec6a35c..84261653 100644
  
  	qent->mb = mbuf_alloc(RTP_PRESZ + hdr_len + pld_len + RTP_TRAILSZ);
  	if (!qent->mb) {
-@@ -276,6 +279,7 @@ static void vidqueue_poll(struct vtx *vtx, uint64_t jfs, uint64_t prev_jfs)
+@@ -277,6 +280,7 @@ static void vidqueue_poll(struct vtx *vtx, uint64_t jfs, uint64_t prev_jfs)
  	struct le *le;
  	struct mbuf *mbd;
  	uint64_t jfs_nack = jfs + NACK_QUEUE_TIME;
@@ -43,7 +43,7 @@ index eec6a35c..84261653 100644
  
  	if (!vtx)
  		return;
-@@ -295,6 +299,23 @@ static void vidqueue_poll(struct vtx *vtx, uint64_t jfs, uint64_t prev_jfs)
+@@ -296,6 +300,23 @@ static void vidqueue_poll(struct vtx *vtx, uint64_t jfs, uint64_t prev_jfs)
  	burst = min(burst, BURST_MAX);
  	sent  = 0;
  
@@ -66,9 +66,9 @@ index eec6a35c..84261653 100644
 +
  	while (le) {
  		struct vidqent *qent = le->data;
- 
-@@ -315,6 +336,8 @@ static void vidqueue_poll(struct vtx *vtx, uint64_t jfs, uint64_t prev_jfs)
  		le = le->next;
+@@ -315,6 +336,8 @@ static void vidqueue_poll(struct vtx *vtx, uint64_t jfs, uint64_t prev_jfs)
+ 		list_move(&qent->le, &vtx->sendqnb);
  
  		if (sent > burst) {
 +			warning("video_poll: %p: burst break %zu\n", vtx,
@@ -76,7 +76,7 @@ index eec6a35c..84261653 100644
  			break;
  		}
  	}
-@@ -422,7 +445,7 @@ static int packet_handler(bool marker, uint64_t ts,
+@@ -412,7 +435,7 @@ static int packet_handler(bool marker, uint64_t ts,
  	rtp_ts = vtx->ts_offset + (ts & 0xffffffff);
  
  	err = vidqent_alloc(&qent, strm, marker, stream_pt_enc(strm), rtp_ts,
