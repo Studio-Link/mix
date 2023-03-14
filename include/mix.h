@@ -18,8 +18,7 @@ enum mix_rec {
 
 enum user_event { USER_ADDED, USER_UPDATED, USER_DELETED, CHAT_ADDED };
 
-typedef int(mix_audio_rec_h)(const char *folder, bool enable);
-typedef int(mix_video_rec_h)(const char *folder, bool enable);
+typedef int(mix_rec_h)(const char *folder, bool enable);
 typedef void(mix_disp_enable_h)(const char *device, bool enable);
 typedef uint64_t(mix_time_rec_h)(void);
 
@@ -36,8 +35,8 @@ struct mix {
 	char token_listeners[TOKEN_SZ];
 	char token_download[TOKEN_SZ];
 	struct rtc_configuration pc_config;
-	mix_audio_rec_h *audio_rec_h;
-	mix_video_rec_h *video_rec_h;
+	mix_rec_h *audio_rec_h;
+	mix_rec_h *video_rec_h;
 	mix_disp_enable_h *disp_enable_h;
 	mix_time_rec_h *time_rec_h;
 	enum mix_rec rec_state;
@@ -81,8 +80,8 @@ struct mix *slmix(void);
 int slmix_init(void);
 void slmix_config(char *file);
 void slmix_close(void);
-void slmix_set_audio_rec_h(struct mix *m, mix_audio_rec_h *rec_h);
-void slmix_set_video_rec_h(struct mix *m, mix_audio_rec_h *rec_h);
+void slmix_set_audio_rec_h(struct mix *m, mix_rec_h *rec_h);
+void slmix_set_video_rec_h(struct mix *m, mix_rec_h *rec_h);
 void slmix_set_time_rec_h(struct mix *m, mix_time_rec_h *time_h);
 void slmix_set_video_disp_h(struct mix *m, mix_disp_enable_h *disp_h);
 void slmix_record(struct mix *m, enum mix_rec state);

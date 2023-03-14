@@ -82,7 +82,7 @@ void slmix_close(void)
 }
 
 
-void slmix_set_audio_rec_h(struct mix *m, mix_audio_rec_h *rec_h)
+void slmix_set_audio_rec_h(struct mix *m, mix_rec_h *rec_h)
 {
 	if (!m)
 		return;
@@ -91,7 +91,7 @@ void slmix_set_audio_rec_h(struct mix *m, mix_audio_rec_h *rec_h)
 }
 
 
-void slmix_set_video_rec_h(struct mix *m, mix_audio_rec_h *rec_h)
+void slmix_set_video_rec_h(struct mix *m, mix_rec_h *rec_h)
 {
 	if (!m)
 		return;
@@ -152,7 +152,7 @@ void slmix_record(struct mix *m, enum mix_rec state)
 	int err		 = 0;
 
 	if (!m || !m->video_rec_h || !m->audio_rec_h) {
-		warning("slmix: record state %s failed\n",
+		warning("slmix: record init state %s failed\n",
 			slmix_rec_state_name(state));
 		return;
 	}
