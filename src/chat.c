@@ -1,4 +1,4 @@
-#include "mix.h"
+#include <mix.h>
 
 
 static void destructor(void *data)

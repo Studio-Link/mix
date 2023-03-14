@@ -65,7 +65,7 @@ static void *record_thread(void *arg)
 }
 
 
-int vmix_record_start(char *record_folder)
+int vmix_record_start(const char *record_folder)
 {
 	int err;
 
@@ -150,10 +150,10 @@ out:
 }
 
 
-void vmix_record_close(void)
+int vmix_record_close(void)
 {
 	if (!record.run)
-		return;
+		return EINVAL;
 
 	double avg_fps = .0;
 
@@ -173,4 +173,6 @@ void vmix_record_close(void)
 	fclose(record.f);
 	chmod(record.filename, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	record.f = NULL;
+
+	return 0;
 }
