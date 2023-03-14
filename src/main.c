@@ -1,5 +1,6 @@
 #include <getopt.h>
-#include "mix.h"
+#include <mix.h>
+
 
 static const char *modv[] = {
 	"ice",
@@ -17,50 +18,11 @@ static const char *modv[] = {
 
 static char *config_file = NULL;
 
+
 static void signal_handler(int sig)
 {
 	(void)sig;
 	re_cancel();
-}
-
-static int slmix_init(struct mix *mix)
-{
-	struct pl srv;
-	int err;
-	pl_set_str(&srv, "turn:195.201.63.86:3478");
-
-	err = stunuri_decode(&mix->pc_config.ice_server, &srv);
-	if (err) {
-		warning("mix: invalid iceserver '%r' (%m)\n", &srv, err);
-		return err;
-	}
-
-	mix->pc_config.stun_user  = "turn200301";
-	mix->pc_config.credential = "choh4zeem3foh1";
-
-	mix->mnat = mnat_find(baresip_mnatl(), "ice");
-	if (!mix->mnat) {
-		warning("mix: medianat 'ice' not found\n");
-		return ENOENT;
-	}
-
-	mix->menc = menc_find(baresip_mencl(), "dtls_srtp");
-	if (!mix->menc) {
-		warning("mix: mediaenc 'dtls-srtp' not found\n");
-		return ENOENT;
-	}
-
-	return 0;
-}
-
-
-static void slmix_close(struct mix *mix)
-{
-	list_flush(&mix->sessl);
-	list_flush(&mix->chatl);
-
-	mix->httpsock		  = mem_deref(mix->httpsock);
-	mix->pc_config.ice_server = mem_deref(mix->pc_config.ice_server);
 }
 
 
@@ -128,30 +90,6 @@ static int slmix_getopt(int argc, char *const argv[])
 }
 
 
-static void slmix_config(struct mix *mix)
-{
-	struct conf *conf;
-
-	if (!mix || !config_file)
-		return;
-
-	if (0 != conf_alloc(&conf, config_file))
-		return;
-
-	conf_get_str(conf, "mix_token_host", mix->token_host,
-		     sizeof(mix->token_host));
-
-	conf_get_str(conf, "mix_token_guests", mix->token_guests,
-		     sizeof(mix->token_guests));
-
-	conf_get_str(conf, "mix_token_listeners", mix->token_listeners,
-		     sizeof(mix->token_listeners));
-
-	conf_get_str(conf, "mix_token_download", mix->token_download,
-		     sizeof(mix->token_download));
-
-	mem_deref(conf);
-}
 
 
 int main(int argc, char *const argv[])
@@ -160,31 +98,25 @@ int main(int argc, char *const argv[])
 	(void)argv;
 	int err;
 	struct config *config;
-	struct mix mix = {.sessl	   = LIST_INIT,
-			  .pc_config	   = {.offerer = false},
-			  .token_host	   = "",
-			  .token_guests	   = "",
-			  .token_listeners = "",
-			  .token_download  = ""};
+	struct mix *mix = slmix();
 
-	const char *conf =
-		"call_max_calls		10\n" /* SIP only */
-		"sip_verify_server	yes\n"
-		"audio_buffer		20-160\n"
-		"audio_buffer_mode	fixed\n"
-		"audio_silence		-35.0\n"
-		"jitter_buffer_type     fixed\n"
-		"jitter_buffer_wish     5\n"
-		"jitter_buffer_delay    5-10\n"
-		"opus_bitrate		64000\n"
-		"ice_policy		relay\n"
-		"video_size		1920x1080\n"
-		"video_bitrate		2000000\n"
-		"video_fps		25\n"
-		"avcodec_keyint		2\n"
-		"avcodec_h265enc	nil\n"
-		"avcodec_h265dec	nil\n"
-		"audio_txmode		thread\n";
+	const char *conf = "call_max_calls		10\n" /* SIP only */
+			   "sip_verify_server	yes\n"
+			   "audio_buffer		20-160\n"
+			   "audio_buffer_mode	fixed\n"
+			   "audio_silence		-35.0\n"
+			   "jitter_buffer_type     fixed\n"
+			   "jitter_buffer_wish     5\n"
+			   "jitter_buffer_delay    5-10\n"
+			   "opus_bitrate		64000\n"
+			   "ice_policy		relay\n"
+			   "video_size		1920x1080\n"
+			   "video_bitrate		2000000\n"
+			   "video_fps		25\n"
+			   "avcodec_keyint		2\n"
+			   "avcodec_h265enc	nil\n"
+			   "avcodec_h265dec	nil\n"
+			   "audio_txmode		thread\n";
 
 	/*
 	 * turn off buffering on stdout
@@ -219,10 +151,10 @@ int main(int argc, char *const argv[])
 	config->audio.channels_play = 1;
 	config->audio.channels_src  = 1;
 
-	config->avt.rtcp_mux = true;
+	config->avt.rtcp_mux  = true;
 	config->avt.rtp_stats = true;
 
-	slmix_config(&mix);
+	slmix_config(config_file);
 
 	err = baresip_init(config);
 	if (err) {
@@ -240,19 +172,19 @@ int main(int argc, char *const argv[])
 		}
 	}
 
-	err = slmix_init(&mix);
+	err = slmix_init();
 	if (err)
 		return err;
 
 	sl_ws_init();
-	err = slmix_http_listen(&mix.httpsock, &mix);
+	err = slmix_http_listen(&mix->httpsock, mix);
 	if (err)
 		return err;
 
 	re_main(signal_handler);
 
 	sl_ws_close();
-	slmix_close(&mix);
+	slmix_close();
 
 	module_app_unload();
 	conf_close();

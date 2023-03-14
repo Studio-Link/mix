@@ -233,7 +233,7 @@ static void http_req_handler(struct http_conn *conn,
 		if (!sess->user || !sess->user->host)
 			goto err;
 
-		amix_record_enable(true, mix->token_download, false);
+		slmix_record(mix, REC_AUDIO_VIDEO);
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;
@@ -245,7 +245,7 @@ static void http_req_handler(struct http_conn *conn,
 		if (!sess->user || !sess->user->host)
 			goto err;
 
-		amix_record_enable(true, mix->token_download, true);
+		slmix_record(mix, REC_AUDIO);
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;
@@ -257,7 +257,7 @@ static void http_req_handler(struct http_conn *conn,
 		if (!sess->user || !sess->user->host)
 			goto err;
 
-		amix_record_enable(false, mix->token_download, false);
+		slmix_record(mix, REC_DISABLED);
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;

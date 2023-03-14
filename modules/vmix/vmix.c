@@ -3,10 +3,11 @@
  *
  * Copyright (C) 2022 Sebastian Reimers
  */
+#include <re_atomic.h>
 #include <re.h>
 #include <rem.h>
 #include <baresip.h>
-#include <re_atomic.h>
+#include <mix.h>
 #include "vmix.h"
 
 
@@ -94,6 +95,31 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 }
 
 
+static int video_rec_h(const char *folder, bool enable)
+{
+	if (folder && enable) {
+		return vmix_record_start(folder);
+	}
+
+	return vmix_record_close();
+}
+
+
+static void disp_enable_h(const char *device, bool enable)
+{
+	struct vidsrc_st *src;
+
+	if (!device)
+		return;
+
+	src = vmix_src_find(device);
+	if (!src)
+		return;
+
+	vidmix_source_enable(src->vidmix_src, enable);
+}
+
+
 static int module_init(void)
 {
 	int err;
@@ -119,6 +145,9 @@ static int module_init(void)
 	IF_ERR_GOTO_OUT(err);
 
 	err = uag_event_register(ua_event_handler, NULL);
+
+	slmix_set_audio_rec_h(slmix(), video_rec_h);
+	slmix_set_video_disp_h(slmix(), disp_enable_h);
 out:
 	return err;
 }

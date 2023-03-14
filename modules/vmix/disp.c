@@ -92,22 +92,6 @@ int vmix_disp_display(struct vidisp_st *st, const char *title,
 }
 
 
-void vmix_disp_enable(const char *device, bool enable);
-void vmix_disp_enable(const char *device, bool enable)
-{
-	struct vidsrc_st *src;
-
-	if (!device)
-		return;
-
-	src = vmix_src_find(device);
-	if (!src)
-		return;
-
-	vidmix_source_enable(src->vidmix_src, enable);
-}
-
-
 struct vidisp_st *vmix_disp_find(const char *device)
 {
 	return list_ledata(hash_lookup(vmix_disp, hash_joaat_str(device),

@@ -9,7 +9,19 @@ enum {
 	CHAT_MSGSZ = 1024
 };
 
+enum mix_rec {
+	REC_DISABLED	= 0,
+	REC_AUDIO	= 1,
+	REC_VIDEO	= 2,
+	REC_AUDIO_VIDEO = 3
+};
+
 enum user_event { USER_ADDED, USER_UPDATED, USER_DELETED, CHAT_ADDED };
+
+typedef int(mix_audio_rec_h)(const char *folder, bool enable);
+typedef int(mix_video_rec_h)(const char *folder, bool enable);
+typedef void(mix_disp_enable_h)(const char *device, bool enable);
+typedef uint64_t(mix_time_rec_h)(void);
 
 struct mix {
 	struct list sessl;
@@ -24,6 +36,11 @@ struct mix {
 	char token_listeners[TOKEN_SZ];
 	char token_download[TOKEN_SZ];
 	struct rtc_configuration pc_config;
+	mix_audio_rec_h *audio_rec_h;
+	mix_video_rec_h *video_rec_h;
+	mix_disp_enable_h *disp_enable_h;
+	mix_time_rec_h *time_rec_h;
+	enum mix_rec rec_state;
 };
 
 struct user {
@@ -55,6 +72,23 @@ struct session {
 	struct media_track *mvideo;
 	struct mix *mix;
 };
+
+
+/******************************************************************************
+ * mix.c
+ */
+struct mix *slmix(void);
+int slmix_init(void);
+void slmix_config(char *file);
+void slmix_close(void);
+void slmix_set_audio_rec_h(struct mix *m, mix_audio_rec_h *rec_h);
+void slmix_set_video_rec_h(struct mix *m, mix_audio_rec_h *rec_h);
+void slmix_set_time_rec_h(struct mix *m, mix_time_rec_h *time_h);
+void slmix_set_video_disp_h(struct mix *m, mix_disp_enable_h *disp_h);
+void slmix_record(struct mix *m, enum mix_rec state);
+void slmix_disp_enable(struct mix *m, const char *dev, bool enable);
+enum mix_rec slmix_rec_state(struct mix *m);
+const char *slmix_rec_state_name(enum mix_rec state);
 
 /******************************************************************************
  * avatar.c
@@ -125,6 +159,3 @@ void sl_ws_session_close(struct session *sess);
  * @TODO: convert to registered functions or shared header
  */
 void amix_mute(char *device, bool mute, uint16_t id);
-int amix_record_enable(bool enable, char *token, bool audio_only);
-uint64_t amix_record_msecs(void);
-void vmix_disp_enable(const char *device, bool enable);

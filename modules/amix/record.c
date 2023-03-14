@@ -4,13 +4,9 @@
  * Copyright (C) 2022 Sebastian Reimers
  */
 
-#define _POSIX_SOURCE 1
-
 #include <stdint.h>
-#include <time.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <pthread.h>
 #include <re.h>
 #include <rem.h>
 #include <baresip.h>
@@ -23,6 +19,8 @@ static struct {
 	mtx_t *lock;
 	thrd_t thread;
 	struct aubuf *ab;
+	char *folder;
+	uint64_t msecs;
 } record = {.tracks = LIST_INIT, .run = false};
 
 struct record_entry {
@@ -31,46 +29,12 @@ struct record_entry {
 	size_t size;
 };
 
-static char record_folder[256] = {0};
-static uint64_t record_msecs   = 0;
 
-
-uint64_t amix_record_msecs(void);
 uint64_t amix_record_msecs(void)
 {
-	if (!record_msecs)
+	if (!record.msecs)
 		return 0;
-	return tmr_jiffies() - record_msecs;
-}
-
-
-static int timestamp_print(struct re_printf *pf, const struct tm *tm)
-{
-	if (!tm)
-		return 0;
-
-	return re_hprintf(pf, "%d-%02d-%02d-%02d-%02d-%02d",
-			  1900 + tm->tm_year, tm->tm_mon + 1, tm->tm_mday,
-			  tm->tm_hour, tm->tm_min, tm->tm_sec);
-}
-
-
-static void mkdir_folder(char *token)
-{
-	time_t tnow = time(NULL);
-	struct tm tm;
-
-	localtime_r(&tnow, &tm);
-
-	(void)re_snprintf(record_folder, sizeof(record_folder),
-			  "webui/public/download/%s", token);
-
-	fs_mkdir(record_folder, 0755);
-
-	(void)re_snprintf(record_folder, sizeof(record_folder), "%s/%H",
-			  record_folder, timestamp_print, &tm);
-
-	fs_mkdir(record_folder, 0755);
+	return tmr_jiffies() - record.msecs;
 }
 
 
@@ -115,11 +79,11 @@ static int record_track(struct auframe *af)
 			return ENOMEM;
 
 		track->id   = af->id;
-		track->last = record_msecs;
+		track->last = record.msecs;
 
 		/* TODO: add user->name */
 		re_snprintf(track->file, sizeof(track->file),
-			    "%s/audio_id%u.flac", record_folder, track->id);
+			    "%s/audio_id%u.flac", record.folder, track->id);
 
 		err = flac_init(&track->flac, af, track->file);
 		if (err) {
@@ -154,8 +118,8 @@ static int record_thread(void *arg)
 
 	auframe_init(&af, AUFMT_S16LE, sampv, sampc, SRATE, CH);
 
-	if (!record_msecs)
-		record_msecs = tmr_jiffies();
+	if (!record.msecs)
+		record.msecs = tmr_jiffies();
 
 	while (record.run) {
 		sys_msleep(4);
@@ -168,24 +132,25 @@ static int record_thread(void *arg)
 	}
 
 out:
-	record_msecs = 0;
+	record.msecs = 0;
 	mem_deref(sampv);
 
 	return 0;
 }
 
 
-int vmix_record_start(char *record_folder);
-int amix_record_start(char *token, bool audio_only)
+int amix_record_start(const char *folder)
 {
 	int err;
+
+	if (!folder)
+		return EINVAL;
 
 	if (record.run)
 		return EALREADY;
 
-	record_msecs = 0;
-
-	mkdir_folder(token);
+	record.msecs = 0;
+	str_dup(&record.folder, folder);
 
 	err = mutex_alloc(&record.lock);
 	if (err)
@@ -199,9 +164,6 @@ int amix_record_start(char *token, bool audio_only)
 
 	record.run = true;
 	info("aumix: record started\n");
-
-	if (!audio_only)
-		vmix_record_start(record_folder);
 
 	thread_create_name(&record.thread, "aumix record", record_thread,
 			   NULL);
@@ -274,13 +236,13 @@ static void ffmpeg_destruct(void *arg)
 }
 
 
-void amix_record_close(void)
+int amix_record_close(void)
 {
 	struct le *le;
 	struct ffmpeg_work *work;
 
 	if (!record.run)
-		return;
+		return EINVAL;
 
 	record.run = false;
 	info("aumix: record close\n");
@@ -309,9 +271,12 @@ void amix_record_close(void)
 
 	mbuf_set_pos(work->mb, 0);
 
-	str_dup(&work->folder, record_folder);
+	str_dup(&work->folder, record.folder);
 	re_thread_async(ffmpeg_final, NULL, work);
 
 out:
+	record.folder = mem_deref(record.folder);
 	list_flush(&record.tracks);
+
+	return 0;
 }

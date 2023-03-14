@@ -1,6 +1,6 @@
 #include <re.h>
 #include <baresip.h>
-#include "mix.h"
+#include <mix.h>
 
 static struct websock *ws = NULL;
 static struct list wsl;
@@ -104,7 +104,8 @@ static void conn_destroy(void *arg)
 			json = mem_deref(json);
 		}
 
-		vmix_disp_enable(wsc->sess->id, false);
+		slmix_disp_enable(wsc->mix, wsc->sess->id, false);
+
 		pc_close(wsc->sess);
 	}
 
@@ -186,9 +187,16 @@ void sl_ws_send_event_all(char *json)
 
 static void update_handler(void *arg)
 {
-	(void)arg;
+	struct mix *mix = arg;
+
+	if (!mix)
+		return;
+
+	if (!mix->time_rec_h)
+		goto out;
+
 	char json[512];
-	uint64_t secs = amix_record_msecs() / 1000;
+	uint64_t secs = mix->time_rec_h() / 1000;
 
 	if (!secs)
 		goto out;
@@ -199,7 +207,7 @@ static void update_handler(void *arg)
 	sl_ws_send_event_all(json);
 
 out:
-	tmr_start(&tmr_update, 1000, update_handler, NULL);
+	tmr_start(&tmr_update, 1000, update_handler, mix);
 }
 
 
@@ -211,7 +219,7 @@ int sl_ws_init(void)
 	err = websock_alloc(&ws, NULL, NULL);
 
 	tmr_init(&tmr_update);
-	tmr_start(&tmr_update, 1000, update_handler, NULL);
+	tmr_start(&tmr_update, 1000, update_handler, slmix());
 
 	return err;
 }

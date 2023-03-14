@@ -6,6 +6,7 @@
 #include <re.h>
 #include <rem.h>
 #include <baresip.h>
+#include <mix.h>
 #include "amix.h"
 
 static struct auplay *auplay = NULL;
@@ -42,6 +43,8 @@ struct auplay_st {
 	mtx_t *lock;
 };
 
+
+#if 0
 static int16_t amix_level(const int16_t *sampv, size_t frames)
 {
 	int pos	      = 0;
@@ -69,6 +72,7 @@ static int16_t amix_level(const int16_t *sampv, size_t frames)
 
 	return 0;
 }
+#endif
 
 
 static void mix_readh(struct auframe *af, void *arg)
@@ -289,23 +293,6 @@ static int mix_debug(struct re_printf *pf, void *arg)
 }
 
 
-void vmix_record_close(void);
-int amix_record_enable(bool enable, char *token, bool audio_only);
-int amix_record_enable(bool enable, char *token, bool audio_only)
-{
-	int err = 0;
-
-	if (enable)
-		err = amix_record_start(token, audio_only);
-	else {
-		vmix_record_close();
-		amix_record_close();
-	}
-
-	return err;
-}
-
-
 static const struct cmd cmdv[] = {
 	{"aumix_debug", 'z', 0, "Debug aumix", mix_debug}};
 
@@ -338,6 +325,16 @@ static void talk_detection(void *arg)
 }
 
 
+static int audio_rec_h(const char *folder, bool enable)
+{
+	if (folder && enable) {
+		return amix_record_start(folder);
+	}
+
+	return amix_record_close();
+}
+
+
 static int module_init(void)
 {
 	int err;
@@ -360,6 +357,9 @@ static int module_init(void)
 	list_init(&ausrcl);
 	tmr_init(&tmr_level);
 	tmr_start(&tmr_level, 1000, talk_detection, NULL);
+
+	slmix_set_audio_rec_h(slmix(), audio_rec_h);
+	slmix_set_time_rec_h(slmix(), amix_record_msecs);
 
 out:
 	return err;

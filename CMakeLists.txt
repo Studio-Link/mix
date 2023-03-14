@@ -79,28 +79,50 @@ add_subdirectory(external/baresip)
 
 find_package(re CONFIG REQUIRED)
 
+list(APPEND RE_DEFINITIONS
+  -DVERSION="${PROJECT_VERSION_FULL}"
+  -DVER_MAJOR=${PROJECT_VERSION_MAJOR}
+  -DVER_MINOR=${PROJECT_VERSION_MINOR}
+  -DVER_PATCH=${PROJECT_VERSION_PATCH}
+  -D_GNU_SOURCE
+)
+
+include_directories(
+    include
+    external/re/include
+    external/baresip/include
+)
+
 ##############################################################################
 #
 # Source/Header section
 #
 
-set(SRCS
+set(SRCS_LIB
   src/avatar.c
   src/chat.c
   src/http.c
-  src/main.c
   src/sess.c
   src/users.c
   src/ws.c
+  src/mix.c
+)
+
+set(SRCS_EXE
+  src/main.c
 )
 
 
 ##############################################################################
 #
-# Main target object
+# Target objects
 #
 
-add_executable(${PROJECT_NAME} ${SRCS})
-target_link_libraries(${PROJECT_NAME} PRIVATE baresip re gd ${LINKLIBS})
+add_library(${PROJECT_NAME}-lib STATIC ${SRCS_LIB})
+target_compile_definitions(${PROJECT_NAME}-lib PRIVATE ${RE_DEFINITIONS} ${MIX_DEFS}
+  SLMIX_VERSION="${PROJECT_VERSION}")
+
+add_executable(${PROJECT_NAME} ${SRCS_EXE})
+target_link_libraries(${PROJECT_NAME} PRIVATE slmix-lib baresip re gd ${LINKLIBS})
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${RE_DEFINITIONS} ${MIX_DEFS}
   SLMIX_VERSION="${PROJECT_VERSION}")
