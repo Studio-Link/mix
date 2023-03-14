@@ -76,6 +76,9 @@ struct session {
 /******************************************************************************
  * mix.c
  */
+const char *slmix_git_version(void);
+const char *slmix_git_revision(void);
+const char *slmix_git_branch(void);
 struct mix *slmix(void);
 int slmix_init(void);
 void slmix_config(char *file);

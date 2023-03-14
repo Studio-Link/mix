@@ -51,10 +51,10 @@ static int slmix_getopt(int argc, char *const argv[])
 		"/____/\\__/\\__,_/\\__,_/_/\\____(_)_____/_/_/ /_/_/|_|"
 		"\n");
 
-	(void)re_printf("Mix v%s"
+	(void)re_printf("Mix v%s-%s"
 			" Copyright (C) 2013 - 2023"
 			" Sebastian Reimers\n\n",
-			SLMIX_VERSION);
+			SLMIX_VERSION, slmix_git_revision());
 
 	for (;;) {
 		const int c = getopt_long(argc, argv, "vhc:", options, &index);

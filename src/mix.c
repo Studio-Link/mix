@@ -1,12 +1,33 @@
 #include <time.h>
 #include <mix.h>
 
+extern const char *GIT_TAG;
+extern const char *GIT_REV;
+extern const char *GIT_BRANCH;
+
 static struct mix mix = {.sessl		  = LIST_INIT,
 			 .pc_config	  = {.offerer = false},
 			 .token_host	  = "",
 			 .token_guests	  = "",
 			 .token_listeners = "",
 			 .token_download  = ""};
+
+const char *slmix_git_version(void)
+{
+	return GIT_TAG;
+}
+
+
+const char *slmix_git_revision(void)
+{
+	return GIT_REV;
+}
+
+
+const char *slmix_git_branch(void)
+{
+	return GIT_BRANCH;
+}
 
 
 struct mix *slmix(void)
