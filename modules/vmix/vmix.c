@@ -146,7 +146,7 @@ static int module_init(void)
 
 	err = uag_event_register(ua_event_handler, NULL);
 
-	slmix_set_audio_rec_h(slmix(), video_rec_h);
+	slmix_set_video_rec_h(slmix(), video_rec_h);
 	slmix_set_video_disp_h(slmix(), disp_enable_h);
 out:
 	return err;
