@@ -1,10 +1,10 @@
 <template>
   <div v-if="Users.chat_active.value">
-    <div class="hidden md:flex w-screen max-w-sm xl:max-w-md"></div>
+    <div class="hidden md:flex w-screen max-w-xs xl:max-w-sm"></div>
     <div class="overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
       <div class="fixed inset-y-0 right-0 pl-4 max-w-full flex sm:pl-16">
         <div
-          class="w-screen max-w-sm xl:max-w-md"
+          class="w-screen max-w-xs xl:max-w-sm"
           x-transition:enter="transform transition ease-in-out duration-500 sm:duration-700"
           x-transition:enter-start="translate-x-full"
           x-transition:enter-end="translate-x-0"
