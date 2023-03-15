@@ -1,5 +1,6 @@
 #include <lmdb.h>
 #include <mix.h>
+#include <string.h>
 
 
 /*
@@ -36,16 +37,51 @@ static MDB_env *env = NULL;
 static MDB_dbi dbi_sess;
 
 
-int slmix_db_sess_get(struct pl *key, struct pl *val)
+int slmix_db_sess_get(const struct pl *key, struct mbuf *data)
 {
-	(void)key;
-	(void)val;
+	int err, ret = 0;
+	MDB_val mkey, mdata;
+	MDB_txn *txn;
 
-	return 0;
+	mkey.mv_data = (void *)key->p;
+	mkey.mv_size = key->l;
+
+	err = mdb_txn_begin(env, NULL, 0, &txn);
+	if (err) {
+		warning("slmix_db_get: mdb_txn_begin failed %m\n", err);
+		return err;
+	}
+
+	err = mdb_get(txn, dbi_sess, &mkey, &mdata);
+	if (err == MDB_NOTFOUND) {
+		ret = ENODATA;
+		goto out;
+	}
+
+	if (err) {
+		warning("slmix_db_get: mdb_get failed %m\n", err);
+		ret = err;
+		goto out;
+	}
+
+	err = mbuf_write_mem(data, mdata.mv_data, mdata.mv_size);
+	if (err) {
+		ret = err;
+		warning("slmix_db_get: mbuf_write_mem failed %m\n", err);
+	}
+
+out:
+	err = mdb_txn_commit(txn);
+	if (err) {
+		warning("slmix_db_get: mdb_txn_commit failed %m\n", err);
+		return err;
+	}
+
+	return ret;
 }
 
 
-int slmix_db_sess_put(struct pl *key, struct pl *val)
+int slmix_db_sess_put(const struct pl *key, const struct pl *val)
 {
 	int err;
 	MDB_val mkey, mdata;
@@ -59,23 +95,54 @@ int slmix_db_sess_put(struct pl *key, struct pl *val)
 
 	err = mdb_txn_begin(env, NULL, 0, &txn);
 	if (err) {
-		warning("slmix_db_set: mdb_txn_begin failed %m\n", err);
+		warning("slmix_db_put: mdb_txn_begin failed %m\n", err);
 		return err;
 	}
 
 	err = mdb_put(txn, dbi_sess, &mkey, &mdata, 0);
 	if (err) {
-		warning("slmix_db_set: mdb_put failed %m\n", err);
+		warning("slmix_db_put: mdb_put failed %m\n", err);
 		return err;
 	}
 
 	err = mdb_txn_commit(txn);
 	if (err) {
-		warning("slmix_db_set: mdb_txn_commit failed %m\n", err);
+		warning("slmix_db_put: mdb_txn_commit failed %m\n", err);
 		return err;
 	}
 
 	return 0;
+}
+
+
+int slmix_db_sess_del(const struct pl *key)
+{
+	MDB_val mkey;
+	MDB_txn *txn;
+	int err;
+
+	mkey.mv_data = (void *)key->p;
+	mkey.mv_size = key->l;
+
+	err = mdb_txn_begin(env, NULL, 0, &txn);
+	if (err) {
+		warning("slmix_db_del: mdb_txn_begin failed %m\n", err);
+		return err;
+	}
+
+	err = mdb_del(txn, dbi_sess, &mkey, NULL);
+	if (err) {
+		warning("slmix_db_del: mdb_del failed %m\n", err);
+		return err;
+	}
+
+	err = mdb_txn_commit(txn);
+	if (err) {
+		warning("slmix_db_del: mdb_txn_commit failed %m\n", err);
+		return err;
+	}
+
+	return err;
 }
 
 
