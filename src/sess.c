@@ -6,7 +6,7 @@
  */
 
 #include <string.h>
-#include "mix.h"
+#include <mix.h>
 
 
 static void destructor(void *data)
@@ -189,17 +189,13 @@ int session_start(struct session *sess,
 }
 
 
-int session_new(struct mix *mix, struct session **sessp,
-		const struct http_msg *msg)
+static int session_create(struct session **sessp, struct mix *mix,
+			  const struct pl *sess_id, const struct pl *user_id,
+			  const struct pl *name, bool host, bool speaker)
 {
 	struct session *sess;
 	struct user *user;
-	struct pl token = PL_INIT;
 
-	re_regex((char *)mbuf_buf(msg->mb), mbuf_get_left(msg->mb),
-		 "[a-zA-Z0-9]+", &token);
-
-	info("sess: create\n");
 	sess = mem_zalloc(sizeof(*sess), destructor);
 	if (!sess)
 		return ENOMEM;
@@ -210,40 +206,72 @@ int session_new(struct mix *mix, struct session **sessp,
 		return ENOMEM;
 	}
 
-	if (token.l > 0) {
-		if (str_isset(mix->token_host) &&
-		    0 == pl_strcmp(&token, mix->token_host)) {
-
-			info("sess: host token\n");
-			user->speaker = true;
-			user->host    = true;
-		}
-		else if (str_isset(mix->token_guests) &&
-			 0 == pl_strcmp(&token, mix->token_guests)) {
-
-			info("sess: guest token\n");
-			user->speaker = true;
-		}
-		else if (str_isset(mix->token_listeners) &&
-			 0 == pl_strcmp(&token, mix->token_listeners)) {
-
-			info("sess: listener token\n");
-			user->speaker = false;
-		}
-		else {
-			return EAUTH;
-		}
+	if (sess_id && user_id && name) {
+		info("session: create from database\n");
+		pl_strcpy(sess_id, sess->id, sizeof(sess->id));
+		pl_strcpy(user_id, user->id, sizeof(user->id));
+		pl_strcpy(name, user->name, sizeof(user->name));
+	}
+	else {
+		/* generate a unique session and user id */
+		info("session: create new\n");
+		rand_str(sess->id, sizeof(sess->id));
+		rand_str(user->id, sizeof(user->id));
 	}
 
-	/* generate a unique session and user id */
-	rand_str(sess->id, sizeof(sess->id));
-	rand_str(user->id, sizeof(user->id));
+	user->host    = host;
+	user->speaker = speaker;
+
 	sess->user = user;
 	sess->mix  = mix;
 
 	list_append(&mix->sessl, &sess->le, sess);
 
 	*sessp = sess;
+
+	return 0;
+}
+
+
+int session_new(struct mix *mix, struct session **sessp,
+		const struct http_msg *msg)
+{
+	struct pl token = PL_INIT;
+	bool speaker = false, host = false;
+	int err;
+
+	re_regex((char *)mbuf_buf(msg->mb), mbuf_get_left(msg->mb),
+		 "[a-zA-Z0-9]+", &token);
+
+
+	if (token.l > 0) {
+		if (str_isset(mix->token_host) &&
+		    0 == pl_strcmp(&token, mix->token_host)) {
+
+			info("sess: host token\n");
+			speaker = true;
+			host	= true;
+		}
+		else if (str_isset(mix->token_guests) &&
+			 0 == pl_strcmp(&token, mix->token_guests)) {
+
+			info("sess: guest token\n");
+			speaker = true;
+		}
+		else if (str_isset(mix->token_listeners) &&
+			 0 == pl_strcmp(&token, mix->token_listeners)) {
+
+			info("sess: listener token\n");
+			speaker = false;
+		}
+		else {
+			return EAUTH;
+		}
+	}
+
+	err = session_create(sessp, mix, NULL, NULL, NULL, host, speaker);
+	if (err)
+		return err;
 
 	return 0;
 }
@@ -267,15 +295,46 @@ struct session *session_lookup_hdr(const struct list *sessl,
 struct session *session_lookup(const struct list *sessl,
 			       const struct pl *sessid)
 {
+	struct mbuf mb;
+	struct pl pl_user_id = PL_INIT;
+	struct pl pl_name    = PL_INIT;
+	struct pl pl_host    = PL_INIT;
+	struct pl pl_speaker = PL_INIT;
+	bool host, speaker;
+	struct session *sess;
+	int err;
 
 	for (struct le *le = sessl->head; le; le = le->next) {
-
-		struct session *sess = le->data;
+		sess = le->data;
 
 		if (0 == pl_strcasecmp(sessid, sess->id))
 			return sess;
 	}
 
+	/* Session DB lookup fallback */
+	mbuf_init(&mb);
+	err = slmix_db_sess_get(sessid, &mb);
+	if (err)
+		goto out;
+
+	err = re_regex((const char *)mb.buf, mb.end,
+		       "[^;]+;[^;]+;[^;]+;[^;]+;[^;]+", NULL, &pl_user_id,
+		       &pl_name, &pl_host, &pl_speaker);
+	if (err)
+		goto out;
+
+	pl_bool(&host, &pl_host);
+	pl_bool(&speaker, &pl_speaker);
+
+	err = session_create(&sess, slmix(), sessid, &pl_user_id, &pl_name,
+			     host, speaker);
+	if (!err) {
+		mbuf_reset(&mb);
+		return sess;
+	}
+
+out:
+	mbuf_reset(&mb);
 	warning("mix: session not found (%r)\n", sessid);
 
 	return NULL;
@@ -406,4 +465,25 @@ int session_speaker(struct session *sess, bool enable)
 	}
 
 	return session_user_updated(sess);
+}
+
+
+int session_save(struct session *sess)
+{
+	char str[128] = {0};
+	struct pl key, val;
+
+	if (!sess || !sess->user)
+		return EINVAL;
+
+	re_snprintf(str, sizeof(str), "%llu;%s;%s;%d;%d",
+		    tmr_jiffies_rt_usec() / 1000, sess->user->id,
+		    sess->user->name, sess->user->host, sess->user->speaker);
+
+	pl_set_str(&key, sess->id);
+
+	val.p = str;
+	val.l = str_len(str);
+
+	return slmix_db_sess_put(&key, &val);
 }

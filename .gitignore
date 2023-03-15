@@ -8,6 +8,8 @@
 # Vim swp files
 *.swp
 
+/database
+
 /webui/dist
 
 /webui/public/avatars/*

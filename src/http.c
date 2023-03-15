@@ -200,6 +200,8 @@ static void http_req_handler(struct http_conn *conn,
 			return;
 		}
 
+		session_save(sess);
+
 		http_sreply(conn, 204, "Updated", "text/html", "", 0, sess);
 		return;
 	}

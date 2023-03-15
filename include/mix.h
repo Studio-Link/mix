@@ -133,6 +133,7 @@ void session_close(struct session *sess, int err);
 void http_sreply(struct http_conn *conn, uint16_t scode, const char *reason,
 		 const char *ctype, const char *fmt, size_t size,
 		 struct session *sess);
+int session_save(struct session *sess);
 
 /******************************************************************************
  * users.c
@@ -155,6 +156,14 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 		      void *arg);
 void sl_ws_session_close(struct session *sess);
 
+/******************************************************************************
+ * db.c
+ */
+int slmix_db_sess_get(const struct pl *key, struct mbuf *data);
+int slmix_db_sess_put(const struct pl *key, const struct pl *val);
+int slmix_db_sess_del(const struct pl *key);
+int slmix_db_init(void);
+void slmix_db_close(void);
 
 /******************************************************************************
  * external modules (amix, vmix etc.)

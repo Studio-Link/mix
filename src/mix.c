@@ -63,7 +63,9 @@ int slmix_init(void)
 		return ENOENT;
 	}
 
-	return 0;
+	err = slmix_db_init();
+
+	return err;
 }
 
 
@@ -100,6 +102,8 @@ void slmix_close(void)
 
 	mix.httpsock		 = mem_deref(mix.httpsock);
 	mix.pc_config.ice_server = mem_deref(mix.pc_config.ice_server);
+
+	slmix_db_close();
 }
 
 
