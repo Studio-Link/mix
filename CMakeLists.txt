@@ -15,6 +15,14 @@ set(CMAKE_C_COMPILER clang)
 
 project(slmix VERSION 0.5.0 LANGUAGES C)
 
+##############################################################################
+#
+# Packages
+#
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
+
+find_package(LMDB REQUIRED)
 
 ##############################################################################
 #
@@ -62,6 +70,8 @@ if(USE_UNIX_SOCK)
   list(APPEND MIX_DEFS -DSLMIX_UNIX_SOCK)
 endif()
 
+list(APPEND LINKLIBS gd ${LMDB_LIBRARIES})
+
 ##############################################################################
 #
 # Subdirectory section
@@ -97,11 +107,12 @@ include_directories(
 set(SRCS_LIB
   src/avatar.c
   src/chat.c
+  src/db.c
   src/http.c
+  src/mix.c
   src/sess.c
   src/users.c
   src/ws.c
-  src/mix.c
   ${CMAKE_CURRENT_BINARY_DIR}/version.c
 )
 
@@ -116,11 +127,12 @@ set(SRCS_EXE
 #
 
 add_library(${PROJECT_NAME}-lib STATIC ${SRCS_LIB})
+target_link_libraries(${PROJECT_NAME}-lib PRIVATE ${LINKLIBS})
 target_compile_definitions(${PROJECT_NAME}-lib PRIVATE ${RE_DEFINITIONS} ${MIX_DEFS}
   SLMIX_VERSION="${PROJECT_VERSION}")
 
 add_executable(${PROJECT_NAME} ${SRCS_EXE})
-target_link_libraries(${PROJECT_NAME} PRIVATE slmix-lib baresip re gd ${LINKLIBS})
+target_link_libraries(${PROJECT_NAME} PRIVATE slmix-lib baresip re)
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${RE_DEFINITIONS} ${MIX_DEFS}
   SLMIX_VERSION="${PROJECT_VERSION}")
 

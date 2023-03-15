@@ -14,7 +14,8 @@ You can use a hosted version at https://my.studio.link/mixrooms
 
 ```bash
 apt install curl wget ninja-build pkg-config clang cmake make git patch ca-certificates \
-	libgd-dev libopus-dev libz-dev libssl-dev libavformat-dev libavcodec-dev libflac-dev
+    libgd-dev libopus-dev libz-dev libssl-dev libavformat-dev libavcodec-dev libflac-dev \
+    liblmdb-dev
 ```
 
 ##### Node.js v18.x LTS or v19.x (Current)
@@ -27,7 +28,7 @@ https://github.com/nodesource/distributions/blob/master/README.md#debinstall
 
 ```bash
 pacman -S curl wget ninja pkgconf clang cmake make git patch ca-certificates \
-	gd opus zlib ffmpeg flac nodejs npm
+	gd opus zlib ffmpeg flac nodejs npm lmdb
 ```
 
 ### Build

@@ -407,3 +407,23 @@ int session_speaker(struct session *sess, bool enable)
 
 	return session_user_updated(sess);
 }
+
+
+int session_save(struct session *sess)
+{
+	char str[128] = {0};
+	struct pl key, val;
+
+	if (!sess || !sess->user)
+		return EINVAL;
+
+	re_snprintf(str, sizeof(str), "%llu;%s;%d;%d", tmr_jiffies_rt_usec() / 1000, sess->user->id,
+		    sess->user->host, sess->user->speaker);
+
+	pl_set_str(&key, sess->id);
+
+	val.p = str;
+	val.l = str_len(str);
+
+	return slmix_db_put(&key, &val);
+}
