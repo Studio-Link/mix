@@ -245,6 +245,8 @@ int session_new(struct mix *mix, struct session **sessp,
 
 	*sessp = sess;
 
+	session_save(sess);
+
 	return 0;
 }
 
@@ -426,5 +428,5 @@ int session_save(struct session *sess)
 	val.p = str;
 	val.l = str_len(str);
 
-	return slmix_db_put(&key, &val);
+	return slmix_db_sess_put(&key, &val);
 }

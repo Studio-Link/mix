@@ -33,10 +33,10 @@ data from DB.
 */
 
 static MDB_env *env = NULL;
-static MDB_dbi dbi;
+static MDB_dbi dbi_sess;
 
 
-int slmix_db_get(struct pl *key, struct pl *val)
+int slmix_db_sess_get(struct pl *key, struct pl *val)
 {
 	(void)key;
 	(void)val;
@@ -45,7 +45,7 @@ int slmix_db_get(struct pl *key, struct pl *val)
 }
 
 
-int slmix_db_put(struct pl *key, struct pl *val)
+int slmix_db_sess_put(struct pl *key, struct pl *val)
 {
 	int err;
 	MDB_val mkey, mdata;
@@ -63,7 +63,7 @@ int slmix_db_put(struct pl *key, struct pl *val)
 		return err;
 	}
 
-	err = mdb_put(txn, dbi, &mkey, &mdata, 0);
+	err = mdb_put(txn, dbi_sess, &mkey, &mdata, 0);
 	if (err) {
 		warning("slmix_db_set: mdb_put failed %m\n", err);
 		return err;
@@ -98,9 +98,22 @@ int slmix_db_init(void)
 		return err;
 	}
 
-	(void)fs_mkdir("/tmp/sl", 0700);
+	/* Increase DB size to 32 MByte - must be a multiple of os page size */
+	err = mdb_env_set_mapsize(env, 32 * 1024 * 1024);
+	if (err) {
+		warning("slmix_db_init: mdb_env_set_mapsize failed %m\n", err);
+		return err;
+	}
 
-	err = mdb_env_open(env, "/tmp/sl", 0, 0600);
+	err = mdb_env_set_maxdbs(env, 1);
+	if (err) {
+		warning("slmix_db_init: mdb_env_set_maxdbs failed %m\n", err);
+		return err;
+	}
+
+	(void)fs_mkdir("database", 0700);
+
+	err = mdb_env_open(env, "database", MDB_WRITEMAP | MDB_MAPASYNC, 0600);
 	if (err) {
 		warning("slmix_db_init: mdb_env_open failed %m\n", err);
 		goto err;
@@ -112,16 +125,16 @@ int slmix_db_init(void)
 		goto err;
 	}
 
-	err = mdb_dbi_open(txn, NULL, 0, &dbi);
+	err = mdb_dbi_open(txn, "sessions", MDB_CREATE, &dbi_sess);
 	if (err) {
-		warning("slmix_db_init: mdb_dbi_open failed %m\n", err);
+		warning("slmix_db_init: mdb_dbi_open sess failed %m\n", err);
 		goto err;
 	}
 
 	err = mdb_txn_commit(txn);
 	if (err) {
 		warning("slmix_db_init: mdb_txn_commit failed %m\n", err);
-		mdb_dbi_close(env, dbi);
+		mdb_dbi_close(env, dbi_sess);
 		goto err;
 	}
 
@@ -135,6 +148,6 @@ err:
 
 void slmix_db_close(void)
 {
-	mdb_dbi_close(env, dbi);
+	mdb_dbi_close(env, dbi_sess);
 	mdb_env_close(env);
 }

@@ -159,8 +159,8 @@ void sl_ws_session_close(struct session *sess);
 /******************************************************************************
  * db.c
  */
-int slmix_db_get(struct pl *key, struct pl *val);
-int slmix_db_put(struct pl *key, struct pl *val);
+int slmix_db_sess_get(struct pl *key, struct pl *val);
+int slmix_db_sess_put(struct pl *key, struct pl *val);
 int slmix_db_init(void);
 void slmix_db_close(void);
 
