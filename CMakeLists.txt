@@ -109,6 +109,7 @@ set(SRCS_LIB
   src/chat.c
   src/db.c
   src/http.c
+  src/http_client.c
   src/mix.c
   src/sess.c
   src/users.c
@@ -127,12 +128,12 @@ set(SRCS_EXE
 #
 
 add_library(${PROJECT_NAME}-lib STATIC ${SRCS_LIB})
-target_link_libraries(${PROJECT_NAME}-lib PRIVATE ${LINKLIBS})
+target_link_libraries(${PROJECT_NAME}-lib PRIVATE ${LINKLIBS} re)
 target_compile_definitions(${PROJECT_NAME}-lib PRIVATE ${RE_DEFINITIONS} ${MIX_DEFS}
   SLMIX_VERSION="${PROJECT_VERSION}")
 
 add_executable(${PROJECT_NAME} ${SRCS_EXE})
-target_link_libraries(${PROJECT_NAME} PRIVATE slmix-lib baresip re)
+target_link_libraries(${PROJECT_NAME} PRIVATE slmix-lib baresip)
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${RE_DEFINITIONS} ${MIX_DEFS}
   SLMIX_VERSION="${PROJECT_VERSION}")
 
