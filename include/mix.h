@@ -92,11 +92,13 @@ void slmix_disp_enable(struct mix *m, const char *dev, bool enable);
 enum mix_rec slmix_rec_state(struct mix *m);
 const char *slmix_rec_state_name(enum mix_rec state);
 
+
 /******************************************************************************
  * avatar.c
  */
 int avatar_save(struct session *sess, struct http_conn *conn,
 		const struct http_msg *msg);
+
 
 /******************************************************************************
  * chat.c
@@ -105,10 +107,12 @@ int chat_save(struct user *user, struct mix *mix, const struct http_msg *msg);
 int chat_json(char **json, struct mix *mix);
 int chat_event_json(char **json, enum user_event event, struct chat *chat);
 
+
 /******************************************************************************
  * http.c
  */
 int slmix_http_listen(struct http_sock **sock, struct mix *mix);
+
 
 /******************************************************************************
  * sess.c
@@ -135,6 +139,7 @@ void http_sreply(struct http_conn *conn, uint16_t scode, const char *reason,
 		 struct session *sess);
 int session_save(struct session *sess);
 
+
 /******************************************************************************
  * users.c
  */
@@ -156,6 +161,7 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 		      void *arg);
 void sl_ws_session_close(struct session *sess);
 
+
 /******************************************************************************
  * db.c
  */
@@ -164,6 +170,31 @@ int slmix_db_sess_put(const struct pl *key, const struct pl *val);
 int slmix_db_sess_del(const struct pl *key);
 int slmix_db_init(void);
 void slmix_db_close(void);
+
+
+/******************************************************************************
+ * http_client.c
+ */
+enum sl_httpc_met {
+	SL_HTTP_GET,
+	SL_HTTP_POST,
+	SL_HTTP_PUT,
+	SL_HTTP_PATCH,
+	SL_HTTP_DELETE
+};
+
+struct sl_httpconn {
+	struct http_reqconn *conn;
+	void *arg;
+};
+
+int sl_httpc_init(void);
+void sl_httpc_close(void);
+int sl_httpc_alloc(struct sl_httpconn **conn, http_resp_h *resph,
+		   http_data_h *datah, void *arg);
+int sl_httpc_req(struct sl_httpconn *conn, enum sl_httpc_met sl_met,
+		  const char *url, struct mbuf *body);
+
 
 /******************************************************************************
  * external modules (amix, vmix etc.)
