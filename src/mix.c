@@ -64,6 +64,10 @@ int slmix_init(void)
 	}
 
 	err = slmix_db_init();
+	if (err)
+		return err;
+
+	err = sl_httpc_init();
 
 	return err;
 }
@@ -104,6 +108,7 @@ void slmix_close(void)
 	mix.pc_config.ice_server = mem_deref(mix.pc_config.ice_server);
 
 	slmix_db_close();
+	sl_httpc_close();
 }
 
 
