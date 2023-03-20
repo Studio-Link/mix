@@ -44,13 +44,13 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: install clang-14 and ninja
+    - name: install clang-15 and ninja
       if: ${{ runner.os == 'Linux' }}
       run: |
         wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-        sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-14 main"
+        sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-15 main"
         sudo apt-get update
-        sudo apt-get install -y clang-tools-14 clang-14 clang-tidy-14 ninja-build cppcheck gdb
+        sudo apt-get install -y clang-tools-15 clang-15 clang-tidy-15 ninja-build cppcheck gdb
 
     - name: install libs
       if: ${{ runner.os == 'Linux' }}
@@ -64,7 +64,7 @@ jobs:
 
     - name: make StudioLink - Linux
       if: ${{ runner.os == 'Linux' }}
-      run: CC=clang-14 make
+      run: CC=clang-15 make
 
     - name: test requirements
       run: cd tests/bdd && python -m venv env && env/bin/pip install -r requirements.txt
@@ -75,12 +75,12 @@ jobs:
     - name: clang-tidy
       if: ${{ runner.os == 'Linux' }}
       run: |
-        clang-tidy-14 -p build -checks=cert-\*,-cert-dcl37-c,-cert-dcl51-cpp,-clang-analyzer-valist.Uninitialized src/*.c
-        clang-tidy-14 -p build -checks=cert-\*,-cert-dcl37-c,-cert-dcl51-cpp,-clang-analyzer-valist.Uninitialized modules/**/*.c
+        clang-tidy-15 -p build -checks=cert-\*,-cert-dcl37-c,-cert-dcl51-cpp,-clang-analyzer-valist.Uninitialized src/*.c
+        clang-tidy-15 -p build -checks=cert-\*,-cert-dcl37-c,-cert-dcl51-cpp,-clang-analyzer-valist.Uninitialized modules/**/*.c
 
     - name: clang scan-build
       if: ${{ runner.os == 'Linux' }}
-      run: make clean && scan-build-14 --status-bugs make
+      run: make clean && scan-build-15 --status-bugs make
 
   analyze:
     name: CodeQL Analyze
