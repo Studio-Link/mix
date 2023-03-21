@@ -38,7 +38,7 @@
                       <div class="text-sm space-x-2">
                         <span class="text-gray-900">{{ item.user_name }}</span>
                         <span class="text-gray-500">
-                          {{ new Date(parseInt(item.time) * 1000).toLocaleString() }}
+                          {{ formatTimeAgo(new Date(parseInt(item.time) * 1000)) }}
                         </span>
                       </div>
                       <p>{{ item.msg }}</p>
@@ -64,7 +64,7 @@
                       <div class="text-sm space-x-2">
                         <span class="text-gray-900">{{ item.user_name }}</span>
                         <span class="text-gray-500">
-                          {{ new Date(parseInt(item.time) * 1000).toLocaleString() }}
+                          {{ formatTimeAgo(new Date(parseInt(item.time) * 1000)) }}
                         </span>
                       </div>
                       <p>{{ item.msg }}</p>
@@ -124,6 +124,7 @@ import api from '../api'
 import { onMounted, onUpdated, ref } from 'vue'
 import { Users } from '../ws/users'
 import { Webrtc, WebrtcState } from '../webrtc'
+import { formatTimeAgo } from '@vueuse/core'
 
 const messages = ref<any>([])
 const msg = ref('')
