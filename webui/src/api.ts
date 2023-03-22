@@ -15,7 +15,7 @@ let sess: Session = JSON.parse(window.localStorage.getItem('sess')!)
 
 async function api_fetch(met: string, url: string, data: any) {
     // Default options are marked with *
-    const resp = await fetch(config.host() + '/api/v1' + url, {
+    const resp = await fetch(config.host() + config.base() + 'api/v1' + url, {
         method: met,
         cache: 'no-cache',
         credentials: 'same-origin',
@@ -111,7 +111,7 @@ export default {
     },
 
     async websocket() {
-        Users.websocket(config.ws_host(), sess.id)
+        Users.websocket(sess.id)
     },
 
     async logout(force: boolean) {

@@ -2,6 +2,7 @@ import { Ref, ref } from 'vue'
 import api from '../api'
 import { Error } from '../error'
 import { Webrtc } from '../webrtc'
+import config from '../config'
 
 interface User {
     id: string
@@ -28,7 +29,7 @@ export enum RecordType {
 interface Users {
     socket?: WebSocket
     ws_close(): void
-    websocket(host: string, sessid: string): void
+    websocket(sessid: string): void
     speakers: Ref<User[] | undefined>
     listeners: Ref<User[] | undefined>
     chat_messages: Ref<Chat[] | undefined>
@@ -61,8 +62,8 @@ export const Users: Users = {
     ws_close() {
         this.socket?.close()
     },
-    websocket(host, sessid) {
-        this.socket = new WebSocket(host + '/ws/v1/users')
+    websocket(sessid) {
+        this.socket = new WebSocket(config.ws_host() + config.base() + 'ws/v1/users')
 
         this.socket.onerror = () => {
             console.log('Websocket users error')
