@@ -28,7 +28,7 @@ def before_all(context):
     context.ws = {}
     context.sessid = {}
     context.response = {}
-    context.proc = subprocess.Popen(["./build/slmix"], cwd="../../.")
+    context.proc = subprocess.Popen(["./build/slmix", "-c", "config_example"], cwd="../../.")
     wait_until_port_reachable('127.0.0.1', 9999, 1)
 
 
