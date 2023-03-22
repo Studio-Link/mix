@@ -40,6 +40,7 @@ struct mix {
 	mix_disp_enable_h *disp_enable_h;
 	mix_time_rec_h *time_rec_h;
 	enum mix_rec rec_state;
+	char path[512];
 };
 
 struct user {
@@ -81,7 +82,7 @@ const char *slmix_git_revision(void);
 const char *slmix_git_branch(void);
 struct mix *slmix(void);
 int slmix_init(void);
-void slmix_config(char *file);
+int slmix_config(char *file);
 void slmix_close(void);
 void slmix_set_audio_rec_h(struct mix *m, mix_rec_h *rec_h);
 void slmix_set_video_rec_h(struct mix *m, mix_rec_h *rec_h);

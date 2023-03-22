@@ -1,7 +1,6 @@
 #include <re.h>
 #include <baresip.h>
 #include <gd.h>
-#include <unistd.h>
 #include <sys/stat.h>
 
 #include "mix.h"
@@ -24,7 +23,6 @@ static int work(void *arg)
 	struct pl pl  = PL_INIT;
 	int err	      = 0;
 	size_t offset = 0x17; /* "data:image/png;base64, */
-	char path[256];
 	char file[512];
 
 	if (mbuf_get_left(mb) < offset + 1) /* offset + ending '"' */
@@ -61,18 +59,13 @@ static int work(void *arg)
 		goto err;
 	}
 
-	if (!getcwd(path, sizeof(path))) {
-		warning("avatar: getcwd failed\n");
-		err = errno;
-		goto err;
-	}
-
-	debug("write %s/webui/public/avatars/%s.[png,webp]\n", path,
+	debug("write %s/webui/public/avatars/%s.[png,webp]\n", slmix()->path,
 	      avatar->sess->user->id);
 
 	/* PNG */
-	re_snprintf(file, sizeof(file), "%s/webui/public/avatars/%s.png", path,
-		    avatar->sess->user->id);
+	re_snprintf(file, sizeof(file), "%s/webui/public/avatars/%s.png",
+		    slmix()->path, avatar->sess->user->id);
+
 	err = fs_fopen(&img, file, "w+");
 	if (err) {
 		warning("avatar: write png failed %m\n", err);
@@ -86,7 +79,7 @@ static int work(void *arg)
 
 	/* WEBP */
 	re_snprintf(file, sizeof(file), "%s/webui/public/avatars/%s.webp",
-		    path, avatar->sess->user->id);
+		    slmix()->path, avatar->sess->user->id);
 	err = fs_fopen(&img, file, "w+");
 	if (err) {
 		warning("avatar: write webp failed %m\n", err);
