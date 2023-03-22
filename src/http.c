@@ -394,6 +394,7 @@ static void http_req_handler(struct http_conn *conn,
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client") &&
 	    0 == pl_strcasecmp(&msg->met, "DELETE")) {
 
+		struct pl sess_id;
 		/* draft-ietf-wish-whip-03 */
 		info("mix: DELETE -> disconnect\n");
 
@@ -402,6 +403,11 @@ static void http_req_handler(struct http_conn *conn,
 			http_ereply(conn, 404, "Session Not Found");
 			return;
 		}
+
+		pl_set_str(&sess_id, sess->id);
+		slmix_db_sess_del(&sess_id);
+
+		avatar_delete(sess);
 
 		info("mix: closing session %s\n", sess->id);
 		session_close(sess, 0);

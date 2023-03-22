@@ -1,9 +1,8 @@
-#include <re.h>
-#include <baresip.h>
 #include <gd.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
-#include "mix.h"
+#include <mix.h>
 
 struct avatar {
 	struct http_conn *conn;
@@ -23,7 +22,7 @@ static int work(void *arg)
 	struct pl pl  = PL_INIT;
 	int err	      = 0;
 	size_t offset = 0x17; /* "data:image/png;base64, */
-	char file[512];
+	char file[PATH_SZ];
 
 	if (mbuf_get_left(mb) < offset + 1) /* offset + ending '"' */
 		return EINVAL;
@@ -153,6 +152,27 @@ int avatar_save(struct session *sess, struct http_conn *conn,
 	avatar->mb   = mem_ref(msg->mb);
 
 	re_thread_async(work, http_callback, avatar);
+
+	return 0;
+}
+
+
+int avatar_delete(struct session *sess)
+{
+	char file[PATH_SZ];
+	int err;
+
+	re_snprintf(file, sizeof(file), "%s/webui/public/avatars/%s.png",
+		    slmix()->path, sess->user->id);
+	err = unlink(file);
+	if (err)
+		return errno;
+
+	re_snprintf(file, sizeof(file), "%s/webui/public/avatars/%s.webp",
+		    slmix()->path, sess->user->id);
+	err = unlink(file);
+	if (err)
+		return errno;
 
 	return 0;
 }
