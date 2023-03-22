@@ -6,7 +6,8 @@ extern const char *GIT_TAG;
 extern const char *GIT_REV;
 extern const char *GIT_BRANCH;
 
-static struct mix mix = {.sessl		  = LIST_INIT,
+static struct mix mix = {.room		  = "main",
+			 .sessl		  = LIST_INIT,
 			 .pc_config	  = {.offerer = false},
 			 .token_host	  = "",
 			 .token_guests	  = "",
@@ -87,6 +88,8 @@ int slmix_config(char *file)
 	err = conf_alloc(&conf, file);
 	if (err)
 		return ENOMEM;
+
+	conf_get_str(conf, "mix_room", mix.room, sizeof(mix.room));
 
 	conf_get_str(conf, "mix_token_host", mix.token_host,
 		     sizeof(mix.token_host));
@@ -197,9 +200,9 @@ enum mix_rec slmix_rec_state(struct mix *m)
 void slmix_record(struct mix *m, enum mix_rec state)
 {
 	struct tm tm;
-	time_t now	 = time(NULL);
-	char folder[256] = {0};
-	int err		 = 0;
+	time_t now	     = time(NULL);
+	char folder[PATH_SZ] = {0};
+	int err		     = 0;
 
 	if (!m || !m->video_rec_h || !m->audio_rec_h) {
 		warning("slmix: record init state %s failed\n",
@@ -224,6 +227,11 @@ void slmix_record(struct mix *m, enum mix_rec state)
 
 	(void)re_snprintf(folder, sizeof(folder), "webui/public/download/%s",
 			  m->token_download);
+	fs_mkdir(folder, 0755);
+
+	(void)re_snprintf(folder, sizeof(folder),
+			  "webui/public/download/%s/%s", m->token_download,
+			  m->room);
 	fs_mkdir(folder, 0755);
 
 	(void)re_snprintf(folder, sizeof(folder), "%s/%H", folder,

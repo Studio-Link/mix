@@ -2,11 +2,13 @@
 #include <baresip.h>
 
 enum {
+	ROOM_SZ	   = 128,
 	SESSID_SZ  = 32,
 	USERID_SZ  = 16,
 	NAME_SZ	   = 32,
 	TOKEN_SZ   = 32,
-	CHAT_MSGSZ = 1024
+	CHAT_MSGSZ = 1024,
+	PATH_SZ	   = 512,
 };
 
 enum mix_rec {
@@ -23,6 +25,7 @@ typedef void(mix_disp_enable_h)(const char *device, bool enable);
 typedef uint64_t(mix_time_rec_h)(void);
 
 struct mix {
+	char room[ROOM_SZ];
 	struct list sessl;
 	struct list chatl;
 	uint16_t next_speaker_id;
@@ -40,7 +43,7 @@ struct mix {
 	mix_disp_enable_h *disp_enable_h;
 	mix_time_rec_h *time_rec_h;
 	enum mix_rec rec_state;
-	char path[512];
+	char path[PATH_SZ];
 };
 
 struct user {
@@ -194,7 +197,7 @@ void sl_httpc_close(void);
 int sl_httpc_alloc(struct sl_httpconn **conn, http_resp_h *resph,
 		   http_data_h *datah, void *arg);
 int sl_httpc_req(struct sl_httpconn *conn, enum sl_httpc_met sl_met,
-		  const char *url, struct mbuf *body);
+		 const char *url, struct mbuf *body);
 
 
 /******************************************************************************
