@@ -152,7 +152,9 @@ int main(int argc, char *const argv[])
 	config->avt.rtcp_mux  = true;
 	config->avt.rtp_stats = true;
 
-	slmix_config(config_file);
+	err = slmix_config(config_file);
+	if (err)
+		return err;
 
 	err = baresip_init(config);
 	if (err) {

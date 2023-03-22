@@ -1,4 +1,5 @@
 #include <time.h>
+#include <unistd.h>
 #include <mix.h>
 
 extern const char *GIT_TAG;
@@ -73,15 +74,17 @@ int slmix_init(void)
 }
 
 
-void slmix_config(char *file)
+int slmix_config(char *file)
 {
 	struct conf *conf;
+	int err;
 
 	if (!file)
-		return;
+		return EINVAL;
 
-	if (0 != conf_alloc(&conf, file))
-		return;
+	err = conf_alloc(&conf, file);
+	if (err)
+		return ENOMEM;
 
 	conf_get_str(conf, "mix_token_host", mix.token_host,
 		     sizeof(mix.token_host));
@@ -95,7 +98,21 @@ void slmix_config(char *file)
 	conf_get_str(conf, "mix_token_download", mix.token_download,
 		     sizeof(mix.token_download));
 
+	err = conf_get_str(conf, "mix_path", mix.path, sizeof(mix.path));
+	if (err) {
+		if (!getcwd(mix.path, sizeof(mix.path))) {
+			warning("slmix_config: getcwd failed\n");
+			err = errno;
+			goto out;
+		}
+	}
+
+	info("slmix_config path: %s\n", mix.path);
+
+out:
 	mem_deref(conf);
+
+	return err;
 }
 
 
