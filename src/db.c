@@ -150,6 +150,7 @@ int slmix_db_init(void)
 {
 	int err;
 	MDB_txn *txn;
+	char dbpath[512];
 
 	/* Before starting any other threads:
 	- Create the environment.
@@ -158,6 +159,8 @@ int slmix_db_init(void)
 	- Commit the transaction.
 	- After that use the DBI handles freely among any transactions/threads.
 	*/
+
+	re_snprintf(dbpath, sizeof(dbpath), "%s/database", slmix()->path);
 
 	err = mdb_env_create(&env);
 	if (err) {
@@ -178,9 +181,9 @@ int slmix_db_init(void)
 		return err;
 	}
 
-	(void)fs_mkdir("database", 0700);
+	(void)fs_mkdir(dbpath, 0700);
 
-	err = mdb_env_open(env, "database", MDB_WRITEMAP | MDB_MAPASYNC, 0600);
+	err = mdb_env_open(env, dbpath, MDB_WRITEMAP | MDB_MAPASYNC, 0600);
 	if (err) {
 		warning("slmix_db_init: mdb_env_open failed %m\n", err);
 		goto err;
