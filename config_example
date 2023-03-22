@@ -1,0 +1,5 @@
+mix_token_host		TOKENHOST # can start record
+mix_token_download	TOKENDOWNLOAD # protected download folder 
+mix_token_guests	TOKENGUEST # invite url 
+mix_token_api		TOKENAPI # api token
+#mix_path           /opt/slmix/
