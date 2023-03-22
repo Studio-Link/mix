@@ -102,6 +102,7 @@ const char *slmix_rec_state_name(enum mix_rec state);
  */
 int avatar_save(struct session *sess, struct http_conn *conn,
 		const struct http_msg *msg);
+int avatar_delete(struct session *sess);
 
 
 /******************************************************************************
