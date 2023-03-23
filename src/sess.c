@@ -313,7 +313,7 @@ struct session *session_lookup(const struct list *sessl,
 
 	/* Session DB lookup fallback */
 	mbuf_init(&mb);
-	err = slmix_db_sess_get(sessid, &mb);
+	err = slmix_db_get(slmix_db_sess(), sessid, &mb);
 	if (err)
 		goto out;
 
@@ -485,5 +485,5 @@ int session_save(struct session *sess)
 	val.p = str;
 	val.l = str_len(str);
 
-	return slmix_db_sess_put(&key, &val);
+	return slmix_db_put(slmix_db_sess(), &key, &val);
 }

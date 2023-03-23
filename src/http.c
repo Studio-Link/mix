@@ -405,7 +405,7 @@ static void http_req_handler(struct http_conn *conn,
 		}
 
 		pl_set_str(&sess_id, sess->id);
-		slmix_db_sess_del(&sess_id);
+		slmix_db_del(slmix_db_sess(), &sess_id);
 
 		avatar_delete(sess);
 
