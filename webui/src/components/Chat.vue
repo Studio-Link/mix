@@ -1,5 +1,5 @@
 <template>
-  <div v-if="Users.chat_active.value">
+  <div class="z-10" v-if="Users.chat_active.value">
     <div class="hidden md:flex w-screen max-w-xs xl:max-w-sm"></div>
     <div class="overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
       <div class="fixed inset-y-0 right-0 pl-4 max-w-full flex sm:pl-16">
@@ -83,7 +83,7 @@
                 </div>
                 <div class="min-w-0 flex-1">
                   <div>
-                    <label for="comment" class="sr-only">About</label>
+                    <label for="comment" class="sr-only">Chat message</label>
                     <input
                       v-model="msg"
                       v-on:keyup.enter="chat()"
@@ -105,13 +105,6 @@
                 </div>
               </div>
             </div>
-            <div
-              class="bg-gray-600"
-              :class="{
-                'h-20': Webrtc.state.value === WebrtcState.Offline,
-                'h-12': Webrtc.state.value !== WebrtcState.Offline,
-              }"
-            ></div>
           </div>
         </div>
       </div>
@@ -123,7 +116,6 @@
 import api from '../api'
 import { onMounted, onUpdated, ref } from 'vue'
 import { Users } from '../ws/users'
-import { Webrtc, WebrtcState } from '../webrtc'
 import { formatTimeAgo } from '@vueuse/core'
 
 const messages = ref<any>([])

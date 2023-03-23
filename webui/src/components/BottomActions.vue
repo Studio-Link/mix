@@ -1,18 +1,44 @@
 <template>
   <div class="fixed inset-x-0 bottom-0">
-    <div class="bg-gray-600">
-      <div class="mx-auto py-1 px-3 sm:px-6 lg:px-8">
+    <div class="">
+      <div class="mx-auto py-1 pr-3 sm:pr-6 lg:pr-8">
         <div class="flex items-center justify-between">
-          <!-- Logout button -->
-          <div>
-            <button
-              ref="logout"
-              title="Logout"
-              class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
-              @click="logout_clicked()"
-            >
-              <ArrowLeftOnRectangleIcon class="h-8 w-8 mx-auto" />
-            </button>
+          <!-- User menu -->
+          <div class="w-16">
+            <Menu as="div" class="relative x-shrink-0">
+              <div>
+                <MenuButton
+                  class="mx-auto flex rounded-full text-sm text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-700"
+                >
+                  <span class="sr-only">Open user menu</span>
+                  <picture class="mx-auto block h-10 w-10 rounded-full">
+                    <source type="image/webp" :srcset="'/avatars/' + user_id + '.webp'" />
+                    <img :src="'/avatars/' + user_id + '.png'" alt="Avatar Image" />
+                  </picture>
+                </MenuButton>
+              </div>
+              <transition
+                enter-active-class="transition ease-out duration-100"
+                enter-from-class="transform opacity-0 scale-95"
+                enter-to-class="transform opacity-100 scale-100"
+                leave-active-class="transition ease-in duration-75"
+                leave-from-class="transform opacity-100 scale-100"
+                leave-to-class="transform opacity-0 scale-95"
+              >
+                <MenuItems
+                  class="bottom-full absolute left-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                >
+                  <MenuItem v-slot="active">
+                    <a
+                      @click="logout_clicked()"
+                      href="#"
+                      :class="[active ? 'bg-gray-100' : '', 'block px-4 py-2 text-sm text-gray-700']"
+                      >Logout</a
+                    >
+                  </MenuItem>
+                </MenuItems>
+              </transition>
+            </Menu>
           </div>
           <!-- Button group centered -->
           <div class="flex space-x-1 sm:space-x-4">
@@ -103,35 +129,23 @@
               </button>
             </div>
             <!-- Play button -->
-            <div>
+            <div class="text-gray-600">
               <button
                 v-if="Webrtc.state.value < WebrtcState.Listening"
                 ref="play"
-                class="text-gray-300 hover:bg-gray-700 hover:text-white group items-center px-2 py-2 text-base font-medium rounded-md block"
+                class="hover:bg-gray-700 hover:text-white group items-center px-2 py-2 text-base font-medium rounded-md block"
                 title="Join as listener"
                 :class="{ 'animate-pulse': Webrtc.state.value == WebrtcState.Connecting }"
                 @click="listen()"
               >
                 <PlayCircleIcon class="h-14 w-14 mx-auto" />
-                <div v-if="Webrtc.state.value == WebrtcState.Offline" class="text-gray-300 text-sm text-center">
-                  Press to listen
-                </div>
-                <div v-if="Webrtc.state.value == WebrtcState.Connecting" class="text-gray-300 text-sm text-center">
-                  Connecting...
-                </div>
+                <div v-if="Webrtc.state.value == WebrtcState.Offline" class="text-sm text-center">Press to listen</div>
+                <div v-if="Webrtc.state.value == WebrtcState.Connecting" class="text-sm text-center">Connecting...</div>
               </button>
             </div>
           </div>
           <!-- Chat button -->
           <div>
-            <button
-              ref="chat"
-              title="Chat"
-              class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
-              @click="chat_clicked()"
-            >
-              <ChatBubbleOvalLeftEllipsisIcon class="h-9 w-9 mx-auto" />
-            </button>
           </div>
         </div>
       </div>
@@ -148,13 +162,14 @@ import SettingsModal from '../components/SettingsModal.vue'
 import {
   HandRaisedIcon,
   Cog6ToothIcon,
-  ChatBubbleOvalLeftEllipsisIcon,
   ArrowLeftOnRectangleIcon,
   VideoCameraIcon,
   VideoCameraSlashIcon,
 } from '@heroicons/vue/24/outline'
 import { PlayCircleIcon } from '@heroicons/vue/24/solid'
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 
+const user_id = api.session()?.user_id
 const hand_status = Users.hand_status
 
 function listen() {
@@ -181,10 +196,6 @@ function video_clicked(mute: boolean) {
 
 async function settings_clicked() {
   Users.settings_active.value = true
-}
-
-function chat_clicked() {
-  Users.chat_active.value = !Users.chat_active.value
 }
 
 function logout_clicked() {
