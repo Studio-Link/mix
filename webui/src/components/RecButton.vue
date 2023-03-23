@@ -1,6 +1,6 @@
 <template>
   <div
-    class="inline-flex rounded-md shadow-sm px-3"
+    class="inline-flex rounded-md shadow-sm px-3 h-9"
     :class="{
       hidden: !Users.record.value && !api.is_host(),
     }"
