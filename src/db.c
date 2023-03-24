@@ -38,11 +38,73 @@ static MDB_dbi dbi_sess;
 static MDB_dbi dbi_rooms;
 
 
+int slmix_db_cur_open(void **cur, unsigned int dbi)
+{
+	int err;
+	MDB_txn *txn = NULL;
+
+	err = mdb_txn_begin(env, NULL, 0, &txn);
+	if (err) {
+		warning("slmix_db_cursor_open: mdb_txn_begin failed %s\n",
+			mdb_strerror(err));
+		return err;
+	}
+
+	err = mdb_cursor_open(txn, dbi, (MDB_cursor **)cur);
+	if (err) {
+		warning("slmix_db_cursor_open: mdb_cursor_open failed %s\n",
+			mdb_strerror(err));
+		mdb_txn_abort(txn);
+		return err;
+	}
+
+	return 0;
+}
+
+
+int slmix_db_cur_next(void *cur, struct mbuf *key, struct mbuf *data)
+{
+	MDB_val mkey, mdata;
+	int err;
+
+	err = mdb_cursor_get(cur, &mkey, &mdata, MDB_NEXT);
+	if (err)
+		return err;
+
+	err = mbuf_write_mem(key, mkey.mv_data, mkey.mv_size);
+	err |= mbuf_write_mem(data, mdata.mv_data, mdata.mv_size);
+	if (err) {
+		warning("slmix_db_cur_next: mbuf_write_mem failed %m\n", err);
+		return err;
+	}
+
+	/* write 0-terminated safe string */
+	mbuf_write_u8(key, 0);
+	mbuf_write_u8(data, 0);
+
+	mbuf_set_pos(key, 0);
+	mbuf_set_pos(data, 0);
+
+	return 0;
+}
+
+
+int slmix_db_cur_close(void *cur)
+{
+	MDB_txn *txn = mdb_cursor_txn(cur);
+
+	mdb_cursor_close(cur);
+	mdb_txn_abort(txn);
+
+	return 0;
+}
+
+
 int slmix_db_get(unsigned int dbi, const struct pl *key, struct mbuf *data)
 {
 	int err, ret = 0;
 	MDB_val mkey, mdata;
-	MDB_txn *txn;
+	MDB_txn *txn = NULL;
 
 	mkey.mv_data = (void *)key->p;
 	mkey.mv_size = key->l;
@@ -70,33 +132,31 @@ int slmix_db_get(unsigned int dbi, const struct pl *key, struct mbuf *data)
 	err = mbuf_write_mem(data, mdata.mv_data, mdata.mv_size);
 	if (err) {
 		ret = err;
-		warning("slmix_db_get: mbuf_write_mem failed %s\n",
-			mdb_strerror(err));
+		warning("slmix_db_get: mbuf_write_mem failed %m\n", err);
 	}
 
+	/* write 0-terminated safe string */
+	mbuf_write_u8(data, 0);
+	mbuf_set_pos(data, 0);
+
 out:
-	err = mdb_txn_commit(txn);
-	if (err) {
-		warning("slmix_db_get: mdb_txn_commit failed %s\n",
-			mdb_strerror(err));
-		return err;
-	}
+	mdb_txn_abort(txn);
 
 	return ret;
 }
 
 
-int slmix_db_put(unsigned int dbi, const struct pl *key, const struct pl *val)
+int slmix_db_put(unsigned int dbi, const struct pl *key, void *val, size_t sz)
 {
 	int err;
 	MDB_val mkey, mdata;
-	MDB_txn *txn;
+	MDB_txn *txn = NULL;
 
 	mkey.mv_data = (void *)key->p;
 	mkey.mv_size = key->l;
 
-	mdata.mv_data = (void *)val->p;
-	mdata.mv_size = val->l;
+	mdata.mv_data = val;
+	mdata.mv_size = sz;
 
 	err = mdb_txn_begin(env, NULL, 0, &txn);
 	if (err) {
@@ -109,6 +169,7 @@ int slmix_db_put(unsigned int dbi, const struct pl *key, const struct pl *val)
 	if (err) {
 		warning("slmix_db_put: mdb_put failed %s\n",
 			mdb_strerror(err));
+		mdb_txn_abort(txn);
 		return err;
 	}
 
@@ -126,7 +187,7 @@ int slmix_db_put(unsigned int dbi, const struct pl *key, const struct pl *val)
 int slmix_db_del(unsigned int dbi, const struct pl *key)
 {
 	MDB_val mkey;
-	MDB_txn *txn;
+	MDB_txn *txn = NULL;
 	int err;
 
 	mkey.mv_data = (void *)key->p;
@@ -143,6 +204,7 @@ int slmix_db_del(unsigned int dbi, const struct pl *key)
 	if (err) {
 		warning("slmix_db_del: mdb_del failed %s\n",
 			mdb_strerror(err));
+		mdb_txn_abort(txn);
 		return err;
 	}
 

@@ -474,7 +474,7 @@ int slmix_session_speaker(struct session *sess, bool enable)
 int slmix_session_save(struct session *sess)
 {
 	char str[128] = {0};
-	struct pl key, val;
+	struct pl key;
 
 	if (!sess || !sess->user)
 		return EINVAL;
@@ -485,8 +485,5 @@ int slmix_session_save(struct session *sess)
 
 	pl_set_str(&key, sess->id);
 
-	val.p = str;
-	val.l = str_len(str);
-
-	return slmix_db_put(slmix_db_sess(), &key, &val);
+	return slmix_db_put(slmix_db_sess(), &key, str, str_len(str) + 1);
 }
