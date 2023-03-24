@@ -126,7 +126,7 @@ static void http_req_handler(struct http_conn *conn,
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/connect") &&
 	    0 == pl_strcasecmp(&msg->met, "POST")) {
 
-		err = session_new(mix, &sess, msg);
+		err = slmix_session_new(mix, &sess, msg);
 		if (err == EAUTH) {
 			http_sreply(conn, 401, "Unauthorized", "text/html", "",
 				    0, NULL);
@@ -164,7 +164,7 @@ static void http_req_handler(struct http_conn *conn,
 	 */
 
 	/* Every requests from here must provide a valid session */
-	sess = session_lookup_hdr(&mix->sessl, msg);
+	sess = slmix_session_lookup_hdr(&mix->sessl, msg);
 	if (!sess) {
 		http_sreply(conn, 404, "Session Not Found", "text/html", "", 0,
 			    NULL);
@@ -200,7 +200,7 @@ static void http_req_handler(struct http_conn *conn,
 			return;
 		}
 
-		session_save(sess);
+		slmix_session_save(sess);
 
 		http_sreply(conn, 204, "Updated", "text/html", "", 0, sess);
 		return;
@@ -209,8 +209,8 @@ static void http_req_handler(struct http_conn *conn,
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/sdp") &&
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
 
-		err = session_start(sess, &mix->pc_config, mix->mnat,
-				    mix->menc);
+		err = slmix_session_start(sess, &mix->pc_config, mix->mnat,
+					  mix->menc);
 		if (err)
 			goto err;
 
@@ -280,11 +280,12 @@ static void http_req_handler(struct http_conn *conn,
 		if (err)
 			goto err;
 
-		sess_speaker = session_lookup_user_id(&mix->sessl, &user_id);
+		sess_speaker =
+			slmix_session_lookup_user_id(&mix->sessl, &user_id);
 		if (!sess_speaker)
 			goto err;
 
-		err = session_speaker(sess_speaker, true);
+		err = slmix_session_speaker(sess_speaker, true);
 		if (err)
 			goto err;
 
@@ -306,13 +307,14 @@ static void http_req_handler(struct http_conn *conn,
 		if (err)
 			goto err;
 
-		sess_listener = session_lookup_user_id(&mix->sessl, &user_id);
+		sess_listener =
+			slmix_session_lookup_user_id(&mix->sessl, &user_id);
 		if (!sess_listener)
 			goto err;
 
 		/* check permission, allow self listener downgrade */
 		if (sess->user->host || sess == sess_listener) {
-			err = session_speaker(sess_listener, false);
+			err = slmix_session_speaker(sess_listener, false);
 			if (err)
 				goto err;
 		}
@@ -326,7 +328,7 @@ static void http_req_handler(struct http_conn *conn,
 
 		sess->user->hand = true;
 
-		err = session_user_updated(sess);
+		err = slmix_session_user_updated(sess);
 		if (err)
 			goto err;
 
@@ -339,7 +341,7 @@ static void http_req_handler(struct http_conn *conn,
 
 		sess->user->hand = false;
 
-		err = session_user_updated(sess);
+		err = slmix_session_user_updated(sess);
 		if (err)
 			goto err;
 
@@ -350,7 +352,7 @@ static void http_req_handler(struct http_conn *conn,
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/video/enable") &&
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
 
-		session_video(sess, true);
+		slmix_session_video(sess, true);
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;
@@ -359,7 +361,7 @@ static void http_req_handler(struct http_conn *conn,
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/video/disable") &&
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
 
-		session_video(sess, false);
+		slmix_session_video(sess, false);
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;
@@ -370,7 +372,7 @@ static void http_req_handler(struct http_conn *conn,
 
 		sess->user->audio = true;
 
-		err = session_user_updated(sess);
+		err = slmix_session_user_updated(sess);
 		if (err)
 			goto err;
 
@@ -383,7 +385,7 @@ static void http_req_handler(struct http_conn *conn,
 
 		sess->user->audio = false;
 
-		err = session_user_updated(sess);
+		err = slmix_session_user_updated(sess);
 		if (err)
 			goto err;
 
@@ -398,7 +400,7 @@ static void http_req_handler(struct http_conn *conn,
 		/* draft-ietf-wish-whip-03 */
 		info("mix: DELETE -> disconnect\n");
 
-		sess = session_lookup_hdr(&mix->sessl, msg);
+		sess = slmix_session_lookup_hdr(&mix->sessl, msg);
 		if (!sess) {
 			http_ereply(conn, 404, "Session Not Found");
 			return;
@@ -410,7 +412,7 @@ static void http_req_handler(struct http_conn *conn,
 		avatar_delete(sess);
 
 		info("mix: closing session %s\n", sess->id);
-		session_close(sess, 0);
+		slmix_session_close(sess, 0);
 		sess = NULL;
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, NULL);

@@ -55,7 +55,7 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 	sessid.p = (const char *)mbuf_buf(mb);
 	sessid.l = mbuf_get_left(mb);
 
-	wsc->sess = session_lookup(&wsc->mix->sessl, &sessid);
+	wsc->sess = slmix_session_lookup(&wsc->mix->sessl, &sessid);
 	if (!wsc->sess) {
 		websock_close(wsc->c, WEBSOCK_INVALID_PAYLOAD,
 			      "Session not found");

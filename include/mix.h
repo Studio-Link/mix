@@ -123,26 +123,26 @@ int slmix_http_listen(struct http_sock **sock, struct mix *mix);
  * sess.c
  */
 void pc_close(struct session *sess);
-int session_user_updated(struct session *sess);
-void session_video(struct session *sess, bool enable);
-int session_speaker(struct session *sess, bool enable);
-int session_new(struct mix *mix, struct session **sessp,
+int slmix_session_user_updated(struct session *sess);
+void slmix_session_video(struct session *sess, bool enable);
+int slmix_session_speaker(struct session *sess, bool enable);
+int slmix_session_new(struct mix *mix, struct session **sessp,
 		const struct http_msg *msg);
-int session_start(struct session *sess,
+int slmix_session_start(struct session *sess,
 		  const struct rtc_configuration *pc_config,
 		  const struct mnat *mnat, const struct menc *menc);
-struct session *session_lookup_hdr(const struct list *sessl,
+struct session *slmix_session_lookup_hdr(const struct list *sessl,
 				   const struct http_msg *msg);
-struct session *session_lookup(const struct list *sessl,
+struct session *slmix_session_lookup(const struct list *sessl,
 			       const struct pl *sessid);
-struct session *session_lookup_user_id(const struct list *sessl,
+struct session *slmix_session_lookup_user_id(const struct list *sessl,
 				       const struct pl *user_id);
-int session_handle_ice_candidate(struct session *sess, const struct odict *od);
-void session_close(struct session *sess, int err);
+int slmix_session_handle_ice_candidate(struct session *sess, const struct odict *od);
+void slmix_session_close(struct session *sess, int err);
 void http_sreply(struct http_conn *conn, uint16_t scode, const char *reason,
 		 const char *ctype, const char *fmt, size_t size,
 		 struct session *sess);
-int session_save(struct session *sess);
+int slmix_session_save(struct session *sess);
 
 
 /******************************************************************************
