@@ -170,8 +170,11 @@ void sl_ws_session_close(struct session *sess);
 /******************************************************************************
  * db.c
  */
+int slmix_db_cur_open(void **cur, unsigned int dbi);
+int slmix_db_cur_next(void *cur, struct mbuf *key, struct mbuf *data);
+int slmix_db_cur_close(void *cur);
 int slmix_db_get(unsigned int dbi, const struct pl *key, struct mbuf *data);
-int slmix_db_put(unsigned int dbi, const struct pl *key, const struct pl *val);
+int slmix_db_put(unsigned int dbi, const struct pl *key, void *val, size_t sz);
 int slmix_db_del(unsigned int dbi, const struct pl *key);
 unsigned int slmix_db_sess(void);
 unsigned int slmix_db_rooms(void);
