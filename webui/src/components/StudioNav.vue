@@ -6,7 +6,7 @@
         <div class="flex-1">
           <nav aria-label="Sidebar" class="flex flex-col items-center space-y-3 py-4">
             <a
-              v-for="room in Users.rooms.value?.reverse()"
+              v-for="room in Users.rooms.value"
               :key="room.name"
               :href="room.url"
               class="relative block group"
