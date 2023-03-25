@@ -169,6 +169,7 @@ void sl_ws_dummyh(const struct websock_hdr *hdr, struct mbuf *mb, void *arg);
 void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 		      void *arg);
 void sl_ws_session_close(struct session *sess);
+struct list *sl_ws_list(void);
 
 
 /******************************************************************************

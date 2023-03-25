@@ -239,3 +239,9 @@ int sl_ws_close(void)
 
 	return 0;
 }
+
+
+struct list *sl_ws_list(void)
+{
+	return &wsl;
+}

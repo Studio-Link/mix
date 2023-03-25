@@ -107,7 +107,7 @@ int slmix_update_room(void)
 	int err;
 
 	re_snprintf(str, sizeof(str), "{\"url\": \"%s\", \"listeners\": %u}",
-		    mix.url, list_count(&mix.sessl));
+		    mix.url, list_count(sl_ws_list()));
 	pl_set_str(&key, mix.room);
 
 	err = slmix_db_put(slmix_db_rooms(), &key, str, str_len(str) + 1);
