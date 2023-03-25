@@ -97,6 +97,7 @@ void slmix_record(struct mix *m, enum mix_rec state);
 void slmix_disp_enable(struct mix *m, const char *dev, bool enable);
 enum mix_rec slmix_rec_state(struct mix *m);
 const char *slmix_rec_state_name(enum mix_rec state);
+void slmix_refresh_rooms(void *arg);
 
 
 /******************************************************************************
