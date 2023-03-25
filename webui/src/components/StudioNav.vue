@@ -30,7 +30,16 @@
                   class="text-gray-100 group-hover:rounded-2xl group-hover:bg-brand group-hover:text-white bg-sl-02dpa rounded-3xl flex items-center justify-center w-12 h-12 transition-all duration-200 overflow-hidden"
                 >
                   <img alt="Studio" class="rounded-lg" src="https://source.unsplash.com/random/100x100" />
-                  <span class="sr-only">{{room.name}}</span>
+                  <span class="sr-only">{{ room.name }}</span>
+
+                  <span
+                    class="absolute bottom-0 right-0 block translate-y-1/2 translate-x-1/2 transform rounded-full mb-2 mr-2"
+                  >
+                    <span
+                      class="bg-gray-200 text-gray-600 ml-auto inline-block rounded-full py-0.5 px-2 text-xs"
+                      >{{ room.listeners }}</span
+                    >
+                  </span>
                 </div>
               </div>
             </a>
@@ -43,6 +52,4 @@
 
 <script setup lang="ts">
 import { Users } from '../ws/users'
-
-
 </script>
