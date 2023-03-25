@@ -122,5 +122,5 @@ ccheck:
 	tests/ccheck.py src modules
 
 .PHONY: test
-test:
+test: build
 	cd tests/bdd && env/bin/behave
