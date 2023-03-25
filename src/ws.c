@@ -118,6 +118,10 @@ static void conn_destroy(void *arg)
 
 	mem_deref(wsc->sess);
 	list_unlink(&wsc->le);
+
+	bool force = true;
+	slmix_update_room();
+	slmix_refresh_rooms(&force);
 }
 
 
