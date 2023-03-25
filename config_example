@@ -1,4 +1,5 @@
 mix_room		MixRoom
+mix_url			/
 mix_token_host		TOKENHOST # can start record
 mix_token_download	TOKENDOWNLOAD # protected download folder 
 mix_token_guests	TOKENGUEST # invite url 

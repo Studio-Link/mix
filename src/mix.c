@@ -6,6 +6,7 @@ extern const char *GIT_TAG;
 extern const char *GIT_REV;
 extern const char *GIT_BRANCH;
 
+
 static struct mix mix = {.room		  = "main",
 			 .sessl		  = LIST_INIT,
 			 .pc_config	  = {.offerer = false},
@@ -35,6 +36,91 @@ const char *slmix_git_branch(void)
 struct mix *slmix(void)
 {
 	return &mix;
+}
+
+
+static struct tmr tmr_room_update;
+static uint64_t last_room_update = 0;
+struct mbuf update_data;
+
+
+static void update_room(void *arg)
+{
+	struct mbuf mbkey, val;
+	struct pl key;
+	uint64_t current;
+	void *cur;
+	char *json = NULL;
+	struct mbuf mjson;
+	(void)arg;
+
+	pl_set_str(&key, "up");
+
+	slmix_db_get(slmix_db_rooms(), &key, &update_data);
+
+	current = mbuf_read_u64(&update_data);
+	mbuf_set_posend(&update_data, 0, 0);
+
+	if (current == last_room_update)
+		goto out;
+
+	last_room_update = current;
+
+	mbuf_init(&mbkey);
+	mbuf_init(&val);
+	mbuf_init(&mjson);
+
+	slmix_db_cur_open(&cur, slmix_db_rooms());
+
+	while (slmix_db_cur_next(cur, &mbkey, &val) == 0) {
+		if (str_cmp((char *)mbkey.buf, "up") == 0)
+			continue;
+
+		mbuf_printf(&mjson, "\"%s\": %s", mbkey.buf, val.buf);
+
+		mbuf_set_posend(&mbkey, 0, 0);
+		mbuf_set_posend(&val, 0, 0);
+	}
+
+	re_sdprintf(&json, "{\"type\": \"rooms\", \"rooms\": {%b}}", mjson.buf,
+		    mjson.end);
+	sl_ws_send_event_all(json);
+	mem_deref(json);
+
+	slmix_db_cur_close(cur);
+	mbuf_reset(&mbkey);
+	mbuf_reset(&val);
+	mbuf_reset(&mjson);
+
+out:
+	tmr_start(&tmr_room_update, 500, update_room, NULL);
+}
+
+
+static int init_room(void)
+{
+	char str[128] = {0};
+	struct pl key;
+	int err;
+
+	re_snprintf(str, sizeof(str), "{\"url\": \"%s\"}", mix.url);
+	pl_set_str(&key, mix.room);
+
+	err = slmix_db_put(slmix_db_rooms(), &key, str, str_len(str) + 1);
+	if (err)
+		return err;
+
+	uint64_t time = tmr_jiffies_rt_usec() / 1000;
+	pl_set_str(&key, "up");
+	err = slmix_db_put(slmix_db_rooms(), &key, &time, sizeof(time));
+	if (err)
+		return err;
+
+	mbuf_init(&update_data);
+	tmr_init(&tmr_room_update);
+	tmr_start(&tmr_room_update, 100, update_room, NULL);
+
+	return err;
 }
 
 
@@ -70,6 +156,10 @@ int slmix_init(void)
 		return err;
 
 	err = sl_httpc_init();
+	if (err)
+		return err;
+
+	err = init_room();
 
 	return err;
 }
@@ -90,6 +180,7 @@ int slmix_config(char *file)
 		return ENOMEM;
 
 	conf_get_str(conf, "mix_room", mix.room, sizeof(mix.room));
+	conf_get_str(conf, "mix_url", mix.url, sizeof(mix.url));
 
 	conf_get_str(conf, "mix_token_host", mix.token_host,
 		     sizeof(mix.token_host));
@@ -124,6 +215,16 @@ out:
 
 void slmix_close(void)
 {
+	struct pl key;
+
+	info("slmix close\n");
+
+	pl_set_str(&key, mix.room);
+	slmix_db_del(slmix_db_rooms(), &key);
+
+	tmr_cancel(&tmr_room_update);
+	mbuf_reset(&update_data);
+
 	list_flush(&mix.sessl);
 	list_flush(&mix.chatl);
 
