@@ -8,6 +8,7 @@ interface Room {
     name: string
     url: string
     image: string
+    listeners: number
 }
 
 interface User {
@@ -164,7 +165,11 @@ export const Users: Users = {
             if (data.type === 'rooms') {
                 this.rooms.value = []
                 for (const key in data.rooms) {
-                    const room: Room = { name: key, image: '', url: data.rooms[key].url }
+                    const room: Room = {
+                        name: key, image: '',
+                        url: data.rooms[key].url,
+                        listeners: data.rooms[key].listeners
+                    }
                     this.rooms.value.push(room)
                 }
             }
