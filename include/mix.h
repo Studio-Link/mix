@@ -8,7 +8,8 @@ enum {
 	NAME_SZ	   = 32,
 	TOKEN_SZ   = 32,
 	CHAT_MSGSZ = 1024,
-	PATH_SZ	   = 512,
+	PATH_SZ	   = 256,
+	URL_SZ	   = 256,
 };
 
 enum mix_rec {
@@ -26,6 +27,7 @@ typedef uint64_t(mix_time_rec_h)(void);
 
 struct mix {
 	char room[ROOM_SZ];
+	char url[URL_SZ];
 	struct list sessl;
 	struct list chatl;
 	uint16_t next_speaker_id;
