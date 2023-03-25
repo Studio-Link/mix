@@ -80,6 +80,9 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 		json = mem_deref(json);
 	}
 
+	bool force = true;
+	slmix_refresh_rooms(&force);
+
 	if (0 == user_event_json(&json, USER_ADDED, wsc->sess)) {
 		sl_ws_send_event(wsc->sess, json);
 		json = mem_deref(json);

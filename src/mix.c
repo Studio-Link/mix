@@ -44,7 +44,7 @@ static uint64_t last_room_update = 0;
 struct mbuf update_data;
 
 
-static void update_room(void *arg)
+void slmix_refresh_rooms(void *arg)
 {
 	struct mbuf mbkey, val;
 	struct pl key;
@@ -52,7 +52,10 @@ static void update_room(void *arg)
 	void *cur;
 	char *json = NULL;
 	struct mbuf mjson;
-	(void)arg;
+	bool force = false;
+
+	if (arg)
+		force = *(bool *)arg;
 
 	pl_set_str(&key, "up");
 
@@ -61,7 +64,7 @@ static void update_room(void *arg)
 	current = mbuf_read_u64(&update_data);
 	mbuf_set_posend(&update_data, 0, 0);
 
-	if (current == last_room_update)
+	if (!force && current == last_room_update)
 		goto out;
 
 	last_room_update = current;
@@ -93,7 +96,7 @@ static void update_room(void *arg)
 	mbuf_reset(&mjson);
 
 out:
-	tmr_start(&tmr_room_update, 500, update_room, NULL);
+	tmr_start(&tmr_room_update, 500, slmix_refresh_rooms, NULL);
 }
 
 
@@ -116,7 +119,7 @@ static int init_room(void)
 
 	mbuf_init(&update_data);
 	tmr_init(&tmr_room_update);
-	tmr_start(&tmr_room_update, 100, update_room, NULL);
+	tmr_start(&tmr_room_update, 100, slmix_refresh_rooms, NULL);
 
 	return err;
 }
