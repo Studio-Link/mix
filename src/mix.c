@@ -76,14 +76,14 @@ static void update_room(void *arg)
 		if (str_cmp((char *)mbkey.buf, "up") == 0)
 			continue;
 
-		mbuf_printf(&mjson, "\"%s\": %s", mbkey.buf, val.buf);
+		mbuf_printf(&mjson, "\"%s\": %s,", mbkey.buf, val.buf);
 
 		mbuf_set_posend(&mbkey, 0, 0);
 		mbuf_set_posend(&val, 0, 0);
 	}
 
 	re_sdprintf(&json, "{\"type\": \"rooms\", \"rooms\": {%b}}", mjson.buf,
-		    mjson.end);
+		    mjson.end - 1);
 	sl_ws_send_event_all(json);
 	mem_deref(json);
 
