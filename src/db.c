@@ -38,6 +38,17 @@ static MDB_dbi dbi_sess;
 static MDB_dbi dbi_rooms;
 
 
+int slmix_db_up(unsigned int dbi)
+{
+	struct pl key;
+	uint64_t time = tmr_jiffies_rt_usec() / 1000;
+
+	pl_set_str(&key, "up");
+
+	return slmix_db_put(dbi, &key, &time, sizeof(time));
+}
+
+
 int slmix_db_cur_open(void **cur, unsigned int dbi)
 {
 	int err;

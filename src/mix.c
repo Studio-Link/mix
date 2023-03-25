@@ -110,9 +110,7 @@ static int init_room(void)
 	if (err)
 		return err;
 
-	uint64_t time = tmr_jiffies_rt_usec() / 1000;
-	pl_set_str(&key, "up");
-	err = slmix_db_put(slmix_db_rooms(), &key, &time, sizeof(time));
+	err = slmix_db_up(slmix_db_rooms());
 	if (err)
 		return err;
 
@@ -221,6 +219,7 @@ void slmix_close(void)
 
 	pl_set_str(&key, mix.room);
 	slmix_db_del(slmix_db_rooms(), &key);
+	slmix_db_up(slmix_db_rooms());
 
 	tmr_cancel(&tmr_room_update);
 	mbuf_reset(&update_data);

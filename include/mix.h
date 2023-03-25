@@ -172,6 +172,7 @@ void sl_ws_session_close(struct session *sess);
 /******************************************************************************
  * db.c
  */
+int slmix_db_up(unsigned int dbi);
 int slmix_db_cur_open(void **cur, unsigned int dbi);
 int slmix_db_cur_next(void *cur, struct mbuf *key, struct mbuf *data);
 int slmix_db_cur_close(void *cur);
