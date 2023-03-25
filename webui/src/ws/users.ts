@@ -4,6 +4,12 @@ import { Error } from '../error'
 import { Webrtc } from '../webrtc'
 import config from '../config'
 
+interface Room {
+    name: string
+    url: string
+    image: string
+}
+
 interface User {
     id: string
     name: string
@@ -40,6 +46,7 @@ interface Users {
     record_type: Ref<RecordType>
     hand_status: Ref<boolean>
     speaker_status: Ref<boolean>
+    rooms: Ref<Room[] | undefined>
 }
 
 function pad(num: number, size: number) {
@@ -48,6 +55,7 @@ function pad(num: number, size: number) {
 }
 
 export const Users: Users = {
+    rooms: ref([]),
     speakers: ref([]),
     listeners: ref([]),
     chat_messages: ref([]),
@@ -151,6 +159,14 @@ export const Users: Users = {
                     msg: data.msg,
                 }
                 this.chat_messages.value?.push(chat)
+            }
+
+            if (data.type === 'rooms') {
+                this.rooms.value = []
+                for (const key in data.rooms) {
+                    const room: Room = { name: key, image: '', url: data.rooms[key].url }
+                    this.rooms.value.push(room)
+                }
             }
 
             if (data.type === 'rec') {
