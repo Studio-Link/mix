@@ -74,6 +74,13 @@ def step_impl8(context, user, updated_user):
     assert resp["name"] == updated_user, f'name: {resp}'
 
 
+@then('"{user}" WebSocket receives rooms update')
+def step_impl8a(context, user):
+    response = context.ws[user].recv()
+    resp = json.loads(response)
+    assert resp["type"] == 'rooms', f'type: {resp}'
+
+
 @then('"{user}" WebSocket receives "{delete_user}" delete')
 def step_impl9(context, user, delete_user):
     response = context.ws[user].recv()

@@ -8,6 +8,9 @@ Feature: Chat
         Given "Bob" connects without a token
         And "Bob" set client name
         Then "Bob" WebSocket receives "2" users
+        And "Bob" WebSocket receives rooms update
+        And "Alice" WebSocket receives rooms update
+        And "Alice" WebSocket receives rooms update
         And "Alice" WebSocket receives added "Bob" user
 
         Given "Bob" posts chat message "'hello alice'"
