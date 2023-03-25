@@ -81,6 +81,7 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 	}
 
 	bool force = true;
+	slmix_update_room();
 	slmix_refresh_rooms(&force);
 
 	if (0 == user_event_json(&json, USER_ADDED, wsc->sess)) {

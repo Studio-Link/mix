@@ -100,13 +100,14 @@ out:
 }
 
 
-static int init_room(void)
+int slmix_update_room(void)
 {
 	char str[128] = {0};
 	struct pl key;
 	int err;
 
-	re_snprintf(str, sizeof(str), "{\"url\": \"%s\"}", mix.url);
+	re_snprintf(str, sizeof(str), "{\"url\": \"%s\", \"listeners\": %u}",
+		    mix.url, list_count(&mix.sessl));
 	pl_set_str(&key, mix.room);
 
 	err = slmix_db_put(slmix_db_rooms(), &key, str, str_len(str) + 1);
@@ -116,10 +117,6 @@ static int init_room(void)
 	err = slmix_db_up(slmix_db_rooms());
 	if (err)
 		return err;
-
-	mbuf_init(&update_data);
-	tmr_init(&tmr_room_update);
-	tmr_start(&tmr_room_update, 100, slmix_refresh_rooms, NULL);
 
 	return err;
 }
@@ -160,7 +157,11 @@ int slmix_init(void)
 	if (err)
 		return err;
 
-	err = init_room();
+	mbuf_init(&update_data);
+	tmr_init(&tmr_room_update);
+	tmr_start(&tmr_room_update, 100, slmix_refresh_rooms, NULL);
+
+	err = slmix_update_room();
 
 	return err;
 }
