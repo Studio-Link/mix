@@ -84,8 +84,8 @@ set(APP_MODULES_DIR ${CMAKE_SOURCE_DIR}/modules)
 set(APP_MODULES amix vmix)
 set(MODULES ice dtls_srtp turn opus avcodec fakevideo auresamp)
 
-add_subdirectory(external/re)
-add_subdirectory(external/baresip)
+add_subdirectory(external/re EXCLUDE_FROM_ALL)
+add_subdirectory(external/baresip EXCLUDE_FROM_ALL)
 
 find_package(re CONFIG REQUIRED)
 
