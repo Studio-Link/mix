@@ -479,7 +479,7 @@ export const Webrtc = {
         })
     },
 
-    logout() {
+    hangup() {
         videostream?.getVideoTracks()[0].stop()
         screenstream?.getVideoTracks()[0].stop()
         audiostream?.getAudioTracks()[0].stop()
