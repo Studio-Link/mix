@@ -305,6 +305,7 @@ void slmix_record(struct mix *m, enum mix_rec state)
 {
 	struct tm tm;
 	time_t now	     = time(NULL);
+	char tmp[PATH_SZ]    = {0};
 	char folder[PATH_SZ] = {0};
 	int err		     = 0;
 
@@ -329,16 +330,15 @@ void slmix_record(struct mix *m, enum mix_rec state)
 
 	localtime_r(&now, &tm);
 
-	(void)re_snprintf(folder, sizeof(folder), "webui/public/download/%s",
+	(void)re_snprintf(tmp, sizeof(tmp), "webui/public/download/%s",
 			  m->token_download);
 	fs_mkdir(folder, 0755);
 
-	(void)re_snprintf(folder, sizeof(folder),
-			  "webui/public/download/%s/%s", m->token_download,
-			  m->room);
+	(void)re_snprintf(tmp, sizeof(tmp), "webui/public/download/%s/%s",
+			  m->token_download, m->room);
 	fs_mkdir(folder, 0755);
 
-	(void)re_snprintf(folder, sizeof(folder), "%s/%H", folder,
+	(void)re_snprintf(folder, sizeof(folder), "%s/%H", tmp,
 			  timestamp_print, &tm);
 	fs_mkdir(folder, 0755);
 
