@@ -41,12 +41,15 @@
             </Menu>
           </div>
           <!-- Button group centered -->
-          <div class="flex space-x-1 sm:space-x-4">
+          <div 
+
+          :class="[Webrtc.state.value >= WebrtcState.Listening ? 'bg-gray-600' : '']"
+          class="flex pl-2 space-x-1 sm:space-x-2 rounded-md">
             <!-- Hand button -->
             <div v-if="Webrtc.state.value >= WebrtcState.Listening">
               <button
                 ref="hand"
-                :class="{ 'animate-pulse': hand_status }"
+                :class="{ 'animate-bounce': hand_status }"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
                 @click="hand_clicked()"
               >
@@ -119,13 +122,24 @@
                 <span class="sr-only">Video enabled</span>
               </button>
             </div>
+            <!-- Settings -->
             <div v-if="Webrtc.state.value >= WebrtcState.ReadySpeaking">
               <button
                 ref="settings"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
                 @click="settings_clicked()"
               >
-                <Cog6ToothIcon class="h-10 w-10" />
+                <AdjustmentsVerticalIcon class="h-10 w-10" />
+              </button>
+            </div>
+            <!-- Hangup -->
+            <div v-if="Webrtc.state.value >= WebrtcState.ReadySpeaking">
+              <button
+                ref="hangup"
+                class="text-red-400 hover:bg-gray-700 group block px-2 py-2 text-base font-medium rounded-md"
+                @click="hangup_clicked()"
+              >
+                <PhoneXMarkIcon class="h-10 w-10" />
               </button>
             </div>
             <!-- Play button -->
@@ -145,8 +159,7 @@
             </div>
           </div>
           <!-- Chat button -->
-          <div>
-          </div>
+          <div></div>
         </div>
       </div>
     </div>
@@ -161,10 +174,10 @@ import api from '../api'
 import SettingsModal from '../components/SettingsModal.vue'
 import {
   HandRaisedIcon,
-  Cog6ToothIcon,
-  ArrowLeftOnRectangleIcon,
+  AdjustmentsVerticalIcon,
   VideoCameraIcon,
   VideoCameraSlashIcon,
+  PhoneXMarkIcon
 } from '@heroicons/vue/24/outline'
 import { PlayCircleIcon } from '@heroicons/vue/24/solid'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
@@ -200,5 +213,9 @@ async function settings_clicked() {
 
 function logout_clicked() {
   api.logout(true)
+}
+
+function hangup_clicked() {
+  Webrtc.hangup()
 }
 </script>

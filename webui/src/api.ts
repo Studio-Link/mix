@@ -115,7 +115,7 @@ export default {
     },
 
     async logout(force: boolean) {
-        Webrtc.logout()
+        Webrtc.hangup()
         await api_fetch('DELETE', '/client', sess)
         window.localStorage.removeItem('sess')
         if (force)
