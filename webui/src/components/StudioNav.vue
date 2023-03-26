@@ -25,9 +25,9 @@
                   <span class="sr-only">{{ room.name }}</span>
 
                   <span
-                    class="absolute top-0 right-0 block translate-y-1/2 translate-x-1/2 transform rounded-full -mt-5 mr-2"
+                    class="absolute top-0 right-0 block translate-y-1/2 translate-x-1/2 transform rounded-full -mt-5 mr-1"
                   >
-                    <span class="bg-gray-200 text-gray-600 ml-auto inline-block rounded-full py-0.5 px-2 text-xs">{{
+                    <span class="bg-gray-200 text-gray-600 ml-auto inline-block rounded-full px-1.5 text-xs">{{
                       room.listeners
                     }}</span>
                   </span>
