@@ -326,6 +326,7 @@ export const Webrtc = {
         Webrtc.deviceInfosAudio.value = await navigator.mediaDevices.enumerateDevices()
         Webrtc.deviceInfosVideo.value = Webrtc.deviceInfosAudio.value
     },
+
     async init_avdevices() {
         await pc_media_audio()
         this.deviceInfosAudio.value = await navigator.mediaDevices.enumerateDevices()
