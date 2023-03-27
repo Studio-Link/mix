@@ -3,6 +3,7 @@ import { Users } from './ws/users'
 import { ref } from 'vue'
 import adapter from 'webrtc-adapter'
 import { Error } from './error'
+import { useEventListener } from '@vueuse/core'
 
 // --- Private Webrtc API ---
 let pc: RTCPeerConnection
@@ -321,6 +322,10 @@ export const Webrtc = {
         audio?.play()
     },
 
+    async update_avdevices() {
+        Webrtc.deviceInfosAudio.value = await navigator.mediaDevices.enumerateDevices()
+        Webrtc.deviceInfosVideo.value = Webrtc.deviceInfosAudio.value
+    },
     async init_avdevices() {
         await pc_media_audio()
         this.deviceInfosAudio.value = await navigator.mediaDevices.enumerateDevices()
@@ -332,6 +337,8 @@ export const Webrtc = {
         })
 
         this.audio_input_id.value = audiostream?.getAudioTracks()[0].getSettings().deviceId
+
+        useEventListener(navigator!.mediaDevices, 'devicechange', Webrtc.update_avdevices)
     },
 
     async change_audio() {
