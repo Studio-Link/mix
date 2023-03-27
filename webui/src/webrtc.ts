@@ -397,16 +397,15 @@ export const Webrtc = {
             constraintsVideo.video.deviceId = { exact: this.video_input_id.value }
 
         await pc_media_video()
+        if (!this.video_input_id.value) {
+            this.deviceInfosVideo.value = await navigator.mediaDevices.enumerateDevices()
+            this.video_input_id.value = videostream?.getVideoTracks()[0].getSettings().deviceId
+        }
         if (videostream === null)
             return null
 
         if (this.state.value >= WebrtcState.ReadySpeaking)
             await pc_replace_tracks(null, videostream.getVideoTracks()[0])
-
-        if (!this.video_input_id.value) {
-            this.deviceInfosVideo.value = await navigator.mediaDevices.enumerateDevices()
-            this.video_input_id.value = videostream?.getVideoTracks()[0].getSettings().deviceId
-        }
 
         this.video_mute(false, true)
         console.log('video changed', constraintsVideo)
