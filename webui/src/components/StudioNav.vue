@@ -1,19 +1,26 @@
 <template>
+  <div class="z-10 md:hidden flex items-center fixed left-0">
+    <button
+      :class="{'ml-16': menuOpen}"
+      type="button"
+      class="inline-flex items-center justify-center rounded-md p-2.5 text-gray-400"
+      @click="menuOpen = !menuOpen"
+    >
+      <span class="sr-only">Open/Close nav menu</span>
+      <Bars3Icon v-if="!menuOpen" class="h-6 w-6" aria-hidden="true" />
+      <XMarkIcon v-if="menuOpen" class="h-6 w-6" aria-hidden="true" />
+    </button>
+  </div>
   <!-- Static sidebar for desktop -->
-  <div class="flex flex-shrink-0 mr-2 bg-gray-600 min-h-screen">
+  <div :class="[menuOpen ? 'flex' : 'hidden']" class="md:flex flex-shrink-0 mr-2 bg-gray-600 min-h-screen">
     <div class="flex w-16 flex-col h-screen">
       <div class="flex min-h-0 flex-1 flex-col overflow-y-auto bg-sl-01dpa">
         <div class="flex-1">
           <nav aria-label="Sidebar" class="flex flex-col items-center space-y-3 py-4">
-            <a
-              v-for="room in Users.rooms.value"
-              :key="room.name"
-              :href="room.url"
-              class="relative block group"
-            >
+            <a v-for="room in Users.rooms.value" :key="room.name" :href="room.url" class="relative block group">
               <div class="absolute flex items-center h-full -left-2 -top-2">
                 <div
-                  :class="[room.url != path ? 'scale-0 opacity-0' : '']" 
+                  :class="[room.url != path ? 'scale-0 opacity-0' : '']"
                   class="h-5 group-hover:opacity-100 group-hover:scale-100 w-1 transition-all duration-200 origin-left bg-gray-100 rounded-r"
                 ></div>
               </div>
@@ -46,8 +53,9 @@
 
 <script setup lang="ts">
 import { Users } from '../ws/users'
-import {ref} from 'vue'
+import { ref } from 'vue'
+import { Bars3Icon, XMarkIcon } from '@heroicons/vue/24/outline'
 
-const path=ref(location.pathname)
-
+const path = ref(location.pathname)
+const menuOpen = ref(false)
 </script>

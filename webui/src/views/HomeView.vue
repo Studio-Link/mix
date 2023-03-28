@@ -5,13 +5,15 @@
       <div class="flex items-center fixed right-0 top-0 m-3 space-x-2 text-xs z-30">
         <RecButton />
         <div>
-        <button
-          title="Chat"
-          class="text-gray-100 bg-gray-700 hover:text-white group block px-1 py-1 text-base font-medium rounded-md"
-          @click="chat_clicked()"
-        >
-          <ChatBubbleOvalLeftEllipsisIcon class="h-8 w-8 mx-auto" />
-        </button>
+          <button
+            title="Chat"
+            :class="[Users.chat_active.value ? 'text-gray-400 hover:text-gray-600' : 'text-gray-100 bg-gray-600 hover:text-white']"
+            class="group block px-1 py-1 text-base font-medium rounded-md"
+            @click="chat_clicked()"
+          >
+            <ChatBubbleOvalLeftEllipsisIcon v-if="!Users.chat_active.value" class="h-8 w-8 mx-auto" />
+            <XMarkIcon v-if="Users.chat_active.value" class="h-8 w-8 mx-auto" />
+          </button>
         </div>
       </div>
       <div class="flex">
@@ -39,7 +41,7 @@ import api from '../api'
 import { onMounted } from 'vue'
 import StudioNav from '../components/StudioNav.vue'
 import { Users } from '../ws/users'
-import { ChatBubbleOvalLeftEllipsisIcon } from '@heroicons/vue/24/outline'
+import { ChatBubbleOvalLeftEllipsisIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 
 onMounted(() => {
   api.websocket()
