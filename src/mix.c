@@ -222,8 +222,11 @@ void slmix_close(void)
 	info("slmix close\n");
 
 	pl_set_str(&key, mix.room);
+
+#if 0 /* permanent rooms */
 	slmix_db_del(slmix_db_rooms(), &key);
 	slmix_db_up(slmix_db_rooms());
+#endif
 
 	tmr_cancel(&tmr_room_update);
 	mbuf_reset(&update_data);
