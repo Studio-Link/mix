@@ -40,7 +40,7 @@ unix: external
 
 external:
 	mkdir -p external
-	git clone --depth 1 -b main https://github.com/baresip/re.git external/re
+	git clone --depth 1 -b vidmix_pidx https://github.com/baresip/re.git external/re
 	git clone --depth 1 -b main \
 		https://github.com/baresip/baresip.git external/baresip
 	cd external/re && \
