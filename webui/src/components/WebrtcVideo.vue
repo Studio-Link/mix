@@ -134,6 +134,7 @@ import { Webrtc, WebrtcState } from '../webrtc'
 import { Users } from '../ws/users'
 import api from '../api'
 import { SpeakerWaveIcon } from '@heroicons/vue/24/outline'
+import { useResizeObserver } from '@vueuse/core'
 
 const video = ref<HTMLVideoElement | null>(null)
 const nav = ref(false)
@@ -193,7 +194,7 @@ onMounted(() => {
     video.value?.play()
   })
 
-  addEventListener('resize', () => {
+  useResizeObserver(video.value, () => {
     overlay.value = false
     clearTimeout(resizeTimer)
     resizeTimer = setTimeout(resize, 200)
