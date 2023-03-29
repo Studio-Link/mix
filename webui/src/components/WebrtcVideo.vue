@@ -4,7 +4,7 @@
     @mouseover="nav = true"
     @mouseleave="nav = false"
     @touchstart.passive="nav = true"
-    class="relative flex bg-blue-100 max-w-screen-xl mx-auto mt-8"
+    class="relative flex bg-blue-100 max-w-screen-xl mx-auto mt-8 lg:mt-0"
   >
     <div v-show="nav" class="absolute z-20 text-gray-200 bottom-0 right-0 px-2">
       <button v-if="hasFullscreen" @click="requestFullscreen(video)" class="text-lg" title="Fullscreen">
