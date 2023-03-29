@@ -22,12 +22,6 @@ interface User {
     webrtc: boolean
 }
 
-interface VideoUser {
-    id: string
-    name: string
-    pidx: number
-}
-
 interface Chat {
     user_id: string
     user_name: string
@@ -46,8 +40,8 @@ interface Users {
     websocket(sessid: string): void
     rooms: Ref<Room[]>
     speakers: Ref<User[]>
+    vspeakers: Ref<User[]>
     listeners: Ref<User[]>
-    videos: Ref<VideoUser[]>
     chat_messages: Ref<Chat[]>
     chat_active: Ref<boolean>
     settings_active: Ref<boolean>
@@ -66,8 +60,8 @@ function pad(num: number, size: number) {
 export const Users: Users = {
     rooms: ref([]),
     speakers: ref([]),
+    vspeakers: ref([]),
     listeners: ref([]),
-    videos: ref([]),
     chat_messages: ref([]),
     chat_active: ref(false),
     settings_active: ref(false),
@@ -113,19 +107,15 @@ export const Users: Users = {
                         this.speaker_status.value = data.users[key].speaker
                     }
                     if (data.users[key].speaker) {
+                        if (data.users[key].video && data.users[key].pidx) {
+                            this.vspeakers.value.push(data.users[key])
+                            this.vspeakers.value.sort((a, b) => a.pidx - b.pidx)
+                            continue
+                        }
                         this.speakers.value?.push(data.users[key])
                     } else {
                         this.listeners.value?.push(data.users[key])
                     }
-                    if (data.users[key].video && data.users[key].pidx) {
-                        const video: VideoUser = {
-                            id: data.users[key].id,
-                            pidx: data.users[key].pidx,
-                            name: data.users[key].name,
-                        }
-                        this.videos.value.push(video)
-                    }
-                    this.videos.value.sort((a, b) => a.pidx - b.pidx);
                 }
                 return
             }
@@ -135,7 +125,7 @@ export const Users: Users = {
                 if (data.event === 'deleted' || data.event === 'updated') {
                     this.speakers.value = this.speakers.value?.filter((u) => u.id !== data.id)
                     this.listeners.value = this.listeners.value?.filter((u) => u.id !== data.id)
-                    this.videos.value = this.videos.value?.filter((u) => u.id !== data.id)
+                    this.vspeakers.value = this.vspeakers.value?.filter((u) => u.id !== data.id)
                 }
 
                 if (data.event === 'added' || data.event === 'updated') {
@@ -164,23 +154,19 @@ export const Users: Users = {
                         }
                     }
 
-                    if (user.video && user.pidx) {
-                        const video: VideoUser = {
-                            id: data.id,
-                            pidx: data.pidx,
-                            name: data.name,
-                        }
-
-                        this.videos.value.push(video)
-                        this.videos.value.sort((a, b) => a.pidx - b.pidx);
-                    }
-
                     if (data.speaker) {
+                        if (user.video && user.pidx) {
+                            this.vspeakers.value.push(user)
+                            this.vspeakers.value.sort((a, b) => a.pidx - b.pidx)
+                            return
+                        }
                         this.speakers.value?.unshift(user)
                     } else {
                         this.listeners.value?.unshift(user)
                     }
                 }
+
+                return
             }
 
             if (data.type === 'chat') {
@@ -191,6 +177,8 @@ export const Users: Users = {
                     msg: data.msg,
                 }
                 this.chat_messages.value?.push(chat)
+
+                return
             }
 
             if (data.type === 'rooms') {
@@ -203,6 +191,8 @@ export const Users: Users = {
                     }
                     this.rooms.value.push(room)
                 }
+
+                return
             }
 
             if (data.type === 'rec') {
@@ -217,6 +207,8 @@ export const Users: Users = {
                 const s = Math.floor(time)
 
                 this.record_timer.value = pad(h, 1) + ':' + pad(m, 2) + ':' + pad(s, 2)
+
+                return
             }
         }
     },

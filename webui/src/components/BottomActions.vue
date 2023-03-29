@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed inset-x-0 bottom-0">
+  <div class="fixed inset-x-0 bottom-0 z-20">
     <div class="">
       <div class="mx-auto py-1 pr-3 sm:pr-6 lg:pr-8">
         <div class="flex items-center justify-between">
