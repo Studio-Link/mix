@@ -13,12 +13,19 @@ interface Room {
 
 interface User {
     id: string
+    pidx: number
     name: string
     hand: boolean
     host: boolean
     video: boolean
     audio: boolean
     webrtc: boolean
+}
+
+interface VideoUser {
+    id: string
+    name: string
+    pidx: number
 }
 
 interface Chat {
@@ -37,9 +44,11 @@ interface Users {
     socket?: WebSocket
     ws_close(): void
     websocket(sessid: string): void
-    speakers: Ref<User[] | undefined>
-    listeners: Ref<User[] | undefined>
-    chat_messages: Ref<Chat[] | undefined>
+    rooms: Ref<Room[]>
+    speakers: Ref<User[]>
+    listeners: Ref<User[]>
+    videos: Ref<VideoUser[]>
+    chat_messages: Ref<Chat[]>
     chat_active: Ref<boolean>
     settings_active: Ref<boolean>
     record_timer: Ref<string>
@@ -47,7 +56,6 @@ interface Users {
     record_type: Ref<RecordType>
     hand_status: Ref<boolean>
     speaker_status: Ref<boolean>
-    rooms: Ref<Room[] | undefined>
 }
 
 function pad(num: number, size: number) {
@@ -59,6 +67,7 @@ export const Users: Users = {
     rooms: ref([]),
     speakers: ref([]),
     listeners: ref([]),
+    videos: ref([]),
     chat_messages: ref([]),
     chat_active: ref(false),
     settings_active: ref(false),
@@ -108,6 +117,15 @@ export const Users: Users = {
                     } else {
                         this.listeners.value?.push(data.users[key])
                     }
+                    if (data.users[key].video && data.users[key].pidx) {
+                        const video: VideoUser = {
+                            id: data.users[key].id,
+                            pidx: data.users[key].pidx,
+                            name: data.users[key].name,
+                        }
+                        this.videos.value.push(video)
+                    }
+                    this.videos.value.sort((a, b) => a.pidx - b.pidx);
                 }
                 return
             }
@@ -117,11 +135,13 @@ export const Users: Users = {
                 if (data.event === 'deleted' || data.event === 'updated') {
                     this.speakers.value = this.speakers.value?.filter((u) => u.id !== data.id)
                     this.listeners.value = this.listeners.value?.filter((u) => u.id !== data.id)
+                    this.videos.value = this.videos.value?.filter((u) => u.id !== data.id)
                 }
 
                 if (data.event === 'added' || data.event === 'updated') {
                     const user: User = {
                         id: data.id,
+                        pidx: data.pidx,
                         name: data.name,
                         host: data.host,
                         video: data.video,
@@ -142,6 +162,17 @@ export const Users: Users = {
                             if (!Webrtc.video_muted.value)
                                 Webrtc.video_mute(true)
                         }
+                    }
+
+                    if (user.video && user.pidx) {
+                        const video: VideoUser = {
+                            id: data.id,
+                            pidx: data.pidx,
+                            name: data.name,
+                        }
+
+                        this.videos.value.push(video)
+                        this.videos.value.sort((a, b) => a.pidx - b.pidx);
                     }
 
                     if (data.speaker) {

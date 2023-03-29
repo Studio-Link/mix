@@ -41,21 +41,38 @@
       </button>
     </div>
 
-    <video ref="video" id="live" class="relative mx-auto w-full max-w-screen-xl" playsinline autoplay muted preload="none">
+    <div
+      class="absolute z-10 bg-red-500 bg-opacity-30"
+      v-for="(item, index) in videos"
+      :key="item.pidx"
+      :style="{ width: calc_width(), height: calc_height(), left: calc_left(index), top: calc_top(index) }"
+    >
+      {{ item.name }}
+    </div>
 
-    </video>
+    <video
+      ref="video"
+      id="live"
+      class="relative mx-auto w-full max-w-screen-xl"
+      playsinline
+      autoplay
+      muted
+      preload="none"
+    ></video>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { Webrtc, WebrtcState } from '../webrtc'
+import { Users } from '../ws/users'
 
 const video = ref<HTMLVideoElement | null>(null)
 const nav = ref(false)
 const hasFullscreen = ref(false)
 const hasPiP = ref(false)
 const PiP = ref(false)
+const videos = Users.videos
 
 async function requestPiP() {
   try {
@@ -102,4 +119,37 @@ onMounted(() => {
     video.value?.play()
   })
 })
+
+function calc_rows() {
+  const n = videos.value.length
+  let rows = 0
+  for (rows = 1; ; rows++) {
+    if (n <= rows * rows) break
+  }
+  return rows
+}
+
+function calc_width() {
+  const rows = calc_rows()
+  return Math.floor(video.value!.clientWidth / rows) + 'px'
+}
+
+function calc_height() {
+  const rows = calc_rows()
+  return Math.floor(video.value!.clientHeight / rows) + 'px'
+}
+
+function calc_top(idx: number) {
+  const rows = calc_rows()
+  const h = Math.floor(video.value!.clientHeight / rows)
+
+  return h * Math.floor(idx / rows) + 'px'
+}
+
+function calc_left(idx: number) {
+  const rows = calc_rows()
+  const w = Math.floor(video.value!.clientWidth / rows)
+
+  return w * (idx % rows) + 'px'
+}
 </script>
