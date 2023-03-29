@@ -368,12 +368,12 @@ out:
 }
 
 
-void slmix_disp_enable(struct mix *m, const char *dev, bool enable)
+uint32_t slmix_disp_enable(struct mix *m, const char *dev, bool enable)
 {
 	if (!m || !m->disp_enable_h)
-		return;
+		return 0;
 
-	m->disp_enable_h(dev, enable);
+	return m->disp_enable_h(dev, enable);
 }
 
 

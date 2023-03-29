@@ -43,6 +43,7 @@ int users_json(char **json, struct mix *mix)
 			goto out;
 
 		odict_entry_add(o_user, "id", ODICT_STRING, sess->user->id);
+		odict_entry_add(o_user, "pidx", ODICT_INT, sess->user->pidx);
 		odict_entry_add(o_user, "name", ODICT_STRING,
 				sess->user->name);
 		odict_entry_add(o_user, "speaker", ODICT_BOOL,
@@ -99,6 +100,7 @@ int user_event_json(char **json, enum user_event event, struct session *sess)
 	}
 
 	odict_entry_add(o, "id", ODICT_STRING, sess->user->id);
+	odict_entry_add(o, "pidx", ODICT_INT, sess->user->pidx);
 	odict_entry_add(o, "name", ODICT_STRING, sess->user->name);
 	odict_entry_add(o, "speaker", ODICT_BOOL, sess->user->speaker);
 	odict_entry_add(o, "host", ODICT_BOOL, sess->user->host);

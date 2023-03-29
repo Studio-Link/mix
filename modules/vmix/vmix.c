@@ -105,18 +105,20 @@ static int video_rec_h(const char *folder, bool enable)
 }
 
 
-static void disp_enable_h(const char *device, bool enable)
+static uint32_t disp_enable_h(const char *device, bool enable)
 {
 	struct vidsrc_st *src;
 
 	if (!device)
-		return;
+		return 0;
 
 	src = vmix_src_find(device);
 	if (!src)
-		return;
+		return 0;
 
 	vidmix_source_enable(src->vidmix_src, enable);
+
+	return vidmix_source_get_pidx(src->vidmix_src);
 }
 
 

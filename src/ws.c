@@ -109,6 +109,7 @@ static void conn_destroy(void *arg)
 		}
 
 		slmix_disp_enable(wsc->mix, wsc->sess->id, false);
+		wsc->sess->user->pidx = 0;
 
 		pc_close(wsc->sess);
 	}
@@ -209,7 +210,7 @@ static void update_handler(void *arg)
 	if (!secs)
 		goto out;
 
-	re_snprintf(json, sizeof(json), "{\"type\": \"rec\", \"t\": %u}",
+	re_snprintf(json, sizeof(json), "{\"type\": \"rec\", \"t\": %lu}",
 		    secs);
 
 	sl_ws_send_event_all(json);

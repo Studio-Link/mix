@@ -22,7 +22,7 @@ enum mix_rec {
 enum user_event { USER_ADDED, USER_UPDATED, USER_DELETED, CHAT_ADDED };
 
 typedef int(mix_rec_h)(const char *folder, bool enable);
-typedef void(mix_disp_enable_h)(const char *device, bool enable);
+typedef uint32_t(mix_disp_enable_h)(const char *device, bool enable);
 typedef uint64_t(mix_time_rec_h)(void);
 
 struct mix {
@@ -50,6 +50,7 @@ struct mix {
 
 struct user {
 	char id[USERID_SZ];
+	int pidx; /* Video position index, 0 => disabled */
 	char name[NAME_SZ];
 	uint16_t speaker_id;
 	bool speaker;
@@ -94,7 +95,7 @@ void slmix_set_video_rec_h(struct mix *m, mix_rec_h *rec_h);
 void slmix_set_time_rec_h(struct mix *m, mix_time_rec_h *time_h);
 void slmix_set_video_disp_h(struct mix *m, mix_disp_enable_h *disp_h);
 void slmix_record(struct mix *m, enum mix_rec state);
-void slmix_disp_enable(struct mix *m, const char *dev, bool enable);
+uint32_t slmix_disp_enable(struct mix *m, const char *dev, bool enable);
 enum mix_rec slmix_rec_state(struct mix *m);
 const char *slmix_rec_state_name(enum mix_rec state);
 void slmix_refresh_rooms(void *arg);
