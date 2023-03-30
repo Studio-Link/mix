@@ -216,6 +216,6 @@ function logout_clicked() {
 }
 
 function hangup_clicked() {
-  Webrtc.hangup()
+  api.hangup()
 }
 </script>

@@ -45,11 +45,11 @@
       v-if="overlay"
       v-for="(item, index) in vspeakers"
       :class="{ 'border-2': item.talk }"
-      class="absolute z-10 border-green-500 border-0"
+      class="absolute z-10 border-green-500 border-0 group"
       :key="item.pidx"
       :style="{ width: calc_width(), height: calc_height(), left: calc_left(index), top: calc_top(index) }"
     >
-      <div class="flex group absolute bottom-0 bg-gray-600 text-gray-100 rounded-md ml-1 mb-1 py-0.5 px-2">
+      <div class="flex items-center absolute bottom-0 bg-gray-600 text-gray-100 rounded-md ml-1 mb-1 py-0.5 px-2 text-sm">
         {{ item.name }}
         <span v-if="!item.audio" class="bg-red-700 rounded-lg text-gray-200 ml-2">
           <svg
@@ -74,7 +74,7 @@
             focusable="false"
             data-prefix="fas"
             data-icon="microphone"
-            class="h-5 w-5"
+            class="h-4 w-4"
             role="img"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 384 512"
@@ -100,7 +100,7 @@
           v-if="api.is_host()"
           @click="api.listener(item.id)"
           type="button"
-          class="hidden group-hover:inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
           <SpeakerWaveIcon class="-ml-0.5 mr-1 h-4 w-4" aria-hidden="true" />
           To Audience
@@ -109,7 +109,7 @@
           v-if="!api.is_host() && item.id === api.session().user_id"
           @click="api.listener(item.id)"
           type="button"
-          class="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
           <SpeakerWaveIcon class="-ml-0.5 mr-1 h-4 w-4" aria-hidden="true" />
           Leave Stage

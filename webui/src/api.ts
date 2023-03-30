@@ -114,6 +114,11 @@ export default {
         Users.websocket(sess.id)
     },
 
+    async hangup() {
+       Webrtc.hangup()
+       await api_fetch('POST', '/client/hangup', null) 
+    },
+
     async logout(force: boolean) {
         Webrtc.hangup()
         await api_fetch('DELETE', '/client', sess)

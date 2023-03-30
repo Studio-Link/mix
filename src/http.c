@@ -393,18 +393,21 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/hangup") &&
+	    0 == pl_strcasecmp(&msg->met, "POST")) {
+
+		pc_close(sess);
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, NULL);
+		return;
+	}
+
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client") &&
 	    0 == pl_strcasecmp(&msg->met, "DELETE")) {
 
 		struct pl sess_id;
 		/* draft-ietf-wish-whip-03 */
 		info("mix: DELETE -> disconnect\n");
-
-		sess = slmix_session_lookup_hdr(&mix->sessl, msg);
-		if (!sess) {
-			http_ereply(conn, 404, "Session Not Found");
-			return;
-		}
 
 		pl_set_str(&sess_id, sess->id);
 		slmix_db_del(slmix_db_sess(), &sess_id);
