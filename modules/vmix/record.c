@@ -6,7 +6,7 @@
 
 #include <time.h>
 #include <sys/stat.h>
-#include <pthread.h>
+#include <re_atomic.h>
 #include <re.h>
 #include <rem.h>
 #include <baresip.h>
@@ -15,10 +15,10 @@
 
 static struct {
 	FILE *f;
-	bool run;
+	RE_ATOMIC bool run;
 	struct list bufs;
 	mtx_t *lock;
-	pthread_t thread;
+	thrd_t thread;
 	bool started;
 	uint64_t frames;
 	uint64_t start_time;
@@ -32,13 +32,13 @@ struct record_entry {
 };
 
 
-static void *record_thread(void *arg)
+static int record_thread(void *arg)
 {
 	size_t ret;
 	struct le *le;
 	(void)arg;
 
-	while (record.run) {
+	while (re_atomic_rlx(&record.run)) {
 		sys_msleep(4);
 
 		if (!record.f)
@@ -61,7 +61,7 @@ static void *record_thread(void *arg)
 		}
 	}
 
-	return NULL;
+	return 0;
 }
 
 
@@ -69,7 +69,7 @@ int vmix_record_start(const char *record_folder)
 {
 	int err;
 
-	if (record.run)
+	if (re_atomic_rlx(&record.run))
 		return EALREADY;
 
 	re_snprintf(record.filename, sizeof(record.filename), "%s/video.h264",
@@ -85,10 +85,10 @@ int vmix_record_start(const char *record_folder)
 		return err;
 	}
 
-	record.run = true;
+	re_atomic_rlx_set(&record.run, true);
 	info("vidmix: record started\n");
 
-	pthread_create(&record.thread, NULL, record_thread, NULL);
+	thread_create_name(&record.thread, "vidrec", record_thread, NULL);
 
 	return 0;
 }
@@ -108,11 +108,11 @@ int vmix_record(const uint8_t *buf, size_t size, RE_ATOMIC bool *update)
 	struct record_entry *e;
 	int err;
 
+	if (!re_atomic_rlx(&record.run))
+		return ESHUTDOWN;
+
 	if (!buf || !size || !record.f)
 		return EINVAL;
-
-	if (!record.run)
-		return ESHUTDOWN;
 
 	if (!record.started) {
 		re_atomic_rlx_set(update, true);
@@ -152,18 +152,18 @@ out:
 
 int vmix_record_close(void)
 {
-	if (!record.run)
+	if (!re_atomic_rlx(&record.run))
 		return EINVAL;
 
 	double avg_fps = .0;
 
 	avg_fps = record.frames / ((tmr_jiffies() - record.start_time) * .001);
 
-	record.run     = false;
+	re_atomic_rlx_set(&record.run, false);
 	record.started = false;
 	record.frames  = 0;
 	info("vidmix: record close avg %.2f fps\n", avg_fps);
-	pthread_join(record.thread, NULL);
+	thrd_join(record.thread, NULL);
 
 	/* FIXME: maybe not all frames are written */
 	list_flush(&record.bufs);
