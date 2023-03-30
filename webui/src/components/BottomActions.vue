@@ -57,7 +57,7 @@
               </button>
             </div>
             <!-- Audio Mute -->
-            <div v-if="Webrtc.state.value >= WebrtcState.Listening">
+            <div v-if="Webrtc.state.value >= WebrtcState.Listening && Users.speaker_status.value">
               <button
                 v-if="Webrtc.audio_muted.value"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
@@ -104,7 +104,7 @@
               </button>
             </div>
             <!-- Video Mute -->
-            <div v-if="Webrtc.state.value >= WebrtcState.Listening">
+            <div v-if="Webrtc.state.value >= WebrtcState.Listening && Users.speaker_status.value && Webrtc.video_select.value != 'Disabled'">
               <button
                 v-if="Webrtc.video_muted.value"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
@@ -123,7 +123,7 @@
               </button>
             </div>
             <!-- Settings -->
-            <div v-if="Webrtc.state.value >= WebrtcState.ReadySpeaking">
+            <div v-if="Webrtc.state.value >= WebrtcState.Listening && Users.speaker_status.value">
               <button
                 ref="settings"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
@@ -133,7 +133,7 @@
               </button>
             </div>
             <!-- Hangup -->
-            <div v-if="Webrtc.state.value >= WebrtcState.ReadySpeaking">
+            <div v-if="Webrtc.state.value >= WebrtcState.Listening">
               <button
                 ref="hangup"
                 class="text-red-400 hover:bg-gray-700 group block px-2 py-2 text-base font-medium rounded-md"
