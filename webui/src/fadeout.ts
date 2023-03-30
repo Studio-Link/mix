@@ -30,6 +30,7 @@ function fadeOut(): void {
 export const Fadeout = {
     init() {
         document.addEventListener("mousemove", resetTimer);
+        document.addEventListener("mousedown", resetTimer);
         document.addEventListener("touchstart", resetTimer);
         document.addEventListener("touchmove", resetTimer);
         document.addEventListener("keydown", resetTimer);
