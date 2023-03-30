@@ -25,8 +25,13 @@ void pc_close(struct session *sess)
 	sess->pc     = mem_deref(sess->pc);
 	sess->maudio = NULL;
 	sess->mvideo = NULL;
-	if (sess->user)
-		sess->user->pidx = 0;
+
+	if (sess->user) {
+		sess->user->pidx  = 0;
+		sess->user->audio = false;
+		sess->user->video = false;
+		sess->user->hand = false;
+	}
 }
 
 
