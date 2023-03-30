@@ -4,7 +4,7 @@
       <div class="mx-auto py-1 pr-3 sm:pr-6 lg:pr-8">
         <div class="flex items-center justify-between">
           <!-- User menu -->
-          <div class="w-16">
+          <div class="fadeout w-16">
             <Menu as="div" class="relative x-shrink-0">
               <div>
                 <MenuButton
@@ -44,7 +44,7 @@
           <div 
 
           :class="[Webrtc.state.value >= WebrtcState.Listening ? 'bg-gray-600' : '']"
-          class="flex pl-2 space-x-1 sm:space-x-2 rounded-md">
+          class="fadeout flex pl-2 space-x-1 sm:space-x-2 rounded-md">
             <!-- Hand button -->
             <div v-if="Webrtc.state.value >= WebrtcState.Listening">
               <button
@@ -168,10 +168,12 @@
 </template>
 
 <script setup lang="ts">
+import {Fadeout} from '../fadeout'
 import { Webrtc, WebrtcState } from '../webrtc'
 import { Users } from '../ws/users'
 import api from '../api'
 import SettingsModal from '../components/SettingsModal.vue'
+import { onMounted } from 'vue'
 import {
   HandRaisedIcon,
   AdjustmentsVerticalIcon,
@@ -184,6 +186,10 @@ import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 
 const user_id = api.session()?.user_id
 const hand_status = Users.hand_status
+
+onMounted(() => {
+    Fadeout.init()
+})
 
 function listen() {
   Webrtc.listen()
