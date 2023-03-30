@@ -43,8 +43,9 @@
 
     <div
       v-if="overlay"
-      class="absolute z-10"
       v-for="(item, index) in vspeakers"
+      :class="{ 'border-2': item.talk }"
+      class="absolute z-10 border-green-500 border-0"
       :key="item.pidx"
       :style="{ width: calc_width(), height: calc_height(), left: calc_left(index), top: calc_top(index) }"
     >

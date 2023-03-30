@@ -384,3 +384,12 @@ void slmix_set_time_rec_h(struct mix *m, mix_time_rec_h *time_h)
 
 	m->time_rec_h = time_h;
 }
+
+
+void slmix_set_talk_detect_h(struct mix *m, mix_talk_detect_h *talk_h)
+{
+	if (!m)
+		return;
+
+	m->talk_detect_h = talk_h;
+}

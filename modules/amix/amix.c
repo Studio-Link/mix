@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2021 Sebastian Reimers
  */
+#include <re_atomic.h>
 #include <re.h>
 #include <rem.h>
 #include <baresip.h>
@@ -14,7 +15,6 @@ static struct ausrc *ausrc   = NULL;
 static struct list auplayl   = LIST_INIT;
 static struct list ausrcl    = LIST_INIT;
 static struct aumix *aumix   = NULL;
-static struct tmr tmr_level;
 
 struct ausrc_st {
 	struct le le;
@@ -39,12 +39,10 @@ struct auplay_st {
 	uint64_t ts;
 	const char *device;
 	bool muted;
-	int16_t level;
-	mtx_t *lock;
+	RE_ATOMIC int16_t level;
 };
 
 
-#if 0
 static int16_t amix_level(const int16_t *sampv, size_t frames)
 {
 	int pos	      = 0;
@@ -72,7 +70,6 @@ static int16_t amix_level(const int16_t *sampv, size_t frames)
 
 	return 0;
 }
-#endif
 
 
 static void mix_readh(struct auframe *af, void *arg)
@@ -85,9 +82,8 @@ static void mix_readh(struct auframe *af, void *arg)
 	st_play->wh(af, st_play->arg);
 	af->id = st_play->speaker_id;
 
-	/* mtx_lock(st_play->lock); */
-	/* st_play->level = aumix_level(st_play->sampv, sampc / CH); */
-	/* mtx_unlock(st_play->lock); */
+	re_atomic_rlx_set(&st_play->level,
+			  amix_level(st_play->sampv, af->sampc / CH));
 }
 
 
@@ -168,7 +164,6 @@ static void auplay_destructor(void *arg)
 
 	mem_deref(st->aumix_src);
 	mem_deref(st->sampv);
-	mem_deref(st->lock);
 	list_unlink(&st->le);
 }
 
@@ -194,10 +189,6 @@ static int play_alloc(struct auplay_st **stp, const struct auplay *ap,
 		err = ENOMEM;
 		goto out;
 	}
-
-	err = mutex_alloc(&st->lock);
-	if (err)
-		goto out;
 
 	st->prm	   = *prm;
 	st->wh	   = wh;
@@ -276,33 +267,12 @@ void amix_mute(char *device, bool mute, uint16_t id)
 }
 
 
-static int mix_debug(struct re_printf *pf, void *arg)
+static uint16_t talk_detection_h(void)
 {
 	struct le *le;
-	(void)arg;
-	(void)pf;
-
-	LIST_FOREACH(&auplayl, le)
-	{
-		struct auplay_st *st = le->data;
-
-		info("aumix: %s, muted: %d\n", st->device, st->muted);
-	}
-
-	return 0;
-}
-
-
-static const struct cmd cmdv[] = {
-	{"aumix_debug", 'z', 0, "Debug aumix", mix_debug}};
-
-
-static void talk_detection(void *arg)
-{
-	struct le *le;
-	const char *sess_id = NULL;
+	uint16_t speaker_id = 0;
 	int16_t max	    = 0;
-	(void)arg;
+	int16_t level	    = 0;
 
 	LIST_FOREACH(&auplayl, le)
 	{
@@ -310,18 +280,15 @@ static void talk_detection(void *arg)
 		if (st->muted)
 			continue;
 
-		mtx_lock(st->lock);
-		if (st->level >= max) {
-			max	= st->level;
-			sess_id = st->device;
+		level = re_atomic_rlx(&st->level);
+
+		if (level >= max) {
+			max	   = level;
+			speaker_id = st->speaker_id;
 		}
-		mtx_unlock(st->lock);
 	}
 
-	if (sess_id && max >= MAX_LEVEL)
-		module_event("aumix", "talk", NULL, NULL, "%s", sess_id);
-
-	tmr_start(&tmr_level, 1000, talk_detection, NULL);
+	return speaker_id;
 }
 
 
@@ -339,9 +306,6 @@ static int module_init(void)
 {
 	int err;
 
-	err = cmd_register(baresip_commands(), cmdv, ARRAY_SIZE(cmdv));
-	IF_ERR_GOTO_OUT(err);
-
 	err = ausrc_register(&ausrc, baresip_ausrcl(), "amix", src_alloc);
 	IF_ERR_GOTO_OUT(err);
 
@@ -355,11 +319,10 @@ static int module_init(void)
 
 	list_init(&auplayl);
 	list_init(&ausrcl);
-	tmr_init(&tmr_level);
-	tmr_start(&tmr_level, 1000, talk_detection, NULL);
 
 	slmix_set_audio_rec_h(slmix(), audio_rec_h);
 	slmix_set_time_rec_h(slmix(), amix_record_msecs);
+	slmix_set_talk_detect_h(slmix(), talk_detection_h);
 
 out:
 	return err;
@@ -368,8 +331,6 @@ out:
 
 static int module_close(void)
 {
-	tmr_cancel(&tmr_level);
-	cmd_unregister(baresip_commands(), cmdv);
 	ausrc  = mem_deref(ausrc);
 	auplay = mem_deref(auplay);
 	aumix  = mem_deref(aumix);

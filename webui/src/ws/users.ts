@@ -13,6 +13,7 @@ interface Room {
 
 interface User {
     id: string
+    speaker_id: number
     pidx: number
     name: string
     hand: boolean
@@ -20,6 +21,7 @@ interface User {
     video: boolean
     audio: boolean
     webrtc: boolean
+    talk: boolean
 }
 
 interface Chat {
@@ -131,13 +133,15 @@ export const Users: Users = {
                 if (data.event === 'added' || data.event === 'updated') {
                     const user: User = {
                         id: data.id,
+                        speaker_id: data.speaker_id,
                         pidx: data.pidx,
                         name: data.name,
                         host: data.host,
                         video: data.video,
                         audio: data.audio,
                         hand: data.hand,
-                        webrtc: data.webrtc
+                        webrtc: data.webrtc,
+                        talk: false
                     }
 
                     if (user.id === api.session().user_id) {
@@ -197,17 +201,29 @@ export const Users: Users = {
 
             if (data.type === 'rec') {
                 let time = parseInt(data.t)
-                if (time) this.record.value = true
-                else this.record.value = false
+                let speaker_id = parseInt(data.s)
+                if (time) {
+                    this.record.value = true
+                    const h = Math.floor(time / (60 * 60))
+                    time = time % (60 * 60)
+                    const m = Math.floor(time / 60)
+                    time = time % 60
+                    const s = Math.floor(time)
 
-                const h = Math.floor(time / (60 * 60))
-                time = time % (60 * 60)
-                const m = Math.floor(time / 60)
-                time = time % 60
-                const s = Math.floor(time)
+                    this.record_timer.value = pad(h, 1) + ':' + pad(m, 2) + ':' + pad(s, 2)
+                }
+                else {
+                    this.record.value = false
+                }
 
-                this.record_timer.value = pad(h, 1) + ':' + pad(m, 2) + ':' + pad(s, 2)
-
+                if (speaker_id) {
+                    for (const key in this.vspeakers.value) {
+                        if (this.vspeakers.value[key].speaker_id == speaker_id)
+                            this.vspeakers.value[key].talk = true
+                        else
+                            this.vspeakers.value[key].talk = false
+                    }
+                }
                 return
             }
         }
