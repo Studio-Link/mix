@@ -398,6 +398,8 @@ static void http_req_handler(struct http_conn *conn,
 
 		pc_close(sess);
 
+		slmix_session_user_updated(sess);
+
 		http_sreply(conn, 204, "OK", "text/html", "", 0, NULL);
 		return;
 	}
