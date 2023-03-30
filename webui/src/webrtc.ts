@@ -6,7 +6,7 @@ import { Error } from './error'
 import { useEventListener } from '@vueuse/core'
 
 // --- Private Webrtc API ---
-let pc: RTCPeerConnection
+let pc: RTCPeerConnection | null = null
 let avdummy: MediaStream
 let audiostream: MediaStream | null = null
 let videostream: MediaStream | null = null
@@ -80,7 +80,7 @@ async function updateBandwidthRestriction(bandwidth: number) {
         'RTCRtpSender' in window &&
         'setParameters' in window.RTCRtpSender.prototype) {
 
-        const sender = pc.getSenders().find((s) => s.track?.kind === 'video')
+        const sender = pc?.getSenders().find((s) => s.track?.kind === 'video')
         if (!sender)
             return
 
@@ -103,7 +103,7 @@ function handle_answer(descr: any) {
 
     console.log("remote description: type='%s'", descr.type)
 
-    pc.setRemoteDescription(descr).then(
+    pc?.setRemoteDescription(descr).then(
         () => {
             console.log('set remote description -- success')
             Webrtc.state.value = WebrtcState.Listening
@@ -118,11 +118,11 @@ function pc_offer() {
     const offerOptions = {
         iceRestart: false,
     }
-    pc.createOffer(offerOptions)
+    pc?.createOffer(offerOptions)
         .then(function (desc) {
             console.log('got local description: %s', desc.type)
 
-            pc.setLocalDescription(desc).then(
+            pc?.setLocalDescription(desc).then(
                 () => { },
                 function (error) {
                     console.log('setLocalDescription: %s', error.toString())
@@ -176,8 +176,8 @@ function pc_setup() {
     }
 
     pc.onicegatheringstatechange = async () => {
-        console.log('webrtc/iceGatheringState: ' + pc.iceGatheringState)
-        switch (pc.iceGatheringState) {
+        console.log('webrtc/iceGatheringState: ' + pc?.iceGatheringState)
+        switch (pc?.iceGatheringState) {
             case 'new':
                 /* gathering is either just starting or has been reset */
                 break
@@ -192,7 +192,7 @@ function pc_setup() {
     }
 
     pc.onsignalingstatechange = () => {
-        console.log('webrtc/signalingState: ' + pc.signalingState)
+        console.log('webrtc/signalingState: ' + pc?.signalingState)
     }
 
     pc.onicecandidateerror = (event: any) => {
@@ -200,7 +200,7 @@ function pc_setup() {
     }
 
     avdummy = AVSilence()
-    avdummy.getTracks().forEach((track) => pc.addTrack(track, avdummy))
+    avdummy.getTracks().forEach((track) => pc?.addTrack(track, avdummy))
 
     pc_offer()
 }
@@ -246,8 +246,8 @@ async function pc_screen() {
 
 async function pc_replace_tracks(audio_track: MediaStreamTrack | null, video_track: MediaStreamTrack | null) {
 
-    const audio = pc.getSenders().find((s) => s.track?.kind === 'audio')
-    const video = pc.getSenders().find((s) => s.track?.kind === 'video')
+    const audio = pc?.getSenders().find((s) => s.track?.kind === 'audio')
+    const video = pc?.getSenders().find((s) => s.track?.kind === 'video')
 
     if (!audio || !video) {
         console.log('pc_replace_tracks: no active audio or video tracks found')
@@ -490,7 +490,8 @@ export const Webrtc = {
         videostream?.getVideoTracks()[0].stop()
         screenstream?.getVideoTracks()[0].stop()
         audiostream?.getAudioTracks()[0].stop()
-        pc.close()
+        pc?.close()
+        pc = null
         this.state.value = WebrtcState.Offline
     },
 }
