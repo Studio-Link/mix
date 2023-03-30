@@ -98,23 +98,24 @@ int main(int argc, char *const argv[])
 	struct config *config;
 	struct mix *mix = slmix();
 
-	const char *conf = "call_max_calls		10\n" /* SIP only */
+	const char *conf = "call_max_calls	10\n" /* SIP incoming only */
 			   "sip_verify_server	yes\n"
-			   "audio_buffer		20-160\n"
+			   "audio_buffer	20-160\n"
 			   "audio_buffer_mode	fixed\n"
-			   "audio_silence		-35.0\n"
-			   "jitter_buffer_type     fixed\n"
-			   "jitter_buffer_wish     5\n"
-			   "jitter_buffer_delay    5-10\n"
-			   "opus_bitrate		64000\n"
+			   "audio_silence	-35.0\n"
+			   "jitter_buffer_type	fixed\n"
+			   "jitter_buffer_wish	5\n"
+			   "jitter_buffer_delay	5-10\n"
+			   "opus_bitrate	64000\n"
 			   "ice_policy		relay\n"
 			   "video_size		1920x1080\n"
-			   "video_bitrate		2000000\n"
+			   "video_bitrate	2000000\n"
+			   "video_sendrate	8000000\n" /* max burst send */
 			   "video_fps		25\n"
-			   "avcodec_keyint		2\n"
+			   "avcodec_keyint	2\n"
 			   "avcodec_h265enc	nil\n"
 			   "avcodec_h265dec	nil\n"
-			   "audio_txmode		thread\n";
+			   "audio_txmode	thread\n";
 
 	/*
 	 * turn off buffering on stdout
