@@ -7,7 +7,7 @@
         <div>
           <button
             title="Chat"
-            :class="[Users.chat_active.value ? 'text-gray-400 hover:text-gray-600' : 'text-gray-100 bg-gray-600 hover:text-white']"
+            :class="[Users.chat_active.value ? 'text-gray-400 hover:text-gray-600' : 'fadeout text-gray-100 bg-gray-600 hover:text-white']"
             class="group block px-1 py-1 text-base font-medium rounded-md"
             @click="chat_clicked()"
           >

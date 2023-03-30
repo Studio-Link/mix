@@ -41,10 +41,10 @@
             </Menu>
           </div>
           <!-- Button group centered -->
-          <div 
-
-          :class="[Webrtc.state.value >= WebrtcState.Listening ? 'bg-gray-600' : '']"
-          class="fadeout flex pl-2 space-x-1 sm:space-x-2 rounded-md">
+          <div
+            :class="[Webrtc.state.value >= WebrtcState.Listening ? 'bg-gray-600 fadeout' : '']"
+            class="flex pl-2 space-x-1 sm:space-x-2 rounded-md"
+          >
             <!-- Hand button -->
             <div v-if="Webrtc.state.value >= WebrtcState.Listening">
               <button
@@ -104,7 +104,13 @@
               </button>
             </div>
             <!-- Video Mute -->
-            <div v-if="Webrtc.state.value >= WebrtcState.Listening && Users.speaker_status.value && Webrtc.video_select.value != 'Disabled'">
+            <div
+              v-if="
+                Webrtc.state.value >= WebrtcState.Listening &&
+                Users.speaker_status.value &&
+                Webrtc.video_select.value != 'Disabled'
+              "
+            >
               <button
                 v-if="Webrtc.video_muted.value"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
@@ -158,8 +164,10 @@
               </button>
             </div>
           </div>
-          <!-- Chat button -->
-          <div></div>
+          <!-- Version -->
+          <div class="flex justify-center text-sm text-gray-500 mt-10">
+            <span class="font-bold">{{ version }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -168,27 +176,28 @@
 </template>
 
 <script setup lang="ts">
-import {Fadeout} from '../fadeout'
+import { Fadeout } from '../fadeout'
 import { Webrtc, WebrtcState } from '../webrtc'
 import { Users } from '../ws/users'
 import api from '../api'
 import SettingsModal from '../components/SettingsModal.vue'
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import {
   HandRaisedIcon,
   AdjustmentsVerticalIcon,
   VideoCameraIcon,
   VideoCameraSlashIcon,
-  PhoneXMarkIcon
+  PhoneXMarkIcon,
 } from '@heroicons/vue/24/outline'
 import { PlayCircleIcon } from '@heroicons/vue/24/solid'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 
 const user_id = api.session()?.user_id
 const hand_status = Users.hand_status
+const version = ref(APP_VERSION)
 
 onMounted(() => {
-    Fadeout.init()
+  Fadeout.init()
 })
 
 function listen() {

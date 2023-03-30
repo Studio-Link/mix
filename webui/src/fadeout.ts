@@ -32,5 +32,6 @@ export const Fadeout = {
         document.addEventListener("mousemove", resetTimer);
         document.addEventListener("touchstart", resetTimer);
         document.addEventListener("touchmove", resetTimer);
+        document.addEventListener("keydown", resetTimer);
     }
 }
