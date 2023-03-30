@@ -13,12 +13,15 @@ interface Room {
 
 interface User {
     id: string
+    speaker_id: number
+    pidx: number
     name: string
     hand: boolean
     host: boolean
     video: boolean
     audio: boolean
     webrtc: boolean
+    talk: boolean
 }
 
 interface Chat {
@@ -37,9 +40,11 @@ interface Users {
     socket?: WebSocket
     ws_close(): void
     websocket(sessid: string): void
-    speakers: Ref<User[] | undefined>
-    listeners: Ref<User[] | undefined>
-    chat_messages: Ref<Chat[] | undefined>
+    rooms: Ref<Room[]>
+    speakers: Ref<User[]>
+    vspeakers: Ref<User[]>
+    listeners: Ref<User[]>
+    chat_messages: Ref<Chat[]>
     chat_active: Ref<boolean>
     settings_active: Ref<boolean>
     record_timer: Ref<string>
@@ -47,7 +52,6 @@ interface Users {
     record_type: Ref<RecordType>
     hand_status: Ref<boolean>
     speaker_status: Ref<boolean>
-    rooms: Ref<Room[] | undefined>
 }
 
 function pad(num: number, size: number) {
@@ -58,6 +62,7 @@ function pad(num: number, size: number) {
 export const Users: Users = {
     rooms: ref([]),
     speakers: ref([]),
+    vspeakers: ref([]),
     listeners: ref([]),
     chat_messages: ref([]),
     chat_active: ref(false),
@@ -104,6 +109,11 @@ export const Users: Users = {
                         this.speaker_status.value = data.users[key].speaker
                     }
                     if (data.users[key].speaker) {
+                        if (data.users[key].video && data.users[key].pidx) {
+                            this.vspeakers.value.push(data.users[key])
+                            this.vspeakers.value.sort((a, b) => a.pidx - b.pidx)
+                            continue
+                        }
                         this.speakers.value?.push(data.users[key])
                     } else {
                         this.listeners.value?.push(data.users[key])
@@ -117,17 +127,21 @@ export const Users: Users = {
                 if (data.event === 'deleted' || data.event === 'updated') {
                     this.speakers.value = this.speakers.value?.filter((u) => u.id !== data.id)
                     this.listeners.value = this.listeners.value?.filter((u) => u.id !== data.id)
+                    this.vspeakers.value = this.vspeakers.value?.filter((u) => u.id !== data.id)
                 }
 
                 if (data.event === 'added' || data.event === 'updated') {
                     const user: User = {
                         id: data.id,
+                        speaker_id: data.speaker_id,
+                        pidx: data.pidx,
                         name: data.name,
                         host: data.host,
                         video: data.video,
                         audio: data.audio,
                         hand: data.hand,
-                        webrtc: data.webrtc
+                        webrtc: data.webrtc,
+                        talk: false
                     }
 
                     if (user.id === api.session().user_id) {
@@ -145,11 +159,18 @@ export const Users: Users = {
                     }
 
                     if (data.speaker) {
+                        if (user.video && user.pidx) {
+                            this.vspeakers.value.push(user)
+                            this.vspeakers.value.sort((a, b) => a.pidx - b.pidx)
+                            return
+                        }
                         this.speakers.value?.unshift(user)
                     } else {
                         this.listeners.value?.unshift(user)
                     }
                 }
+
+                return
             }
 
             if (data.type === 'chat') {
@@ -160,6 +181,8 @@ export const Users: Users = {
                     msg: data.msg,
                 }
                 this.chat_messages.value?.push(chat)
+
+                return
             }
 
             if (data.type === 'rooms') {
@@ -172,20 +195,36 @@ export const Users: Users = {
                     }
                     this.rooms.value.push(room)
                 }
+
+                return
             }
 
             if (data.type === 'rec') {
                 let time = parseInt(data.t)
-                if (time) this.record.value = true
-                else this.record.value = false
+                let speaker_id = parseInt(data.s)
+                if (time) {
+                    this.record.value = true
+                    const h = Math.floor(time / (60 * 60))
+                    time = time % (60 * 60)
+                    const m = Math.floor(time / 60)
+                    time = time % 60
+                    const s = Math.floor(time)
 
-                const h = Math.floor(time / (60 * 60))
-                time = time % (60 * 60)
-                const m = Math.floor(time / 60)
-                time = time % 60
-                const s = Math.floor(time)
+                    this.record_timer.value = pad(h, 1) + ':' + pad(m, 2) + ':' + pad(s, 2)
+                }
+                else {
+                    this.record.value = false
+                }
 
-                this.record_timer.value = pad(h, 1) + ':' + pad(m, 2) + ':' + pad(s, 2)
+                if (speaker_id) {
+                    for (const key in this.vspeakers.value) {
+                        if (this.vspeakers.value[key].speaker_id == speaker_id)
+                            this.vspeakers.value[key].talk = true
+                        else
+                            this.vspeakers.value[key].talk = false
+                    }
+                }
+                return
             }
         }
     },

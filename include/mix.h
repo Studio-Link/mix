@@ -22,8 +22,9 @@ enum mix_rec {
 enum user_event { USER_ADDED, USER_UPDATED, USER_DELETED, CHAT_ADDED };
 
 typedef int(mix_rec_h)(const char *folder, bool enable);
-typedef void(mix_disp_enable_h)(const char *device, bool enable);
+typedef uint32_t(mix_disp_enable_h)(const char *device, bool enable);
 typedef uint64_t(mix_time_rec_h)(void);
+typedef uint16_t(mix_talk_detect_h)(void);
 
 struct mix {
 	char room[ROOM_SZ];
@@ -44,12 +45,14 @@ struct mix {
 	mix_rec_h *video_rec_h;
 	mix_disp_enable_h *disp_enable_h;
 	mix_time_rec_h *time_rec_h;
+	mix_talk_detect_h *talk_detect_h;
 	enum mix_rec rec_state;
 	char path[PATH_SZ];
 };
 
 struct user {
 	char id[USERID_SZ];
+	int pidx; /* Video position index, 0 => disabled */
 	char name[NAME_SZ];
 	uint16_t speaker_id;
 	bool speaker;
@@ -92,9 +95,10 @@ void slmix_close(void);
 void slmix_set_audio_rec_h(struct mix *m, mix_rec_h *rec_h);
 void slmix_set_video_rec_h(struct mix *m, mix_rec_h *rec_h);
 void slmix_set_time_rec_h(struct mix *m, mix_time_rec_h *time_h);
+void slmix_set_talk_detect_h(struct mix *m, mix_talk_detect_h *talk_h);
 void slmix_set_video_disp_h(struct mix *m, mix_disp_enable_h *disp_h);
 void slmix_record(struct mix *m, enum mix_rec state);
-void slmix_disp_enable(struct mix *m, const char *dev, bool enable);
+uint32_t slmix_disp_enable(struct mix *m, const char *dev, bool enable);
 enum mix_rec slmix_rec_state(struct mix *m);
 const char *slmix_rec_state_name(enum mix_rec state);
 void slmix_refresh_rooms(void *arg);
@@ -131,17 +135,18 @@ int slmix_session_user_updated(struct session *sess);
 void slmix_session_video(struct session *sess, bool enable);
 int slmix_session_speaker(struct session *sess, bool enable);
 int slmix_session_new(struct mix *mix, struct session **sessp,
-		const struct http_msg *msg);
+		      const struct http_msg *msg);
 int slmix_session_start(struct session *sess,
-		  const struct rtc_configuration *pc_config,
-		  const struct mnat *mnat, const struct menc *menc);
+			const struct rtc_configuration *pc_config,
+			const struct mnat *mnat, const struct menc *menc);
 struct session *slmix_session_lookup_hdr(const struct list *sessl,
-				   const struct http_msg *msg);
+					 const struct http_msg *msg);
 struct session *slmix_session_lookup(const struct list *sessl,
-			       const struct pl *sessid);
+				     const struct pl *sessid);
 struct session *slmix_session_lookup_user_id(const struct list *sessl,
-				       const struct pl *user_id);
-int slmix_session_handle_ice_candidate(struct session *sess, const struct odict *od);
+					     const struct pl *user_id);
+int slmix_session_handle_ice_candidate(struct session *sess,
+				       const struct odict *od);
 void slmix_session_close(struct session *sess, int err);
 void http_sreply(struct http_conn *conn, uint16_t scode, const char *reason,
 		 const char *ctype, const char *fmt, size_t size,

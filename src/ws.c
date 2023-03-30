@@ -109,6 +109,7 @@ static void conn_destroy(void *arg)
 		}
 
 		slmix_disp_enable(wsc->mix, wsc->sess->id, false);
+		wsc->sess->user->pidx = 0;
 
 		pc_close(wsc->sess);
 	}
@@ -196,21 +197,20 @@ void sl_ws_send_event_all(char *json)
 static void update_handler(void *arg)
 {
 	struct mix *mix = arg;
+	char json[128];
+	uint64_t secs;
 
 	if (!mix)
 		return;
 
-	if (!mix->time_rec_h)
+	if (!mix->time_rec_h || !mix->talk_detect_h)
 		goto out;
 
-	char json[512];
-	uint64_t secs = mix->time_rec_h() / 1000;
+	secs = mix->time_rec_h() / 1000;
 
-	if (!secs)
-		goto out;
-
-	re_snprintf(json, sizeof(json), "{\"type\": \"rec\", \"t\": %u}",
-		    secs);
+	re_snprintf(json, sizeof(json),
+		    "{\"type\": \"rec\", \"t\": %lu, \"s\": %u}", secs,
+		    mix->talk_detect_h());
 
 	sl_ws_send_event_all(json);
 

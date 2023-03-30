@@ -195,7 +195,7 @@ int vmix_src_alloc(struct vidsrc_st **stp, const struct vidsrc *vs,
 		st->vidisp->vidsrc = st;
 	}
 
-	warning("vidmix: src_alloc (%f fps)\n", st->fps);
+	info("vidmix: src_alloc (%f fps)\n", st->fps);
 	hash_append(vmix_src, hash_joaat_str(dev), &st->he, st);
 
 	vmix_lock();
