@@ -60,15 +60,10 @@ static int16_t amix_level(const int16_t *sampv, size_t frames)
 		pos += CH;
 	}
 
-	if (max_l >= MAX_LEVEL || max_r >= MAX_LEVEL) {
-
-		if (max_l > max_r)
-			return max_l;
-		else
-			return max_r;
-	}
-
-	return 0;
+	if (max_l > max_r)
+		return max_l;
+	else
+		return max_r;
 }
 
 
@@ -83,7 +78,7 @@ static void mix_readh(struct auframe *af, void *arg)
 	af->id = st_play->speaker_id;
 
 	re_atomic_rlx_set(&st_play->level,
-			  amix_level(st_play->sampv, af->sampc / CH));
+			  amix_level(af->sampv, af->sampc / CH));
 }
 
 
