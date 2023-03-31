@@ -1,8 +1,7 @@
 let timeoutId: NodeJS.Timeout;
 
 function startTimer(): void {
-    // Set a timeout to fade out the navbar after 5 seconds of inactivity
-    timeoutId = setTimeout(fadeOut, 3000);
+    timeoutId = setTimeout(fadeOut, 4000);
     fadeIn()
 }
 
