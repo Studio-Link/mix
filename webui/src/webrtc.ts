@@ -344,7 +344,9 @@ export const Webrtc = {
             }
         })
 
-        if (!available)
+        if (available)
+            this.change_audio()
+        else 
             this.audio_input_id.value = audiostream?.getAudioTracks()[0].getSettings().deviceId
 
         useEventListener(navigator!.mediaDevices, 'devicechange', Webrtc.update_avdevices)
