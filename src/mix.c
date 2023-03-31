@@ -335,11 +335,11 @@ void slmix_record(struct mix *m, enum mix_rec state)
 
 	(void)re_snprintf(tmp, sizeof(tmp), "webui/public/download/%s",
 			  m->token_download);
-	fs_mkdir(folder, 0755);
+	fs_mkdir(tmp, 0755);
 
 	(void)re_snprintf(tmp, sizeof(tmp), "webui/public/download/%s/%s",
 			  m->token_download, m->room);
-	fs_mkdir(folder, 0755);
+	fs_mkdir(tmp, 0755);
 
 	(void)re_snprintf(folder, sizeof(folder), "%s/%H", tmp,
 			  timestamp_print, &tm);
