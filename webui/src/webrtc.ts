@@ -3,7 +3,7 @@ import { Users } from './ws/users'
 import { ref } from 'vue'
 import adapter from 'webrtc-adapter'
 import { Error } from './error'
-import { useEventListener } from '@vueuse/core'
+import { useEventListener, useStorage } from '@vueuse/core'
 
 // --- Private Webrtc API ---
 let pc: RTCPeerConnection | null = null
@@ -306,7 +306,7 @@ export const Webrtc = {
     state: ref(WebrtcState.Offline),
     deviceInfosAudio: ref<MediaDeviceInfo[] | undefined>([]),
     deviceInfosVideo: ref<MediaDeviceInfo[] | undefined>([]),
-    audio_input_id: ref<string | undefined>(undefined),
+    audio_input_id: useStorage('audio_input_id', undefined as string | undefined),
     audio_output_id: ref<string | undefined>(undefined),
     video_input_id: ref<string | undefined>(undefined),
     video_select: ref<string>('Disabled'),
@@ -328,6 +328,7 @@ export const Webrtc = {
     },
 
     async init_avdevices() {
+        let available = false
         await pc_media_audio()
         this.deviceInfosAudio.value = await navigator.mediaDevices.enumerateDevices()
 
@@ -335,9 +336,16 @@ export const Webrtc = {
             console.log(`${device.kind}: ${device.label} id = ${device.deviceId}`)
             if (device.kind === 'audiooutput')
                 this.audio_output_id.value = 'default'
+
+            if (this.audio_input_id.value) {
+                if (this.audio_input_id.value == device.deviceId) {
+                    available = true
+                }
+            }
         })
 
-        this.audio_input_id.value = audiostream?.getAudioTracks()[0].getSettings().deviceId
+        if (!available)
+            this.audio_input_id.value = audiostream?.getAudioTracks()[0].getSettings().deviceId
 
         useEventListener(navigator!.mediaDevices, 'devicechange', Webrtc.update_avdevices)
     },
