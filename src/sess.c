@@ -30,7 +30,7 @@ void pc_close(struct session *sess)
 		sess->user->pidx  = 0;
 		sess->user->audio = false;
 		sess->user->video = false;
-		sess->user->hand = false;
+		sess->user->hand  = false;
 	}
 }
 
@@ -227,8 +227,12 @@ static int slmix_session_create(struct session **sessp, struct mix *mix,
 		rand_str(user->id, sizeof(user->id));
 	}
 
-	user->host    = host;
-	user->speaker = speaker;
+	user->host = host;
+
+	if (mix->show)
+		user->speaker = speaker;
+	else
+		user->speaker = true;
 
 	sess->user = user;
 	sess->mix  = mix;

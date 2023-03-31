@@ -183,6 +183,10 @@ int slmix_config(char *file)
 
 	conf_get_str(conf, "mix_room", mix.room, sizeof(mix.room));
 	conf_get_str(conf, "mix_url", mix.url, sizeof(mix.url));
+	err = conf_get_bool(conf, "mix_show", &mix.show);
+	if (err) {
+		mix.show = true;
+	}
 
 	conf_get_str(conf, "mix_token_host", mix.token_host,
 		     sizeof(mix.token_host));

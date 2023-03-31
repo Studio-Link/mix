@@ -29,6 +29,7 @@ typedef uint16_t(mix_talk_detect_h)(void);
 struct mix {
 	char room[ROOM_SZ];
 	char url[URL_SZ];
+	bool show;
 	struct list sessl;
 	struct list chatl;
 	uint16_t next_speaker_id;
