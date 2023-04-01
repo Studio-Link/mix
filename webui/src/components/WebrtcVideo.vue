@@ -49,7 +49,7 @@
       :key="item.pidx"
       :style="{ width: calc_width(), height: calc_height(), left: calc_left(index), top: calc_top(index) }"
     >
-      <div class="flex items-center absolute bottom-0 bg-gray-600 text-gray-100 rounded-md ml-1 mb-1 py-0.5 px-2 text-sm">
+      <div class="flex items-center absolute bottom-0 md:bg-gray-600 text-gray-100 rounded-md ml-1 mb-1 py-0.5 px-2 text-sm">
         {{ item.name }}
         <span v-if="!item.audio" class="bg-red-700 rounded-lg text-gray-200 ml-2">
           <svg
