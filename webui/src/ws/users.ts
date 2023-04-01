@@ -9,6 +9,7 @@ interface Room {
     url: string
     image: string
     listeners: number
+    show: boolean
 }
 
 interface User {
@@ -41,6 +42,7 @@ interface Users {
     ws_close(): void
     websocket(sessid: string): void
     rooms: Ref<Room[]>
+    room: Ref<Room | undefined>
     speakers: Ref<User[]>
     vspeakers: Ref<User[]>
     listeners: Ref<User[]>
@@ -60,6 +62,7 @@ function pad(num: number, size: number) {
 }
 
 export const Users: Users = {
+    room: ref(undefined),
     rooms: ref([]),
     speakers: ref([]),
     vspeakers: ref([]),
@@ -191,9 +194,13 @@ export const Users: Users = {
                     const room: Room = {
                         name: key, image: '',
                         url: data.rooms[key].url,
-                        listeners: data.rooms[key].listeners
+                        listeners: data.rooms[key].listeners,
+                        show: data.rooms[key].show,
                     }
                     this.rooms.value.push(room)
+
+                    if (data.rooms[key].url == location.pathname)
+                        this.room.value = room
                 }
 
                 return
