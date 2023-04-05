@@ -174,4 +174,5 @@ void vmix_codec_init(void)
 void vmix_codec_close(void)
 {
 	vidcodec_unregister(&h264_1);
+	list_flush(&c.vid_pktl);
 }
