@@ -4,6 +4,9 @@
  * Copyright (C) 2022 Sebastian Reimers
  */
 
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavformat/avio.h>
 #include <time.h>
 #include <sys/stat.h>
 #include <re_atomic.h>
@@ -173,6 +176,85 @@ int vmix_record_close(void)
 	fclose(record.f);
 	chmod(record.filename, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	record.f = NULL;
+
+	return 0;
+}
+
+
+static int vmix_record_create(const char *dest)
+{
+	AVFormatContext *ctx;
+	AVStream *stream;
+	AVCodecContext *enc;
+	AVDictionary *opts = NULL;
+	int fps		   = 25;
+	int err, ret;
+
+	if (!str_isset(dest))
+		return EINVAL;
+
+	ctx = avformat_alloc_context();
+	if (!ctx) {
+		warning("vmix_rec: avformat alloc error\n");
+		return ENOMEM;
+	}
+
+	ctx->oformat = av_guess_format("mp4", NULL, NULL);
+	if (!ctx->oformat) {
+		warning("vmix_rec: oformat not available\n");
+		return EINVAL;
+	}
+
+	ctx->video_codec = avcodec_find_encoder(AV_CODEC_ID_H264);
+	if (!ctx->video_codec) {
+		warning("vmix_rec: encoder not available\n");
+		return EINVAL;
+	}
+
+	stream = avformat_new_stream(ctx, ctx->video_codec);
+	if (!stream) {
+		warning("vmix_rec: new stream error\n");
+		return ENOMEM;
+	}
+
+	stream->id = ctx->nb_streams - 1;
+
+	enc = avcodec_alloc_context3(ctx->video_codec);
+	if (!enc) {
+		warning("vmix_rec: new enc context error\n");
+		return ENOMEM;
+	}
+
+	enc->width     = 1920;
+	enc->height    = 1080;
+	enc->time_base = (AVRational){1, fps};
+	enc->pix_fmt   = AV_PIX_FMT_YUV420P;
+	enc->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+
+	if (avcodec_open2(enc, ctx->video_codec, NULL) < 0) {
+		warning("vmix_rec: avcodec_open2 error\n");
+		return EINVAL;
+	}
+
+	avcodec_parameters_from_context(stream->codecpar, enc);
+	av_dict_set(&opts, "movflags", "+faststart", 0);
+
+	ret = avio_open2(&ctx->pb, dest, AVIO_FLAG_WRITE, NULL, &opts);
+	if (ret < 0) {
+		warning("vmix_rec: avio_open2 error %s\n", av_err2str(ret));
+		return EINVAL;
+	}
+
+	err = str_dup(&ctx->url, dest);
+	if (err)
+		return err;
+
+	ret = avformat_write_header(ctx, &opts);
+	if (ret < 0) {
+		warning("vmix_rec: avformat_write_header error %s\n",
+			av_err2str(ret));
+		return EINVAL;
+	}
 
 	return 0;
 }
