@@ -13,19 +13,33 @@ struct videnc_state {
 	void *arg;
 };
 
-static struct {
-	bool keyframe;
+struct vid_pkt {
+	struct le le;
 	bool marker;
 	uint64_t rtp_ts;
-	struct mbuf *hdr_mb;
-	struct mbuf *pld_mb;
+	struct mbuf hdr_mb;
+	struct mbuf pld_mb;
+};
+
+static struct {
+	struct list vid_pktl;
+	bool keyframe;
 	uint64_t timestamp;
-} p;
+} c;
 
 static bool keyframe_required = false;
 
 
-static void destructor(void *arg)
+static void destructor_pkt(void *arg)
+{
+	struct vid_pkt *pkt = arg;
+
+	mem_deref(pkt->hdr_mb.buf);
+	mem_deref(pkt->pld_mb.buf);
+}
+
+
+static void destructor_enc(void *arg)
 {
 	struct videnc_state *st = arg;
 
@@ -39,14 +53,19 @@ static int packeth(bool marker, uint64_t rtp_ts, const uint8_t *hdr,
 {
 	struct videnc_state *st = arg;
 
-	p.marker = marker;
-	p.rtp_ts = rtp_ts;
+	struct vid_pkt *pkt;
 
-	mbuf_rewind(p.hdr_mb);
-	mbuf_write_mem(p.hdr_mb, hdr, hdr_len);
+	pkt = mem_zalloc(sizeof(struct vid_pkt), destructor_pkt);
+	if (!pkt)
+		return ENOMEM;
 
-	mbuf_rewind(p.pld_mb);
-	mbuf_write_mem(p.pld_mb, pld, pld_len);
+	pkt->marker = marker;
+	pkt->rtp_ts = rtp_ts;
+
+	mbuf_write_mem(&pkt->hdr_mb, hdr, hdr_len);
+	mbuf_write_mem(&pkt->pld_mb, pld, pld_len);
+
+	list_append(&c.vid_pktl, &pkt->le, pkt);
 
 	return st->pkth(marker, rtp_ts, hdr, hdr_len, pld, pld_len, st->arg);
 }
@@ -63,13 +82,14 @@ static int update(struct videnc_state **vesp, const struct vidcodec *vc,
 	if (!vesp || !vc || !prm || !pkth)
 		return EINVAL;
 
-	st = mem_zalloc(sizeof(*st), destructor);
+	st = mem_zalloc(sizeof(*st), destructor_enc);
 	if (!st)
 		return ENOMEM;
 
 	st->pkth = pkth;
 	st->arg	 = arg;
 
+	/* TODO: can maybe optimize with single encupdh (active video call) */
 	err = encupdh(&st->vesp, vc, prm, fmtp, packeth, st);
 
 	if (err)
@@ -84,15 +104,25 @@ static int update(struct videnc_state **vesp, const struct vidcodec *vc,
 static int encode(struct videnc_state *ves, bool update,
 		  const struct vidframe *frame, uint64_t timestamp)
 {
-	if (timestamp == p.timestamp) {
-		if (update && !p.keyframe) {
+	struct le *le;
+	int err = 0;
+
+	if (timestamp == c.timestamp) {
+		if (update && !c.keyframe) {
 			keyframe_required = true;
 			return 0;
 		}
 
-		return ves->pkth(p.marker, p.rtp_ts, p.hdr_mb->buf,
-				 p.hdr_mb->end, p.pld_mb->buf, p.pld_mb->end,
-				 ves->arg);
+		LIST_FOREACH(&c.vid_pktl, le)
+		{
+			struct vid_pkt *pkt = le->data;
+
+			err |= ves->pkth(pkt->marker, pkt->rtp_ts,
+					 pkt->hdr_mb.buf, pkt->hdr_mb.end,
+					 pkt->pld_mb.buf, pkt->pld_mb.end,
+					 ves->arg);
+		}
+		return err;
 	}
 
 	if (keyframe_required) {
@@ -100,8 +130,10 @@ static int encode(struct videnc_state *ves, bool update,
 		update		  = true;
 	}
 
-	p.timestamp = timestamp;
-	p.keyframe  = update;
+	list_flush(&c.vid_pktl);
+
+	c.timestamp = timestamp;
+	c.keyframe  = update;
 
 	return ench(ves->vesp, update, frame, timestamp);
 }
@@ -136,15 +168,10 @@ void vmix_codec_init(void)
 
 	list_clear(baresip_vidcodecl());
 	vidcodec_register(baresip_vidcodecl(), &h264_1);
-
-	p.hdr_mb = mbuf_alloc(32);
-	p.pld_mb = mbuf_alloc(1024);
 }
 
 
 void vmix_codec_close(void)
 {
 	vidcodec_unregister(&h264_1);
-	mem_deref(p.hdr_mb);
-	mem_deref(p.pld_mb);
 }
