@@ -46,9 +46,9 @@ external:
 	cd external/re && \
 		patch -p1 < ../../patches/re_vidmix_clear.patch
 	cd external/baresip && \
-		patch -p1 < ../../patches/baresip_packet_dup_handler.patch && \
 		patch -p1 < ../../patches/baresip_stream_enable.patch && \
 		patch -p1 < ../../patches/baresip_video_remove_sendq_empty.patch
+#		patch -p1 < ../../patches/baresip_packet_dup_handler.patch && \
 		# patch -p1 < ../../patches/baresip_video_latency.patch && \
 		# patch -p1 < ../../patches/baresip_video_burst_size.patch
 

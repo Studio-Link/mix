@@ -132,6 +132,8 @@ static int module_init(void)
 
 	list_init(&vmix_srcl);
 
+	vmix_codec_init();
+
 	err = vmix_src_init();
 	IF_ERR_GOTO_OUT(err);
 
@@ -169,6 +171,7 @@ static int module_close(void)
 	vmix_mix = mem_deref(vmix_mix);
 
 	vmix_src_close();
+	vmix_codec_close();
 
 	return 0;
 }

@@ -10,10 +10,7 @@
 #include <re_atomic.h>
 #include "vmix.h"
 
-static struct vidpacket vp     = {.buf = NULL, .size = 0, .timestamp = 0};
-static struct mbuf *packet_dup = NULL;
 static RE_ATOMIC bool reset    = false;
-static bool is_keyframe	       = false;
 static mtx_t *vmix_mutex;
 
 
@@ -29,33 +26,9 @@ static inline void vmix_unlock(void)
 }
 
 
-/* delegate main src thread */
-static void vmix_delegate(void)
-{
-	struct vidsrc_st *st;
-
-	vmix_lock();
-	if (!vmix_srcl.head)
-		goto out;
-
-	st = vmix_srcl.head->data;
-	if (!st)
-		goto out;
-	vmix_unlock();
-
-	vidmix_source_start(st->vidmix_src);
-	re_atomic_rlx_set(&st->run, true);
-
-	return;
-out:
-	vmix_unlock();
-}
-
-
 static void destructor(void *arg)
 {
 	struct vidsrc_st *st = arg;
-	bool delegate	     = vmix_srcl.head == &st->le;
 
 	re_atomic_rlx_set(&st->run, false);
 
@@ -66,14 +39,10 @@ static void destructor(void *arg)
 	mem_deref(st->device);
 
 	vidmix_source_enable(st->vidmix_src, false);
-	vidmix_source_stop(st->vidmix_src);
 	vmix_lock();
 	list_unlink(&st->le);
 	vmix_unlock();
 	mem_deref(st->vidmix_src);
-
-	if (delegate)
-		vmix_delegate();
 }
 
 
@@ -85,75 +54,17 @@ static void frame_handler(uint64_t ts, const struct vidframe *frame, void *arg)
 	if (!st || !st->frameh)
 		return;
 
-	if (!re_atomic_rlx(&st->run))
-		return;
-
-	/* frameh can return without calling dup_handler if not all network
-	 * packets are send */
-	st->frameh((struct vidframe *)frame, ts, st->arg);
-
-	if (!vp.buf)
-		return;
-
-	if (!vmix_srcl.head)
-		return;
-
 	vmix_lock();
-	le = vmix_srcl.head->next;
-	while (le) {
+	LIST_FOREACH(&vmix_srcl, le) {
 		st = le->data;
 		if (!st)
 			break;
 
-		/* wait until keyframe arrive if src is not running */
-		if (!re_atomic_rlx(&st->run) && !is_keyframe) {
-			le = le->next;
-			continue;
-		}
-
-		re_atomic_rlx_set(&st->run, true);
-		st->packeth(&vp, st->arg);
-		le = le->next;
+		st->frameh((struct vidframe *)frame, ts, st->arg);
 	}
 	vmix_unlock();
 
-	vmix_record(vp.buf, vp.size, &reset);
-
-	/* prevent sending packets multiple times */
-	vp.buf = NULL;
-}
-
-
-int packet_dup_handler(uint64_t ts, uint8_t *buf, size_t size, int keyframe);
-int packet_dup_handler(uint64_t ts, uint8_t *buf, size_t size, int keyframe)
-{
-	int err = 0;
-
-	if (!buf)
-		return 0;
-
-	if (re_atomic_rlx(&reset)) {
-		re_atomic_rlx_set(&reset, false);
-		err   = ECONNRESET;
-		goto out;
-	}
-
-	packet_dup->pos = 0;
-	packet_dup->end = 0;
-
-	err = mbuf_write_mem(packet_dup, buf, size);
-	if (err) {
-		warning("packet_dup_handler %m", err);
-		return 0;
-	}
-
-	vp.timestamp = ts;
-	vp.size	     = size;
-	vp.buf	     = packet_dup->buf;
-	is_keyframe  = keyframe;
-
-out:
-	return err;
+	/* vmix_record(vp.buf, vp.size, &reset); */
 }
 
 
@@ -251,11 +162,6 @@ void vmix_src_input(struct vidsrc_st *st, const struct vidframe *frame,
 
 int vmix_src_init(void)
 {
-	packet_dup = mbuf_alloc(1024);
-	if (!packet_dup) {
-		return ENOMEM;
-	}
-
 	return mutex_alloc(&vmix_mutex);
 }
 
@@ -263,5 +169,4 @@ int vmix_src_init(void)
 void vmix_src_close(void)
 {
 	vmix_mutex = mem_deref(vmix_mutex);
-	packet_dup = mem_deref(packet_dup);
 }

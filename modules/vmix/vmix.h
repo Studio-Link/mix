@@ -57,4 +57,5 @@ int vmix_record_start(const char *record_folder);
 int vmix_record(const uint8_t *buf, size_t size, RE_ATOMIC bool *update);
 int vmix_record_close(void);
 
-
+void vmix_codec_init(void);
+void vmix_codec_close(void);
