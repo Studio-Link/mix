@@ -153,14 +153,14 @@
               <button
                 v-if="Webrtc.state.value < WebrtcState.Listening"
                 ref="play"
-                class="hover:bg-gray-700 hover:text-white group items-center px-2 py-2 text-base font-medium rounded-md block"
+                class="hover:bg-gray-700 bg-gray-50 hover:text-white group items-center px-2 py-2 text-base font-medium rounded-md block"
                 title="Join as listener"
                 :class="{ 'animate-pulse': Webrtc.state.value == WebrtcState.Connecting }"
                 @click="listen()"
               >
-                <PlayCircleIcon class="h-14 w-14 mx-auto" />
-                <div v-if="Webrtc.state.value == WebrtcState.Offline" class="text-sm text-center">Press to listen</div>
-                <div v-if="Webrtc.state.value == WebrtcState.Connecting" class="text-sm text-center">Connecting...</div>
+                <PlayCircleIcon class="h-20 w-20 mx-auto" />
+                <div v-if="Webrtc.state.value == WebrtcState.Offline" class="text-center">Press play to connect</div>
+                <div v-if="Webrtc.state.value == WebrtcState.Connecting" class="text-center">Connecting...</div>
               </button>
             </div>
           </div>
