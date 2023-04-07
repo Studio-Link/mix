@@ -6,7 +6,7 @@
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
       <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-        <div class="space-y-6">
+        <form class="space-y-6" @submit.prevent="login()">
           <Avatar v-if="random" ref="avatar" v-bind="props" class="h-48 mx-auto" />
           <WebcamPhoto v-if="!random" />
           <div v-if="random || webcam.picture.value">
@@ -15,13 +15,15 @@
               <input
                 id="name"
                 v-model="name"
+                title="Use letters and numbers"
                 name="name"
                 type="text"
                 required
+                pattern="[a-zA-Z0-9 ]+" minlength="3" maxlength="20"
                 class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                 :class="{ 'border-red-300': error }"
               />
-              <p v-if="error" id="email-error" class="mt-2 text-sm text-red-600">Please enter name</p>
+              <p v-if="error" id="name-error" class="mt-2 text-sm text-red-600">Please enter name</p>
             </div>
           </div>
           <div class="space-y-2">
@@ -51,11 +53,10 @@
             v-if="random || webcam.picture.value"
             type="submit"
             class="w-full justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-base font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            @click="login()"
           >
             Join Room
           </button>
-        </div>
+        </form>
       </div>
     </div>
     <FooterLinks />
