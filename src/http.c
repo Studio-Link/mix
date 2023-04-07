@@ -184,7 +184,7 @@ static void http_req_handler(struct http_conn *conn,
 		struct pl name = PL_INIT;
 
 		err = re_regex((char *)mbuf_buf(msg->mb),
-			       mbuf_get_left(msg->mb), "[a-zA-Z0-9]+", &name);
+			       mbuf_get_left(msg->mb), "[a-zA-Z0-9 ]+", &name);
 		if (err) {
 			http_sreply(conn, 400, "Name error", "text/html", "",
 				    0, sess);
