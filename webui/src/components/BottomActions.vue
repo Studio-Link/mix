@@ -8,12 +8,12 @@
             <Menu as="div" class="relative x-shrink-0">
               <div>
                 <MenuButton
-                  class="mx-auto flex rounded-full text-sm text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-700"
+                  class="mx-auto flex text-sm text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-700"
                 >
                   <span class="sr-only">Open user menu</span>
-                  <picture class="mx-auto block h-10 w-10 rounded-full">
+                  <picture>
                     <source type="image/webp" :srcset="'/avatars/' + user_id + '.webp'" />
-                    <img :src="'/avatars/' + user_id + '.png'" alt="Avatar Image" />
+                    <img class="rounded-full h-10 w-10" :src="'/avatars/' + user_id + '.png'" alt="Avatar Image" />
                   </picture>
                 </MenuButton>
               </div>
