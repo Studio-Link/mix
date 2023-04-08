@@ -121,16 +121,20 @@
       </div>
     </div>
 
+    <div
+      class="relative mx-auto"
+      :class="[isFullscreen ? 'h-full' : 'w-full max-w-screen-xl']"
+    >
     <video
       ref="video"
+      :class="[isFullscreen ? 'h-full' : '']"
       id="live"
-      class="relative mx-auto aspect-video"
-      :class="[isFullscreen ? '' : 'w-full max-w-screen-xl']"
       playsinline
       autoplay
       muted
       preload="none"
     ></video>
+    </div>
   </div>
 </template>
 
