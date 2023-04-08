@@ -475,7 +475,7 @@ int slmix_http_listen(struct http_sock **sock, struct mix *mix)
 	if (err)
 		return err;
 
-	re_printf("listen webui: http://%j\n", &srv);
+	info("listen webui: http://%j\n", &srv);
 
 	err = unixsock_listen_fd(&fd, &srv);
 	if (err)
@@ -486,7 +486,7 @@ int slmix_http_listen(struct http_sock **sock, struct mix *mix)
 	re_sock_t fd;
 
 	if (sd_listen_fds(0) != 1) {
-		re_printf("http_listen: No or to many systemd fds\n");
+		info("http_listen: No or to many systemd fds\n");
 		return EMFILE;
 	}
 	fd  = SD_LISTEN_FDS_START + 0;
@@ -497,7 +497,7 @@ int slmix_http_listen(struct http_sock **sock, struct mix *mix)
 	if (err)
 		return err;
 
-	re_printf("listen webui: http://%J\n", &srv);
+	info("listen webui: http://%J\n", &srv);
 	err = http_listen(sock, &srv, http_req_handler, mix);
 
 #endif
