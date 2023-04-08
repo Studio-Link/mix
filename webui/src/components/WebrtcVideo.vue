@@ -1,13 +1,15 @@
 <template>
   <div
+    ref="overlay_div"
     v-show="!PiP && Webrtc.state.value >= WebrtcState.Listening"
     @mouseover="nav = true"
     @mouseleave="nav = false"
     @touchstart.passive="nav = true"
-    class="relative flex bg-blue-100 max-w-screen-xl mx-auto mt-8 lg:mt-0"
+    class="relative flex bg-black mx-auto"
+    :class="[isFullscreen ? 'w-full' : 'max-w-screen-xl mt-8 lg:mt-0']"
   >
     <div v-show="nav" class="absolute z-20 text-gray-200 bottom-0 right-0 px-2">
-      <button v-if="hasFullscreen" @click="requestFullscreen(video)" class="text-lg" title="Fullscreen">
+      <button v-if="hasFullscreen" @click="requestFullscreen(overlay_div)" class="text-lg" title="Fullscreen">
         <svg
           aria-hidden="true"
           focusable="false"
@@ -49,7 +51,9 @@
       :key="item.pidx"
       :style="{ width: calc_width(), height: calc_height(), left: calc_left(index), top: calc_top(index) }"
     >
-      <div class="flex items-center absolute bottom-0 md:bg-gray-600 text-gray-100 rounded-md ml-1 mb-1 py-0.5 px-2 text-sm">
+      <div
+        class="flex items-center absolute bottom-0 md:bg-gray-600 text-gray-100 rounded-md ml-1 mb-1 py-0.5 px-2 text-sm"
+      >
         {{ item.name }}
         <span v-if="!item.audio" class="bg-red-700 rounded-lg text-gray-200 ml-2">
           <svg
@@ -120,7 +124,8 @@
     <video
       ref="video"
       id="live"
-      class="relative mx-auto w-full max-w-screen-xl"
+      class="relative mx-auto aspect-video"
+      :class="[isFullscreen ? '' : 'w-full max-w-screen-xl']"
       playsinline
       autoplay
       muted
@@ -138,8 +143,10 @@ import { SpeakerWaveIcon } from '@heroicons/vue/24/outline'
 import { useResizeObserver } from '@vueuse/core'
 
 const video = ref<HTMLVideoElement | null>(null)
+const overlay_div = ref<HTMLDivElement | null>(null)
 const nav = ref(false)
 const hasFullscreen = ref(false)
+const isFullscreen = ref(false)
 const hasPiP = ref(false)
 const PiP = ref(false)
 const overlay = ref(true)
@@ -163,6 +170,10 @@ async function requestPiP() {
 }
 
 function requestFullscreen(element: any) {
+  if (isFullscreen.value) {
+    document.exitFullscreen()
+    return
+  }
   if (element.requestFullscreen) {
     element.requestFullscreen()
     nav.value = false
@@ -186,6 +197,14 @@ function resize() {
   overlay.value = true
 }
 
+function fullscreenchanged() {
+  if (document.fullscreenElement) {
+    isFullscreen.value = true
+  } else {
+    isFullscreen.value = false
+  }
+}
+
 onMounted(() => {
   if (video.value?.requestPictureInPicture) hasPiP.value = true
   hasFullscreen.value = hasFullscreenSupport(video.value)
@@ -201,6 +220,7 @@ onMounted(() => {
     clearTimeout(resizeTimer)
     resizeTimer = setTimeout(resize, 200)
   })
+  document.addEventListener('fullscreenchange', fullscreenchanged)
 })
 
 function calc_rows() {
@@ -232,7 +252,14 @@ function calc_top(idx: number) {
 function calc_left(idx: number) {
   const rows = calc_rows()
   const w = Math.floor(video.value!.clientWidth / rows)
+  let offset
 
-  return w * (idx % rows) + 'px'
+  if (isFullscreen.value) {
+    offset = (screen.width - w) / 2
+  } else {
+    offset = 0
+  }
+
+  return w * (idx % rows) + offset + 'px'
 }
 </script>
