@@ -259,7 +259,7 @@ function calc_left(idx: number) {
   let offset
 
   if (isFullscreen.value) {
-    offset = (screen.width - w) / 2
+    offset = (screen.width - video.value!.clientWidth) / 2
   } else {
     offset = 0
   }
