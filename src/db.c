@@ -89,9 +89,13 @@ int slmix_db_cur_next(void *cur, struct mbuf *key, struct mbuf *data)
 		return err;
 	}
 
-	/* write 0-terminated safe string */
-	mbuf_write_u8(key, 0);
-	mbuf_write_u8(data, 0);
+	/* ensure 0-terminated safe key */
+	if (key->buf[key->end - 1] != '\0')
+		mbuf_write_u8(key, 0);
+
+	/* ensure 0-terminated safe data */
+	if (data->buf[data->end - 1] != '\0')
+		mbuf_write_u8(data, 0);
 
 	mbuf_set_pos(key, 0);
 	mbuf_set_pos(data, 0);
