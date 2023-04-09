@@ -146,8 +146,10 @@ int slmix_db_get(unsigned int dbi, const struct pl *key, struct mbuf *data)
 		warning("slmix_db_get: mbuf_write_mem failed %m\n", err);
 	}
 
-	/* write 0-terminated safe string */
-	mbuf_write_u8(data, 0);
+	/* ensure 0-terminated safe string */
+	if (data->buf[data->end - 1] != '\0')
+		mbuf_write_u8(data, 0);
+
 	mbuf_set_pos(data, 0);
 
 out:
