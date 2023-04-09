@@ -330,7 +330,7 @@ struct session *slmix_session_lookup(const struct list *sessl,
 	if (err)
 		goto out;
 
-	err = re_regex((const char *)mb.buf, mb.end,
+	err = re_regex((const char *)mb.buf, mb.end - 1,
 		       "[^;]+;[^;]+;[^;]+;[^;]+;[^;]+", NULL, &pl_user_id,
 		       &pl_name, &pl_host, &pl_speaker);
 	if (err)
