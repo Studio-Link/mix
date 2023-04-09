@@ -340,7 +340,7 @@ struct session *slmix_session_lookup(const struct list *sessl,
 	pl_bool(&speaker, &pl_speaker);
 
 	err = slmix_session_create(&sess, slmix(), sessid, &pl_user_id,
-				   &pl_name, host, false);
+				   &pl_name, host, speaker);
 	if (!err) {
 		mbuf_reset(&mb);
 		return sess;
