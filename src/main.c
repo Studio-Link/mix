@@ -100,12 +100,12 @@ int main(int argc, char *const argv[])
 
 	const char *conf = "call_max_calls	10\n" /* SIP incoming only */
 			   "sip_verify_server	yes\n"
-			   "audio_buffer	20-300\n"
+			   "audio_buffer	40-300\n"
 			   "audio_buffer_mode	adaptive\n"
 			   "audio_silence	-35.0\n"
-			   "jitter_buffer_type	fixed\n"
-			   "jitter_buffer_wish	5\n"
-			   "jitter_buffer_delay	5-10\n"
+			   "audio_jitter_buffer_type	off\n"
+			   "video_jitter_buffer_type	adaptive\n"
+			   "video_jitter_buffer_delay	1-50\n"
 			   "opus_bitrate	64000\n"
 			   "ice_policy		relay\n"
 			   "video_size		1920x1080\n"
