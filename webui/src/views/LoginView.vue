@@ -7,7 +7,9 @@
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
       <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
         <form class="space-y-6" @submit.prevent="login()">
-          <Avatar v-if="random" ref="avatar" v-bind="props" class="h-48 mx-auto" />
+          <div id="avatar">
+          <Avatar v-if="random" v-bind="props" class="h-48 mx-auto" />
+          </div>
           <WebcamPhoto v-if="!random" />
           <div v-if="random || webcam.picture.value">
             <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
@@ -77,7 +79,6 @@ api.connect(vprops?.token)
 const error = ref(false)
 const name = ref('')
 const random = ref(true)
-const avatar = ref<SVGElement | null>(null)
 const props = ref(Factory({ isCircle: true }))
 
 onMounted(() => {
@@ -110,7 +111,7 @@ function login() {
   if (webcam.picture.value) {
     api.login(name.value, webcam.picture.value)
   } else {
-    const svg = avatar.value
+    const svg = document.querySelector('#avatar svg')
     svg?.setAttribute('width', String(256))
     svg?.setAttribute('height', String(256))
     const xml = new XMLSerializer().serializeToString(svg!)
