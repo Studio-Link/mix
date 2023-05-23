@@ -119,7 +119,7 @@ int slmix_update_room(void)
 	if (err)
 		return err;
 
-	return err;
+	return 0;
 }
 
 
