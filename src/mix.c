@@ -163,6 +163,10 @@ int slmix_init(void)
 	tmr_start(&tmr_room_update, 100, slmix_refresh_rooms, NULL);
 
 	err = slmix_update_room();
+	if (err)
+		return err;
+
+	err = slmix_sip_init(&mix);
 
 	return err;
 }
@@ -244,6 +248,9 @@ void slmix_close(void)
 
 	slmix_db_close();
 	sl_httpc_close();
+
+	slmix_sip_close();
+
 }
 
 
