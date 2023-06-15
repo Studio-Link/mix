@@ -12,6 +12,11 @@ interface Room {
     show: boolean
 }
 
+interface Stats {
+    artt: number
+    vrtt: number
+}
+
 interface User {
     id: string
     speaker_id: number
@@ -23,6 +28,7 @@ interface User {
     audio: boolean
     webrtc: boolean
     talk: boolean
+    stats: Stats
 }
 
 interface Chat {
@@ -144,7 +150,8 @@ export const Users: Users = {
                         audio: data.audio,
                         hand: data.hand,
                         webrtc: data.webrtc,
-                        talk: false
+                        talk: false,
+                        stats: { artt: 0, vrtt: 0 }
                     }
 
                     if (user.id === api.session().user_id) {
@@ -233,6 +240,18 @@ export const Users: Users = {
                 }
                 return
             }
+
+            if (data.type === 'stats') {
+                let speaker_id = parseInt(data.id)
+                for (const key in this.vspeakers.value) {
+                    if (this.vspeakers.value[key].speaker_id != speaker_id)
+                        continue;
+
+                    this.vspeakers.value[key].stats = data.stats
+                }
+                return
+            }
+
         }
     },
 }

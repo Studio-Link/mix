@@ -9,6 +9,9 @@
     :class="[isFullscreen ? 'w-full' : 'max-w-screen-xl mt-8 lg:mt-0']"
   >
     <div v-show="nav" class="absolute z-20 text-gray-200 bottom-0 right-0 px-2">
+      <button class="mr-4" @click="enable_stats()" type="button">
+        <WifiIcon class="h-8 w-8" aria-hidden="true" />
+      </button>
       <button v-if="hasFullscreen" @click="requestFullscreen(overlay_div)" class="text-lg" title="Fullscreen">
         <svg
           aria-hidden="true"
@@ -51,6 +54,12 @@
       :key="item.pidx"
       :style="{ width: calc_width(), height: calc_height(), left: calc_left(index), top: calc_top(index) }"
     >
+      <div v-if="stats" class="bg-black opacity-60 text-gray-50 w-min text-xs">
+        <pre class="pt-2 px-2">
+Video RTT: {{item.stats.vrtt}} ms
+Audio RTT: {{item.stats.artt}} ms
+        </pre>
+      </div>
       <div
         class="flex items-center absolute bottom-0 md:bg-gray-600 text-gray-100 rounded-md ml-1 mb-1 py-0.5 px-2 text-sm"
       >
@@ -121,19 +130,16 @@
       </div>
     </div>
 
-    <div
-      class="relative mx-auto"
-      :class="[isFullscreen ? 'h-full' : 'w-full max-w-screen-xl']"
-    >
-    <video
-      ref="video"
-      :class="[isFullscreen ? 'h-full' : '']"
-      id="live"
-      playsinline
-      autoplay
-      muted
-      preload="none"
-    ></video>
+    <div class="relative mx-auto" :class="[isFullscreen ? 'h-full' : 'w-full max-w-screen-xl']">
+      <video
+        ref="video"
+        :class="[isFullscreen ? 'h-full' : '']"
+        id="live"
+        playsinline
+        autoplay
+        muted
+        preload="none"
+      ></video>
     </div>
   </div>
 </template>
@@ -143,12 +149,13 @@ import { onMounted, ref } from 'vue'
 import { Webrtc, WebrtcState } from '../webrtc'
 import { Users } from '../ws/users'
 import api from '../api'
-import { SpeakerWaveIcon } from '@heroicons/vue/24/outline'
+import { SpeakerWaveIcon, WifiIcon } from '@heroicons/vue/24/outline'
 import { useResizeObserver } from '@vueuse/core'
 
 const video = ref<HTMLVideoElement | null>(null)
 const overlay_div = ref<HTMLDivElement | null>(null)
 const nav = ref(false)
+const stats = ref(false)
 const hasFullscreen = ref(false)
 const isFullscreen = ref(false)
 const hasPiP = ref(false)
@@ -265,5 +272,12 @@ function calc_left(idx: number) {
   }
 
   return w * (idx % rows) + offset + 'px'
+}
+
+function enable_stats() {
+  stats.value = !stats.value
+  if (stats.value) {
+  } else {
+  }
 }
 </script>
