@@ -90,7 +90,7 @@ tsan:
 
 .PHONY: cloc
 cloc:
-	cloc --exclude-dir='node_modules,external,build' .
+	cloc --exclude-dir='node_modules,external,build,env' .
 
 .PHONY: update
 update: external
