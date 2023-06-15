@@ -194,6 +194,40 @@ void sl_ws_send_event_all(char *json)
 }
 
 
+static void ws_send_rtcp_stats(struct mix *mix)
+{
+	struct le *le;
+	char json[128];
+	const struct rtcp_stats *audio_stat;
+	const struct rtcp_stats *video_stat;
+
+	LIST_FOREACH(&mix->sessl, le)
+	{
+
+		struct session *sess = le->data;
+
+		if (!sess->connected)
+			continue;
+
+		audio_stat = stream_rtcp_stats(media_get_stream(sess->maudio));
+		video_stat = stream_rtcp_stats(media_get_stream(sess->mvideo));
+
+		if (!audio_stat || !video_stat)
+			continue;
+
+		re_snprintf(json, sizeof(json),
+			    "{\"type\": \"stats\","
+			    "\"id\": %u, \"stats\": {"
+			    "\"artt\": %lu," /* rtt in ms */
+			    "\"vrtt\": %lu" /* rtt in ms */
+			    "}}",
+			    sess->user->speaker_id, audio_stat->rtt / 1000,
+			    video_stat->rtt / 1000);
+		sl_ws_send_event_all(json);
+	}
+}
+
+
 static void update_handler(void *arg)
 {
 	struct mix *mix = arg;
@@ -211,8 +245,9 @@ static void update_handler(void *arg)
 	re_snprintf(json, sizeof(json),
 		    "{\"type\": \"rec\", \"t\": %lu, \"s\": %u}", secs,
 		    mix->talk_detect_h());
-
 	sl_ws_send_event_all(json);
+
+	ws_send_rtcp_stats(mix);
 
 out:
 	tmr_start(&tmr_update, 1000, update_handler, mix);
