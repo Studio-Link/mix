@@ -105,6 +105,12 @@ const char *slmix_rec_state_name(enum mix_rec state);
 void slmix_refresh_rooms(void *arg);
 int slmix_update_room(void);
 
+/******************************************************************************
+ * sip.c
+ */
+int slmix_sip_init(struct mix *mix);
+int slmix_sip_close(void);
+
 
 /******************************************************************************
  * avatar.c

@@ -99,6 +99,7 @@ int main(int argc, char *const argv[])
 	struct mix *mix = slmix();
 
 	const char *conf = "call_max_calls	10\n" /* SIP incoming only */
+			   "sip_listen          0.0.0.0:5060\n"
 			   "sip_verify_server	yes\n"
 			   "audio_buffer	40-300\n"
 			   "audio_buffer_mode	adaptive\n"
@@ -163,6 +164,12 @@ int main(int argc, char *const argv[])
 		return err;
 	}
 
+	err = ua_init("StudioLinkMix", true, true, true);
+	if (err) {
+		warning("ua_init failed (%m)\n", err);
+		return err;
+	}
+
 	for (size_t i = 0; i < ARRAY_SIZE(modv); i++) {
 
 		err = module_load(".", modv[i]);
@@ -186,6 +193,9 @@ int main(int argc, char *const argv[])
 
 	sl_ws_close();
 	slmix_close();
+
+	ua_stop_all(true);
+	ua_close();
 
 	module_app_unload();
 	conf_close();

@@ -13,7 +13,7 @@ cmake_minimum_required(VERSION 3.18)
 
 set(CMAKE_C_COMPILER clang)
 
-project(slmix VERSION 0.5.3 LANGUAGES C)
+project(slmix VERSION 0.6.0 LANGUAGES C)
 
 ##############################################################################
 #
@@ -110,6 +110,7 @@ set(SRCS_LIB
   src/http_client.c
   src/mix.c
   src/sess.c
+  src/sip.c
   src/users.c
   src/ws.c
   ${CMAKE_CURRENT_BINARY_DIR}/version.c
