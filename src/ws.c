@@ -108,7 +108,7 @@ static void conn_destroy(void *arg)
 			json = mem_deref(json);
 		}
 
-		slmix_disp_enable(wsc->mix, wsc->sess->id, false);
+		slmix_disp_enable(wsc->mix, wsc->sess->user->id, false);
 		wsc->sess->user->pidx = 0;
 
 		pc_close(wsc->sess);
