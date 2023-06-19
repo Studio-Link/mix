@@ -224,7 +224,7 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/sdp") &&
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/sdp/offer") &&
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
 
 		err = slmix_session_start(sess, &mix->pc_config, mix->mnat,
@@ -234,7 +234,6 @@ static void http_req_handler(struct http_conn *conn,
 
 		if (msg->clen &&
 		    msg_ctype_cmp(&msg->ctyp, "application", "json")) {
-			warning("handle put\n");
 			err = handle_put_sdp(sess, msg);
 			if (err)
 				goto err;
@@ -244,6 +243,20 @@ static void http_req_handler(struct http_conn *conn,
 		mem_deref(sess->conn_pending);
 		sess->conn_pending = mem_ref(conn);
 
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/sdp/answer") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+
+#if 0
+		if (msg->clen &&
+		    msg_ctype_cmp(&msg->ctyp, "application", "json")) {
+			err = handle_put_sdp(sess, msg);
+			if (err)
+				goto err;
+		}
+#endif
 		return;
 	}
 

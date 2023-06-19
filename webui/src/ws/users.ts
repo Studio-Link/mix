@@ -3,6 +3,7 @@ import api from '../api'
 import { Error } from '../error'
 import { Webrtc } from '../webrtc'
 import config from '../config'
+import { WebRTCSource } from '../webrtc_source'
 
 interface Room {
     name: string
@@ -19,6 +20,7 @@ interface Stats {
 
 interface User {
     id: string
+    source: WebRTCSource | null
     speaker_id: number
     pidx: number
     name: string
@@ -145,6 +147,7 @@ export const Users: Users = {
                 if (data.event === 'added' || data.event === 'updated') {
                     const user: User = {
                         id: data.id,
+                        source: null,
                         speaker_id: data.speaker_id,
                         pidx: data.pidx,
                         name: data.name,
@@ -254,6 +257,11 @@ export const Users: Users = {
                     this.vspeakers.value[key].stats = data.stats
                 }
                 return
+            }
+
+            if (data.type === 'offer') {
+                this.user.source = new WebRTCSource()
+
             }
 
         }

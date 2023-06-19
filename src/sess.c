@@ -17,6 +17,8 @@ static void destructor(void *data)
 	sess->conn_pending = mem_deref(sess->conn_pending);
 	sess->pc	   = mem_deref(sess->pc);
 	sess->user	   = mem_deref(sess->user);
+
+	list_flush(&sess->source_pcl);
 }
 
 
@@ -196,10 +198,9 @@ int slmix_session_start(struct session *sess,
 }
 
 
-static int slmix_session_create(struct session **sessp, struct mix *mix,
-				const struct pl *sess_id,
-				const struct pl *user_id,
-				const struct pl *name, bool host, bool speaker)
+int slmix_session_alloc(struct session **sessp, struct mix *mix,
+			const struct pl *sess_id, const struct pl *user_id,
+			const struct pl *name, bool host, bool speaker)
 {
 	struct session *sess;
 	struct user *user;
@@ -214,17 +215,20 @@ static int slmix_session_create(struct session **sessp, struct mix *mix,
 		return ENOMEM;
 	}
 
-	if (sess_id && user_id && name) {
+	if (sess_id && user_id) {
 		info("session: create from database\n");
 		pl_strcpy(sess_id, sess->id, sizeof(sess->id));
 		pl_strcpy(user_id, user->id, sizeof(user->id));
-		pl_strcpy(name, user->name, sizeof(user->name));
 	}
 	else {
 		/* generate a unique session and user id */
 		info("session: create new\n");
 		rand_str(sess->id, sizeof(sess->id));
 		rand_str(user->id, sizeof(user->id));
+	}
+
+	if (name) {
+		pl_strcpy(name, user->name, sizeof(user->name));
 	}
 
 	user->host = host;
@@ -289,7 +293,7 @@ int slmix_session_new(struct mix *mix, struct session **sessp,
 {
 	int err;
 
-	err = slmix_session_create(sessp, mix, NULL, NULL, NULL, false, false);
+	err = slmix_session_alloc(sessp, mix, NULL, NULL, NULL, false, false);
 	if (err)
 		return err;
 
@@ -346,8 +350,8 @@ struct session *slmix_session_lookup(const struct list *sessl,
 	pl_bool(&host, &pl_host);
 	pl_bool(&speaker, &pl_speaker);
 
-	err = slmix_session_create(&sess, slmix(), sessid, &pl_user_id,
-				   &pl_name, host, speaker);
+	err = slmix_session_alloc(&sess, slmix(), sessid, &pl_user_id,
+				  &pl_name, host, speaker);
 	if (!err) {
 		mbuf_reset(&mb);
 		return sess;
