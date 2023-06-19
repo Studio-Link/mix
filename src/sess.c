@@ -118,6 +118,7 @@ static void pc_estab_handler(struct media_track *media, void *arg)
 					     baresip_aufiltl());
 		if (err) {
 			warning("mix: could not start audio (%m)\n", err);
+			break;
 		}
 		sess->maudio = media;
 		/* Currently audio is muted only, never disabled */
@@ -130,6 +131,7 @@ static void pc_estab_handler(struct media_track *media, void *arg)
 		err = mediatrack_start_video(media);
 		if (err) {
 			warning("mix: could not start video (%m)\n", err);
+			break;
 		}
 		sess->mvideo = media;
 		stream_enable(media_get_stream(media), false);
