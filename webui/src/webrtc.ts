@@ -185,7 +185,7 @@ function pc_setup() {
                 /* gathering has begun or is ongoing */
                 break
             case 'complete':
-                const resp = await api.sdp(pc.localDescription)
+                const resp = await api.sdp_offer(pc.localDescription)
                 if (resp?.ok) handle_answer(await resp.json())
                 break
         }

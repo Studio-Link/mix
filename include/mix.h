@@ -70,13 +70,20 @@ struct chat {
 	char message[CHAT_MSGSZ];
 };
 
+struct source_pc {
+	struct le le;
+	struct peer_connection *pc;
+	struct session *sess;
+};
+
 struct session {
 	struct le le;
 	struct peer_connection *pc;
+	struct list source_pcl;
 	struct http_conn *conn_pending;
 	char id[SESSID_SZ]; /* Keep secret */
 	struct user *user;
-	bool connected; /* Websocket connected */
+	bool connected; /* SIP or Websocket connected */
 	struct media_track *maudio;
 	struct media_track *mvideo;
 	struct mix *mix;
@@ -145,6 +152,10 @@ int slmix_session_new(struct mix *mix, struct session **sessp,
 		      const struct http_msg *msg);
 int slmix_session_auth(struct mix *mix, struct session *sess,
 		       const struct http_msg *msg);
+int slmix_session_alloc(struct session **sessp, struct mix *mix,
+			       const struct pl *sess_id,
+			       const struct pl *user_id, const struct pl *name,
+			       bool host, bool speaker);
 int slmix_session_start(struct session *sess,
 			const struct rtc_configuration *pc_config,
 			const struct mnat *mnat, const struct menc *menc);
@@ -178,6 +189,7 @@ int sl_ws_close(void);
 int sl_ws_open(struct http_conn *conn, const struct http_msg *msg,
 	       websock_recv_h *recvh, struct mix *mix);
 void sl_ws_send_event(struct session *sess, char *str);
+void sl_ws_send_event_self(struct session *sess, char *str);
 void sl_ws_send_event_all(char *json);
 void sl_ws_dummyh(const struct websock_hdr *hdr, struct mbuf *mb, void *arg);
 void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,

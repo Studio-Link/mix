@@ -105,10 +105,10 @@ int main(int argc, char *const argv[])
 			   "audio_buffer_mode	adaptive\n"
 			   "audio_silence	-35.0\n"
 			   "audio_jitter_buffer_type	off\n"
-			   "video_jitter_buffer_type	adaptive\n"
-			   "video_jitter_buffer_delay	1-50\n"
+			   "video_jitter_buffer_type	fixed\n"
+			   "video_jitter_buffer_delay	1-500\n"
 			   "opus_bitrate	64000\n"
-			   "ice_policy		relay\n"
+			   "ice_policy		all\n"
 			   "video_size		1920x1080\n"
 			   "video_bitrate	2000000\n"
 			   "video_sendrate	8000000\n" /* max burst send */

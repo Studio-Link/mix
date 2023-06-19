@@ -134,8 +134,12 @@ export default {
         Users.ws_close()
     },
 
-    async sdp(desc: RTCSessionDescription | null) {
-        return await api_fetch('PUT', '/webrtc/sdp', desc)
+    async sdp_offer(desc: RTCSessionDescription | null) {
+        return await api_fetch('PUT', '/webrtc/sdp/offer', desc)
+    },
+
+    async sdp_answer(desc: RTCSessionDescriptionInit | null) {
+        return await api_fetch('PUT', '/webrtc/sdp/answer', desc)
     },
 
     async video(enable: boolean) {
