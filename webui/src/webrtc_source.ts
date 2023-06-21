@@ -27,17 +27,26 @@ export class WebRTCSource {
 
             if (track.kind == 'audio') {
                 this.audio = event.streams[0]
+                console.log("WebRTCSource: audio track added")
             }
 
             if (track.kind == 'video') {
                 this.video = event.streams[0]
+                const video: HTMLVideoElement | null = document.querySelector('video#source0')
+
+                if (!video) {
+                    return
+                }
+
+                video.srcObject = this.video
+                video.play()
+
+                console.log("WebRTCSource: video track added")
             }
         }
     }
 
-    async setRemoteDescription(sdp_json: string) {
-        const descr = JSON.parse(sdp_json)
-
+    async setRemoteDescription(descr: any) {
         try {
             await this.pc.setRemoteDescription(descr)
 
