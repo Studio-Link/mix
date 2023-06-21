@@ -12,8 +12,8 @@ static const char *modv[] = {
 	"auresamp",
 
 	/* video */
-	"vmix",
 	"avcodec",
+	"vmix",
 };
 
 static char *config_file = NULL;

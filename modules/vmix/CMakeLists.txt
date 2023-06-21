@@ -1,6 +1,6 @@
 project(vmix)
 
-set(SRCS vmix.c src.c disp.c record.c)
+set(SRCS vmix.c src.c disp.c record.c codec.c)
 
 include_directories(
     ../../include
