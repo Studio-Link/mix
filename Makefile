@@ -106,6 +106,10 @@ avatars:
 run: build avatars
 	build/slmix -c config_example
 
+.PHONY: gdb
+gdb: build avatars
+	gdb --args build/slmix -c config_example
+
 .PHONY: clean
 clean:
 	rm -Rf build
