@@ -18,9 +18,13 @@ interface Stats {
     vrtt: number
 }
 
+interface Source {
+    rtc: WebRTCSource | null
+    speaker_id: number
+}
+
 interface User {
     id: string
-    source: WebRTCSource | null
     speaker_id: number
     pidx: number
     name: string
@@ -49,8 +53,9 @@ interface Users {
     socket?: WebSocket
     ws_close(): void
     websocket(sessid: string): void
-    rooms: Ref<Room[]>
     room: Ref<Room | undefined>
+    rooms: Ref<Room[]>
+    sources: Ref<Source[]>
     speakers: Ref<User[]>
     vspeakers: Ref<User[]>
     listeners: Ref<User[]>
@@ -73,6 +78,7 @@ function pad(num: number, size: number) {
 export const Users: Users = {
     room: ref(undefined),
     rooms: ref([]),
+    sources: ref([]),
     speakers: ref([]),
     vspeakers: ref([]),
     listeners: ref([]),
@@ -147,7 +153,6 @@ export const Users: Users = {
                 if (data.event === 'added' || data.event === 'updated') {
                     const user: User = {
                         id: data.id,
-                        source: null,
                         speaker_id: data.speaker_id,
                         pidx: data.pidx,
                         name: data.name,
@@ -260,8 +265,15 @@ export const Users: Users = {
             }
 
             if (data.type === 'offer') {
-                this.user.source = new WebRTCSource()
 
+                const src: Source = {
+                    rtc: new WebRTCSource(),
+                    speaker_id: 0
+                }
+
+                src.rtc?.setRemoteDescription(data)
+
+                this.sources.value.push(src);
             }
 
         }
