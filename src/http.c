@@ -4,7 +4,8 @@
 #endif
 
 
-static int handle_put_sdp(struct session *sess, const struct http_msg *msg)
+static int handle_put_sdp(struct peer_connection *pc,
+			  const struct http_msg *msg)
 {
 	struct session_description sd = {SDP_NONE, NULL};
 	int err			      = 0;
@@ -16,14 +17,14 @@ static int handle_put_sdp(struct session *sess, const struct http_msg *msg)
 	if (err)
 		return err;
 
-	err = peerconnection_set_remote_descr(sess->pc, &sd);
+	err = peerconnection_set_remote_descr(pc, &sd);
 	if (err) {
 		warning("mix: set remote descr error (%m)\n", err);
 		goto out;
 	}
 
 	if (sd.type == SDP_ANSWER) {
-		err = peerconnection_start_ice(sess->pc);
+		err = peerconnection_start_ice(pc);
 		if (err) {
 			warning("mix: failed to start ice (%m)\n", err);
 			goto out;
@@ -234,7 +235,7 @@ static void http_req_handler(struct http_conn *conn,
 
 		if (msg->clen &&
 		    msg_ctype_cmp(&msg->ctyp, "application", "json")) {
-			err = handle_put_sdp(sess, msg);
+			err = handle_put_sdp(sess->pc, msg);
 			if (err)
 				goto err;
 		}
@@ -249,14 +250,17 @@ static void http_req_handler(struct http_conn *conn,
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/sdp/answer") &&
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
 
-#if 0
 		if (msg->clen &&
 		    msg_ctype_cmp(&msg->ctyp, "application", "json")) {
-			err = handle_put_sdp(sess, msg);
+			/* @FIXME */
+			err = handle_put_sdp(((struct source_pc *)sess
+						      ->source_pcl.head->data)
+						     ->pc,
+					     msg);
 			if (err)
 				goto err;
 		}
-#endif
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;
 	}
 
