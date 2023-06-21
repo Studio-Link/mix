@@ -84,6 +84,42 @@ out:
 }
 
 
+static void estab_handler(struct media_track *media, void *arg)
+{
+	int err = 0;
+	(void)arg;
+
+	info("sip: stream established: '%s'\n",
+	     media_kind_name(mediatrack_kind(media)));
+
+	switch (mediatrack_kind(media)) {
+
+	case MEDIA_KIND_AUDIO:
+		err = mediatrack_start_audio(media, baresip_ausrcl(),
+					     baresip_aufiltl());
+		if (err) {
+			warning("sip: could not start audio (%m)\n", err);
+		}
+		break;
+
+	case MEDIA_KIND_VIDEO:
+		err = mediatrack_start_video(media);
+		if (err) {
+			warning("sip: could not start video (%m)\n", err);
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	if (err)
+		return;
+
+	stream_enable(media_get_stream(media), true);
+}
+
+
 static void close_handler(int err, void *arg)
 {
 
@@ -165,9 +201,10 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 
 			src->sess = sesse;
 
-			err = peerconnection_new(
-				&src->pc, &pc_config, mix->mnat, mix->menc,
-				gather_handler, NULL, close_handler, src);
+			err = peerconnection_new(&src->pc, &pc_config,
+						 mix->mnat, mix->menc,
+						 gather_handler, estab_handler,
+						 close_handler, src);
 			if (err) {
 				warning("sip: peerconnection failed (%m)\n",
 					err);
