@@ -1,0 +1,878 @@
+From 72f6f46cb714ac5b4c261ace6baed8f3a8f17631 Mon Sep 17 00:00:00 2001
+From: Sebastian Reimers <hallo@studio-link.de>
+Date: Thu, 22 Jun 2023 14:02:24 +0200
+Subject: [PATCH 1/3] video: add const struct video for videnc_update_h and
+ viddec_update_h
+
+---
+ include/baresip.h         | 10 ++++++----
+ modules/av1/av1.h         |  8 ++++----
+ modules/av1/decode.c      |  3 ++-
+ modules/av1/encode.c      |  9 +++++----
+ modules/avcodec/avcodec.h |  9 +++++----
+ modules/avcodec/decode.c  |  4 +++-
+ modules/avcodec/encode.c  | 36 ++++++++++++++++++------------------
+ modules/vp8/decode.c      |  3 ++-
+ modules/vp8/encode.c      | 16 ++++++++--------
+ modules/vp8/vp8.h         |  4 ++--
+ modules/vp9/decode.c      |  3 ++-
+ modules/vp9/encode.c      |  8 ++++----
+ modules/vp9/vp9.h         |  4 ++--
+ src/video.c               | 12 ++++++------
+ test/mock/mock_vidcodec.c | 12 +++++++-----
+ 15 files changed, 76 insertions(+), 65 deletions(-)
+
+diff --git a/include/baresip.h b/include/baresip.h
+index 957e68a39..96683f536 100644
+--- a/include/baresip.h
++++ b/include/baresip.h
+@@ -1198,12 +1198,12 @@ struct vidcodec;
+ typedef int (videnc_packet_h)(bool marker, uint64_t rtp_ts,
+ 			      const uint8_t *hdr, size_t hdr_len,
+ 			      const uint8_t *pld, size_t pld_len,
+-			      void *arg);
++			      const struct video *vid);
+ 
+ typedef int (videnc_update_h)(struct videnc_state **vesp,
+ 			      const struct vidcodec *vc,
+ 			      struct videnc_param *prm, const char *fmtp,
+-			      videnc_packet_h *pkth, void *arg);
++			      videnc_packet_h *pkth, const struct video *vid);
+ 
+ typedef int (videnc_encode_h)(struct videnc_state *ves, bool update,
+ 			      const struct vidframe *frame,
+@@ -1212,8 +1212,10 @@ typedef int (videnc_encode_h)(struct videnc_state *ves, bool update,
+ typedef int (videnc_packetize_h)(struct videnc_state *ves,
+ 				 const struct vidpacket *packet);
+ 
+-typedef int (viddec_update_h)(struct viddec_state **vdsp,
+-			      const struct vidcodec *vc, const char *fmtp);
++typedef int(viddec_update_h)(struct viddec_state **vdsp,
++			     const struct vidcodec *vc, const char *fmtp,
++			     const struct video *vid);
++
+ typedef int (viddec_decode_h)(struct viddec_state *vds, struct vidframe *frame,
+                               bool *intra, bool marker, uint16_t seq,
+                               struct mbuf *mb);
+diff --git a/modules/av1/av1.h b/modules/av1/av1.h
+index e64c0967c..f2a967b08 100644
+--- a/modules/av1/av1.h
++++ b/modules/av1/av1.h
+@@ -8,7 +8,7 @@
+ /* Encode */
+ int av1_encode_update(struct videnc_state **vesp, const struct vidcodec *vc,
+ 		      struct videnc_param *prm, const char *fmtp,
+-		      videnc_packet_h *pkth, void *arg);
++		      videnc_packet_h *pkth, const struct video *vid);
+ int av1_encode_packet(struct videnc_state *ves, bool update,
+ 		      const struct vidframe *frame, uint64_t timestamp);
+ int av1_encode_packetize(struct videnc_state *ves,
+@@ -17,6 +17,6 @@ int av1_encode_packetize(struct videnc_state *ves,
+ 
+ /* Decode */
+ int av1_decode_update(struct viddec_state **vdsp, const struct vidcodec *vc,
+-		      const char *fmtp);
+-int av1_decode(struct viddec_state *vds, struct vidframe *frame,
+-	       bool *intra, bool marker, uint16_t seq, struct mbuf *mb);
++		      const char *fmtp, const struct video *vid);
++int av1_decode(struct viddec_state *vds, struct vidframe *frame, bool *intra,
++	       bool marker, uint16_t seq, struct mbuf *mb);
+diff --git a/modules/av1/decode.c b/modules/av1/decode.c
+index aa227d9f4..907fa0784 100644
+--- a/modules/av1/decode.c
++++ b/modules/av1/decode.c
+@@ -42,7 +42,7 @@ static void destructor(void *arg)
+ 
+ 
+ int av1_decode_update(struct viddec_state **vdsp, const struct vidcodec *vc,
+-		       const char *fmtp)
++		       const char *fmtp, const struct video *vid)
+ {
+ 	struct viddec_state *vds;
+ 	aom_codec_dec_cfg_t cfg = {
+@@ -52,6 +52,7 @@ int av1_decode_update(struct viddec_state **vdsp, const struct vidcodec *vc,
+ 	int err = 0;
+ 	(void)vc;
+ 	(void)fmtp;
++	(void)vid;
+ 
+ 	if (!vdsp)
+ 		return EINVAL;
+diff --git a/modules/av1/encode.c b/modules/av1/encode.c
+index 9ba056b67..56f9b4d5a 100644
+--- a/modules/av1/encode.c
++++ b/modules/av1/encode.c
+@@ -28,7 +28,7 @@ struct videnc_state {
+ 	unsigned pktsize;
+ 	bool ctxup;
+ 	videnc_packet_h *pkth;
+-	void *arg;
++	const struct video *vid;
+ };
+ 
+ 
+@@ -43,7 +43,7 @@ static void destructor(void *arg)
+ 
+ int av1_encode_update(struct videnc_state **vesp, const struct vidcodec *vc,
+ 		      struct videnc_param *prm, const char *fmtp,
+-		      videnc_packet_h *pkth, void *arg)
++		      videnc_packet_h *pkth, const struct video *vid)
+ {
+ 	struct videnc_state *ves;
+ 	(void)fmtp;
+@@ -74,7 +74,7 @@ int av1_encode_update(struct videnc_state **vesp, const struct vidcodec *vc,
+ 	ves->pktsize = prm->pktsize;
+ 	ves->fps     = prm->fps;
+ 	ves->pkth    = pkth;
+-	ves->arg     = arg;
++	ves->vid     = vid;
+ 
+ 	return 0;
+ }
+@@ -138,7 +138,8 @@ static int packetize_rtp(struct videnc_state *ves,
+ 	bool new_flag = keyframe;
+ 
+ 	return av1_packetize_high(&new_flag, true, rtp_ts, buf, size,
+-				ves->pktsize, ves->pkth, ves->arg);
++				  ves->pktsize, (av1_packet_h *)ves->pkth,
++				  (void *)ves->vid);
+ }
+ 
+ 
+diff --git a/modules/avcodec/avcodec.h b/modules/avcodec/avcodec.h
+index 6ba0b9130..82d51b449 100644
+--- a/modules/avcodec/avcodec.h
++++ b/modules/avcodec/avcodec.h
+@@ -23,9 +23,9 @@ extern enum AVHWDeviceType avcodec_hw_type;
+ struct videnc_state;
+ 
+ int avcodec_encode_update(struct videnc_state **vesp,
+-			  const struct vidcodec *vc,
+-			  struct videnc_param *prm, const char *fmtp,
+-			  videnc_packet_h *pkth, void *arg);
++			  const struct vidcodec *vc, struct videnc_param *prm,
++			  const char *fmtp, videnc_packet_h *pkth,
++			  const struct video *vid);
+ int avcodec_encode(struct videnc_state *st, bool update,
+ 		   const struct vidframe *frame, uint64_t timestamp);
+ int avcodec_packetize(struct videnc_state *st, const struct vidpacket *packet);
+@@ -38,7 +38,8 @@ int avcodec_packetize(struct videnc_state *st, const struct vidpacket *packet);
+ struct viddec_state;
+ 
+ int avcodec_decode_update(struct viddec_state **vdsp,
+-			  const struct vidcodec *vc, const char *fmtp);
++			  const struct vidcodec *vc, const char *fmtp,
++			  const struct video *vid);
+ int avcodec_decode_h264(struct viddec_state *st, struct vidframe *frame,
+ 		bool *intra, bool eof, uint16_t seq, struct mbuf *src);
+ int avcodec_decode_h265(struct viddec_state *st, struct vidframe *frame,
+diff --git a/modules/avcodec/decode.c b/modules/avcodec/decode.c
+index fe58d1617..92c962d23 100644
+--- a/modules/avcodec/decode.c
++++ b/modules/avcodec/decode.c
+@@ -157,7 +157,8 @@ static int init_decoder(struct viddec_state *st, const char *name)
+ 
+ 
+ int avcodec_decode_update(struct viddec_state **vdsp,
+-			  const struct vidcodec *vc, const char *fmtp)
++			  const struct vidcodec *vc, const char *fmtp,
++			  const struct video *vid)
+ {
+ 	struct viddec_state *st;
+ 	int err = 0;
+@@ -169,6 +170,7 @@ int avcodec_decode_update(struct viddec_state **vdsp,
+ 		return 0;
+ 
+ 	(void)fmtp;
++	(void)vid;
+ 
+ 	st = mem_zalloc(sizeof(*st), destructor);
+ 	if (!st)
+diff --git a/modules/avcodec/encode.c b/modules/avcodec/encode.c
+index b45cd0947..a3067c76f 100644
+--- a/modules/avcodec/encode.c
++++ b/modules/avcodec/encode.c
+@@ -33,7 +33,7 @@ struct videnc_state {
+ 	enum vidfmt fmt;
+ 	enum AVCodecID codec_id;
+ 	videnc_packet_h *pkth;
+-	void *arg;
++	const struct video *vid;
+ 
+ 	union {
+ 		struct {
+@@ -323,9 +323,9 @@ static void param_handler(const struct pl *name, const struct pl *val,
+ 
+ 
+ int avcodec_encode_update(struct videnc_state **vesp,
+-			  const struct vidcodec *vc,
+-			  struct videnc_param *prm, const char *fmtp,
+-			  videnc_packet_h *pkth, void *arg)
++			  const struct vidcodec *vc, struct videnc_param *prm,
++			  const char *fmtp, videnc_packet_h *pkth,
++			  const struct video *vid)
+ {
+ 	struct videnc_state *st;
+ 	int err = 0;
+@@ -341,8 +341,8 @@ int avcodec_encode_update(struct videnc_state **vesp,
+ 		return ENOMEM;
+ 
+ 	st->encprm = *prm;
+-	st->pkth = pkth;
+-	st->arg = arg;
++	st->pkth   = pkth;
++	st->vid	   = vid;
+ 
+ 	st->codec_id = avcodec_resolve_codecid(vc->name);
+ 	if (st->codec_id == AV_CODEC_ID_NONE) {
+@@ -498,16 +498,16 @@ int avcodec_encode(struct videnc_state *st, bool update,
+ 	switch (st->codec_id) {
+ 
+ 	case AV_CODEC_ID_H264:
+-		err = h264_packetize(ts, pkt->data, pkt->size,
+-				     st->encprm.pktsize,
+-				     st->pkth, st->arg);
++		err = h264_packetize(
++			ts, pkt->data, pkt->size, st->encprm.pktsize,
++			(h264_packet_h *)st->pkth, (void *)st->vid);
+ 		break;
+ 
+ #ifdef AV_CODEC_ID_H265
+ 	case AV_CODEC_ID_H265:
+-		err = h265_packetize(ts, pkt->data, pkt->size,
+-				     st->encprm.pktsize,
+-				     st->pkth, st->arg);
++		err = h265_packetize(
++			ts, pkt->data, pkt->size, st->encprm.pktsize,
++			(h265_packet_h *)st->pkth, (void *)st->vid);
+ 		break;
+ #endif
+ 
+@@ -540,16 +540,16 @@ int avcodec_packetize(struct videnc_state *st, const struct vidpacket *packet)
+ 	switch (st->codec_id) {
+ 
+ 	case AV_CODEC_ID_H264:
+-		err = h264_packetize(ts, packet->buf, packet->size,
+-				     st->encprm.pktsize,
+-				     st->pkth, st->arg);
++		err = h264_packetize(
++			ts, packet->buf, packet->size, st->encprm.pktsize,
++			(h264_packet_h *)st->pkth, (void *)st->vid);
+ 		break;
+ 
+ #ifdef AV_CODEC_ID_H265
+ 	case AV_CODEC_ID_H265:
+-		err = h265_packetize(ts, packet->buf, packet->size,
+-				     st->encprm.pktsize,
+-				     st->pkth, st->arg);
++		err = h265_packetize(
++			ts, packet->buf, packet->size, st->encprm.pktsize,
++			(h265_packet_h *)st->pkth, (void *)st->vid);
+ 		break;
+ #endif
+ 
+diff --git a/modules/vp8/decode.c b/modules/vp8/decode.c
+index 21303523f..c8a76dc7e 100644
+--- a/modules/vp8/decode.c
++++ b/modules/vp8/decode.c
+@@ -56,13 +56,14 @@ static void destructor(void *arg)
+ 
+ 
+ int vp8_decode_update(struct viddec_state **vdsp, const struct vidcodec *vc,
+-		       const char *fmtp)
++		      const char *fmtp, const struct video *vid)
+ {
+ 	struct viddec_state *vds;
+ 	vpx_codec_err_t res;
+ 	int err = 0;
+ 	(void)vc;
+ 	(void)fmtp;
++	(void)vid;
+ 
+ 	if (!vdsp)
+ 		return EINVAL;
+diff --git a/modules/vp8/encode.c b/modules/vp8/encode.c
+index 8c9bed6ce..e26fb90e0 100644
+--- a/modules/vp8/encode.c
++++ b/modules/vp8/encode.c
+@@ -27,7 +27,7 @@ struct videnc_state {
+ 	bool ctxup;
+ 	uint16_t picid;
+ 	videnc_packet_h *pkth;
+-	void *arg;
++	const struct video *vid;
+ };
+ 
+ 
+@@ -42,7 +42,7 @@ static void destructor(void *arg)
+ 
+ int vp8_encode_update(struct videnc_state **vesp, const struct vidcodec *vc,
+ 		      struct videnc_param *prm, const char *fmtp,
+-		      videnc_packet_h *pkth, void *arg)
++		      videnc_packet_h *pkth, const struct video *vid)
+ {
+ 	const struct vp8_vidcodec *vp8 = (struct vp8_vidcodec *)vc;
+ 	struct videnc_state *ves;
+@@ -77,7 +77,7 @@ int vp8_encode_update(struct videnc_state **vesp, const struct vidcodec *vc,
+ 	ves->pktsize = prm->pktsize;
+ 	ves->fps     = prm->fps;
+ 	ves->pkth    = pkth;
+-	ves->arg     = arg;
++	ves->vid     = vid;
+ 
+ 	max_fs = vp8_max_fs(fmtp);
+ 	if (max_fs > 0)
+@@ -157,7 +157,7 @@ static inline void hdr_encode(uint8_t hdr[HDR_SIZE], bool noref, bool start,
+ static inline int packetize(bool marker, const uint8_t *buf, size_t len,
+ 			    size_t maxlen, bool noref, uint8_t partid,
+ 			    uint16_t picid, uint64_t rtp_ts,
+-			    videnc_packet_h *pkth, void *arg)
++			    videnc_packet_h *pkth, const struct video *vid)
+ {
+ 	uint8_t hdr[HDR_SIZE];
+ 	bool start = true;
+@@ -170,7 +170,7 @@ static inline int packetize(bool marker, const uint8_t *buf, size_t len,
+ 		hdr_encode(hdr, noref, start, partid, picid);
+ 
+ 		err |= pkth(false, rtp_ts, hdr, sizeof(hdr), buf, maxlen,
+-			    arg);
++			    vid);
+ 
+ 		buf  += maxlen;
+ 		len  -= maxlen;
+@@ -179,7 +179,7 @@ static inline int packetize(bool marker, const uint8_t *buf, size_t len,
+ 
+ 	hdr_encode(hdr, noref, start, partid, picid);
+ 
+-	err |= pkth(marker, rtp_ts, hdr, sizeof(hdr), buf, len, arg);
++	err |= pkth(marker, rtp_ts, hdr, sizeof(hdr), buf, len, vid);
+ 
+ 	return err;
+ }
+@@ -265,7 +265,7 @@ int vp8_encode(struct videnc_state *ves, bool update,
+ 				pkt->data.frame.sz,
+ 				ves->pktsize, !keyframe, partid, ves->picid,
+ 				ts,
+-				ves->pkth, ves->arg);
++				ves->pkth, ves->vid);
+ 		if (err)
+ 			return err;
+ 	}
+@@ -328,7 +328,7 @@ int vp8_encode_packetize(struct videnc_state *ves,
+ 
+ 	err = packetize(true, pkt->buf, pkt->size,
+ 			ves->pktsize, !key_frame, 0,
+-			ves->picid, rtp_ts, ves->pkth, ves->arg);
++			ves->picid, rtp_ts, ves->pkth, ves->vid);
+ 	if (err)
+ 		return err;
+ 
+diff --git a/modules/vp8/vp8.h b/modules/vp8/vp8.h
+index 4140bade1..65da82ca1 100644
+--- a/modules/vp8/vp8.h
++++ b/modules/vp8/vp8.h
+@@ -12,7 +12,7 @@ struct vp8_vidcodec {
+ /* Encode */
+ int vp8_encode_update(struct videnc_state **vesp, const struct vidcodec *vc,
+ 		      struct videnc_param *prm, const char *fmtp,
+-		      videnc_packet_h *pkth, void *arg);
++		      videnc_packet_h *pkth, const struct video *vid);
+ int vp8_encode(struct videnc_state *ves, bool update,
+ 	       const struct vidframe *frame, uint64_t timestamp);
+ int vp8_encode_packetize(struct videnc_state *ves,
+@@ -21,7 +21,7 @@ int vp8_encode_packetize(struct videnc_state *ves,
+ 
+ /* Decode */
+ int vp8_decode_update(struct viddec_state **vdsp, const struct vidcodec *vc,
+-		      const char *fmtp);
++		      const char *fmtp, const struct video *vid);
+ int vp8_decode(struct viddec_state *vds, struct vidframe *frame,
+ 	       bool *intra, bool marker, uint16_t seq, struct mbuf *mb);
+ 
+diff --git a/modules/vp9/decode.c b/modules/vp9/decode.c
+index dc2c2e0ea..f12d66cc2 100644
+--- a/modules/vp9/decode.c
++++ b/modules/vp9/decode.c
+@@ -68,13 +68,14 @@ static void destructor(void *arg)
+ 
+ 
+ int vp9_decode_update(struct viddec_state **vdsp, const struct vidcodec *vc,
+-		       const char *fmtp)
++		      const char *fmtp, const struct video *vid)
+ {
+ 	struct viddec_state *vds;
+ 	vpx_codec_err_t res;
+ 	int err = 0;
+ 	(void)vc;
+ 	(void)fmtp;
++	(void)vid;
+ 
+ 	if (!vdsp)
+ 		return EINVAL;
+diff --git a/modules/vp9/encode.c b/modules/vp9/encode.c
+index 979b739c1..7194ab07c 100644
+--- a/modules/vp9/encode.c
++++ b/modules/vp9/encode.c
+@@ -27,7 +27,7 @@ struct videnc_state {
+ 	bool ctxup;
+ 	uint16_t picid;
+ 	videnc_packet_h *pkth;
+-	void *arg;
++	const struct video *vid;
+ 
+ 	unsigned n_frames;
+ 	unsigned n_key_frames;
+@@ -54,7 +54,7 @@ static void destructor(void *arg)
+ 
+ int vp9_encode_update(struct videnc_state **vesp, const struct vidcodec *vc,
+ 		      struct videnc_param *prm, const char *fmtp,
+-		      videnc_packet_h *pkth, void *arg)
++		      videnc_packet_h *pkth, const struct video *vid)
+ {
+ 	const struct vp9_vidcodec *vp9 = (struct vp9_vidcodec *)vc;
+ 	struct videnc_state *ves;
+@@ -89,7 +89,7 @@ int vp9_encode_update(struct videnc_state **vesp, const struct vidcodec *vc,
+ 	ves->pktsize = prm->pktsize;
+ 	ves->fps     = prm->fps;
+ 	ves->pkth    = pkth;
+-	ves->arg     = arg;
++	ves->vid     = vid;
+ 
+ 	max_fs = vp9_max_fs(fmtp);
+ 	if (max_fs > 0)
+@@ -176,7 +176,7 @@ static int send_packet(struct videnc_state *ves, bool marker,
+ 	ves->n_bytes += (hdr_len + pld_len);
+ 
+ 	return ves->pkth(marker, rtp_ts, hdr, hdr_len, pld, pld_len,
+-			 ves->arg);
++			 ves->vid);
+ }
+ 
+ 
+diff --git a/modules/vp9/vp9.h b/modules/vp9/vp9.h
+index 2f289f5e8..3be237569 100644
+--- a/modules/vp9/vp9.h
++++ b/modules/vp9/vp9.h
+@@ -12,7 +12,7 @@ struct vp9_vidcodec {
+ /* Encode */
+ int vp9_encode_update(struct videnc_state **vesp, const struct vidcodec *vc,
+ 		      struct videnc_param *prm, const char *fmtp,
+-		      videnc_packet_h *pkth, void *arg);
++		      videnc_packet_h *pkth, const struct video *vid);
+ int vp9_encode(struct videnc_state *ves, bool update,
+ 	       const struct vidframe *frame, uint64_t timestamp);
+ int vp9_encode_packetize(struct videnc_state *ves,
+@@ -21,7 +21,7 @@ int vp9_encode_packetize(struct videnc_state *ves,
+ 
+ /* Decode */
+ int vp9_decode_update(struct viddec_state **vdsp, const struct vidcodec *vc,
+-		      const char *fmtp);
++		      const char *fmtp, const struct video *vid);
+ int vp9_decode(struct viddec_state *vds, struct vidframe *frame,
+ 	       bool *intra, bool marker, uint16_t seq, struct mbuf *mb);
+ 
+diff --git a/src/video.c b/src/video.c
+index a94cb0dec..9a2665b10 100644
+--- a/src/video.c
++++ b/src/video.c
+@@ -329,15 +329,15 @@ static double get_fps(const struct video *v)
+ static int packet_handler(bool marker, uint64_t ts,
+ 			  const uint8_t *hdr, size_t hdr_len,
+ 			  const uint8_t *pld, size_t pld_len,
+-			  void *arg)
++			  const struct video *vid)
+ {
+-	struct vtx *vtx = arg;
+-	struct stream *strm = vtx->video->strm;
++	struct vtx *vtx = (struct vtx *)&vid->vtx;
++	struct stream *strm = vid->strm;
+ 	struct vidqent *qent;
+ 	uint32_t rtp_ts;
+ 	int err;
+ 
+-	MAGIC_CHECK(vtx->video);
++	MAGIC_CHECK(vid);
+ 
+ 	if (!vtx->ts_base)
+ 		vtx->ts_base = ts;
+@@ -1553,7 +1553,7 @@ int video_encoder_set(struct video *v, struct vidcodec *vc,
+ 
+ 		vtx->enc = mem_deref(vtx->enc);
+ 		err = vc->encupdh(&vtx->enc, vc, &prm, params,
+-				  packet_handler, vtx);
++				  packet_handler, v);
+ 		if (err) {
+ 			warning("video: encoder alloc: %m\n", err);
+ 			goto out;
+@@ -1608,7 +1608,7 @@ int video_decoder_set(struct video *v, struct vidcodec *vc, int pt_rx,
+ 
+ 		vrx->dec = mem_deref(vrx->dec);
+ 
+-		err = vc->decupdh(&vrx->dec, vc, fmtp);
++		err = vc->decupdh(&vrx->dec, vc, fmtp, v);
+ 		if (err) {
+ 			warning("video: decoder alloc: %m\n", err);
+ 			return err;
+diff --git a/test/mock/mock_vidcodec.c b/test/mock/mock_vidcodec.c
+index 497b97f6e..84300dbf5 100644
+--- a/test/mock/mock_vidcodec.c
++++ b/test/mock/mock_vidcodec.c
+@@ -23,7 +23,7 @@ struct hdr {
+ struct videnc_state {
+ 	double fps;
+ 	videnc_packet_h *pkth;
+-	void *arg;
++	const struct video *vid;
+ };
+ 
+ struct viddec_state {
+@@ -55,7 +55,7 @@ static void decode_destructor(void *arg)
+ static int mock_encode_update(struct videnc_state **vesp,
+ 			      const struct vidcodec *vc,
+ 			      struct videnc_param *prm, const char *fmtp,
+-			      videnc_packet_h *pkth, void *arg)
++			      videnc_packet_h *pkth, const struct video *vid)
+ {
+ 	struct videnc_state *ves;
+ 	(void)fmtp;
+@@ -76,7 +76,7 @@ static int mock_encode_update(struct videnc_state **vesp,
+ 
+ 	ves->fps     = prm->fps;
+ 	ves->pkth    = pkth;
+-	ves->arg     = arg;
++	ves->vid     = vid;
+ 
+ 	return 0;
+ }
+@@ -105,7 +105,7 @@ static int mock_encode(struct videnc_state *ves, bool update,
+ 	rtp_ts = video_calc_rtp_timestamp_fix(timestamp);
+ 
+ 	err = ves->pkth(true, rtp_ts, hdr->buf, hdr->end,
+-			payload, sizeof(payload), ves->arg);
++			payload, sizeof(payload), ves->vid);
+ 	if (err)
+ 		goto out;
+ 
+@@ -117,11 +117,13 @@ static int mock_encode(struct videnc_state *ves, bool update,
+ 
+ 
+ static int mock_decode_update(struct viddec_state **vdsp,
+-			      const struct vidcodec *vc, const char *fmtp)
++			      const struct vidcodec *vc, const char *fmtp,
++			      const struct video *vid)
+ {
+ 	struct viddec_state *vds;
+ 	(void)vc;
+ 	(void)fmtp;
++	(void)vid;
+ 
+ 	if (!vdsp)
+ 		return EINVAL;
+
+From 0d0a5a5637bc63433fa8722cc54646472f81af93 Mon Sep 17 00:00:00 2001
+From: Sebastian Reimers <hallo@studio-link.de>
+Date: Thu, 22 Jun 2023 09:40:33 +0200
+Subject: [PATCH 2/3] video/decode: add timestamp
+
+---
+ include/baresip.h         | 6 +++---
+ modules/av1/av1.h         | 2 +-
+ modules/av1/decode.c      | 6 ++++--
+ modules/avcodec/avcodec.h | 6 ++++--
+ modules/avcodec/decode.c  | 9 +++++++--
+ modules/vp8/decode.c      | 6 ++++--
+ modules/vp8/vp8.h         | 4 ++--
+ modules/vp9/decode.c      | 6 ++++--
+ modules/vp9/vp9.h         | 5 ++---
+ src/video.c               | 3 ++-
+ test/mock/mock_vidcodec.c | 4 +++-
+ 11 files changed, 36 insertions(+), 21 deletions(-)
+
+diff --git a/include/baresip.h b/include/baresip.h
+index 96683f536..346939ce4 100644
+--- a/include/baresip.h
++++ b/include/baresip.h
+@@ -1216,9 +1216,9 @@ typedef int(viddec_update_h)(struct viddec_state **vdsp,
+ 			     const struct vidcodec *vc, const char *fmtp,
+ 			     const struct video *vid);
+ 
+-typedef int (viddec_decode_h)(struct viddec_state *vds, struct vidframe *frame,
+-                              bool *intra, bool marker, uint16_t seq,
+-                              struct mbuf *mb);
++typedef int(viddec_decode_h)(struct viddec_state *vds, struct vidframe *frame,
++			     bool *intra, bool marker, uint16_t seq,
++			     uint64_t ts, struct mbuf *mb);
+ 
+ struct vidcodec {
+ 	struct le le;
+diff --git a/modules/av1/av1.h b/modules/av1/av1.h
+index f2a967b08..ff4a1e9f8 100644
+--- a/modules/av1/av1.h
++++ b/modules/av1/av1.h
+@@ -19,4 +19,4 @@ int av1_encode_packetize(struct videnc_state *ves,
+ int av1_decode_update(struct viddec_state **vdsp, const struct vidcodec *vc,
+ 		      const char *fmtp, const struct video *vid);
+ int av1_decode(struct viddec_state *vds, struct vidframe *frame, bool *intra,
+-	       bool marker, uint16_t seq, struct mbuf *mb);
++	       bool marker, uint16_t seq, uint64_t ts, struct mbuf *mb);
+diff --git a/modules/av1/decode.c b/modules/av1/decode.c
+index 907fa0784..63e71284c 100644
+--- a/modules/av1/decode.c
++++ b/modules/av1/decode.c
+@@ -141,8 +141,8 @@ static int copy_obu(struct mbuf *mb_bs, const uint8_t *buf, size_t size)
+ }
+ 
+ 
+-int av1_decode(struct viddec_state *vds, struct vidframe *frame,
+-	       bool *intra, bool marker, uint16_t seq, struct mbuf *mb)
++int av1_decode(struct viddec_state *vds, struct vidframe *frame, bool *intra,
++	       bool marker, uint16_t seq, uint64_t ts, struct mbuf *mb)
+ {
+ 	aom_codec_frame_flags_t flags;
+ 	aom_codec_iter_t iter = NULL;
+@@ -152,6 +152,8 @@ int av1_decode(struct viddec_state *vds, struct vidframe *frame,
+ 	struct mbuf *mb2 = NULL;
+ 	int err;
+ 
++	(void)ts;
++
+ 	if (!vds || !frame || !intra || !mb)
+ 		return EINVAL;
+ 
+diff --git a/modules/avcodec/avcodec.h b/modules/avcodec/avcodec.h
+index 82d51b449..100263049 100644
+--- a/modules/avcodec/avcodec.h
++++ b/modules/avcodec/avcodec.h
+@@ -41,9 +41,11 @@ int avcodec_decode_update(struct viddec_state **vdsp,
+ 			  const struct vidcodec *vc, const char *fmtp,
+ 			  const struct video *vid);
+ int avcodec_decode_h264(struct viddec_state *st, struct vidframe *frame,
+-		bool *intra, bool eof, uint16_t seq, struct mbuf *src);
++			bool *intra, bool eof, uint16_t seq, uint64_t ts,
++			struct mbuf *src);
+ int avcodec_decode_h265(struct viddec_state *st, struct vidframe *frame,
+-			bool *intra, bool eof, uint16_t seq, struct mbuf *src);
++			bool *intra, bool eof, uint16_t seq, uint64_t ts,
++			struct mbuf *src);
+ 
+ 
+ int avcodec_resolve_codecid(const char *s);
+diff --git a/modules/avcodec/decode.c b/modules/avcodec/decode.c
+index 92c962d23..18f56818c 100644
+--- a/modules/avcodec/decode.c
++++ b/modules/avcodec/decode.c
+@@ -295,13 +295,15 @@ static int ffdecode(struct viddec_state *st, struct vidframe *frame,
+ 
+ 
+ int avcodec_decode_h264(struct viddec_state *st, struct vidframe *frame,
+-			bool *intra, bool marker, uint16_t seq,
++			bool *intra, bool marker, uint16_t seq, uint64_t ts,
+ 			struct mbuf *src)
+ {
+ 	struct h264_nal_header h264_hdr;
+ 	const uint8_t nal_seq[3] = {0, 0, 1};
+ 	int err;
+ 
++	(void)ts;
++
+ 	if (!st || !frame || !intra || !src)
+ 		return EINVAL;
+ 
+@@ -490,12 +492,15 @@ static inline int h265_fu_decode(struct h265_fu *fu, struct mbuf *mb)
+ 
+ 
+ int avcodec_decode_h265(struct viddec_state *vds, struct vidframe *frame,
+-		       bool *intra, bool marker, uint16_t seq, struct mbuf *mb)
++			bool *intra, bool marker, uint16_t seq, uint64_t ts,
++			struct mbuf *mb)
+ {
+ 	static const uint8_t nal_seq[3] = {0, 0, 1};
+ 	struct h265_nal hdr;
+ 	int err;
+ 
++	(void)ts;
++
+ 	if (!vds || !frame || !intra || !mb)
+ 		return EINVAL;
+ 
+diff --git a/modules/vp8/decode.c b/modules/vp8/decode.c
+index c8a76dc7e..24d7268eb 100644
+--- a/modules/vp8/decode.c
++++ b/modules/vp8/decode.c
+@@ -186,8 +186,8 @@ static inline bool is_keyframe(struct mbuf *mb)
+ }
+ 
+ 
+-int vp8_decode(struct viddec_state *vds, struct vidframe *frame,
+-	       bool *intra, bool marker, uint16_t seq, struct mbuf *mb)
++int vp8_decode(struct viddec_state *vds, struct vidframe *frame, bool *intra,
++	       bool marker, uint16_t seq, uint64_t ts, struct mbuf *mb)
+ {
+ 	vpx_codec_iter_t iter = NULL;
+ 	vpx_codec_err_t res;
+@@ -195,6 +195,8 @@ int vp8_decode(struct viddec_state *vds, struct vidframe *frame,
+ 	struct hdr hdr;
+ 	int err, i;
+ 
++	(void)ts;
++
+ 	if (!vds || !frame || !intra || !mb)
+ 		return EINVAL;
+ 
+diff --git a/modules/vp8/vp8.h b/modules/vp8/vp8.h
+index 65da82ca1..141857ffd 100644
+--- a/modules/vp8/vp8.h
++++ b/modules/vp8/vp8.h
+@@ -22,8 +22,8 @@ int vp8_encode_packetize(struct videnc_state *ves,
+ /* Decode */
+ int vp8_decode_update(struct viddec_state **vdsp, const struct vidcodec *vc,
+ 		      const char *fmtp, const struct video *vid);
+-int vp8_decode(struct viddec_state *vds, struct vidframe *frame,
+-	       bool *intra, bool marker, uint16_t seq, struct mbuf *mb);
++int vp8_decode(struct viddec_state *vds, struct vidframe *frame, bool *intra,
++	       bool marker, uint16_t seq, uint64_t ts, struct mbuf *mb);
+ 
+ 
+ /* SDP */
+diff --git a/modules/vp9/decode.c b/modules/vp9/decode.c
+index f12d66cc2..ee4a5ce60 100644
+--- a/modules/vp9/decode.c
++++ b/modules/vp9/decode.c
+@@ -262,8 +262,8 @@ static inline bool is_keyframe(const struct mbuf *mb)
+ }
+ 
+ 
+-int vp9_decode(struct viddec_state *vds, struct vidframe *frame,
+-	       bool *intra, bool marker, uint16_t seq, struct mbuf *mb)
++int vp9_decode(struct viddec_state *vds, struct vidframe *frame, bool *intra,
++	       bool marker, uint16_t seq, uint64_t ts, struct mbuf *mb)
+ {
+ 	vpx_codec_iter_t iter = NULL;
+ 	vpx_codec_err_t res;
+@@ -271,6 +271,8 @@ int vp9_decode(struct viddec_state *vds, struct vidframe *frame,
+ 	struct hdr hdr;
+ 	int err, i;
+ 
++	(void)ts;
++
+ 	if (!vds || !frame || !intra || !mb)
+ 		return EINVAL;
+ 
+diff --git a/modules/vp9/vp9.h b/modules/vp9/vp9.h
+index 3be237569..a42f10068 100644
+--- a/modules/vp9/vp9.h
++++ b/modules/vp9/vp9.h
+@@ -22,9 +22,8 @@ int vp9_encode_packetize(struct videnc_state *ves,
+ /* Decode */
+ int vp9_decode_update(struct viddec_state **vdsp, const struct vidcodec *vc,
+ 		      const char *fmtp, const struct video *vid);
+-int vp9_decode(struct viddec_state *vds, struct vidframe *frame,
+-	       bool *intra, bool marker, uint16_t seq, struct mbuf *mb);
+-
++int vp9_decode(struct viddec_state *vds, struct vidframe *frame, bool *intra,
++	       bool marker, uint16_t seq, uint64_t ts, struct mbuf *mb);
+ 
+ /* SDP */
+ uint32_t vp9_max_fs(const char *fmtp);
+diff --git a/src/video.c b/src/video.c
+index 9a2665b10..6adcdd34f 100644
+--- a/src/video.c
++++ b/src/video.c
+@@ -763,7 +763,8 @@ static int video_stream_decode(struct vrx *vrx, const struct rtp_header *hdr,
+ 
+ 	vidframe_clear(frame);
+ 
+-	err = vrx->vc->dech(vrx->dec, frame, &intra, hdr->m, hdr->seq, mb);
++	err = vrx->vc->dech(vrx->dec, frame, &intra, hdr->m, hdr->seq,
++			    timestamp, mb);
+ 	if (err) {
+ 
+ 		if (err != EPROTO) {
+diff --git a/test/mock/mock_vidcodec.c b/test/mock/mock_vidcodec.c
+index 84300dbf5..f8937a2ad 100644
+--- a/test/mock/mock_vidcodec.c
++++ b/test/mock/mock_vidcodec.c
+@@ -144,13 +144,15 @@ static int mock_decode_update(struct viddec_state **vdsp,
+ 
+ 
+ static int mock_decode(struct viddec_state *vds, struct vidframe *frame,
+-		       bool *intra, bool marker, uint16_t seq, struct mbuf *mb)
++		       bool *intra, bool marker, uint16_t seq, uint64_t ts,
++		       struct mbuf *mb)
+ {
+ 	struct vidsz size;
+ 	struct hdr hdr;
+ 	int err, i;
+ 	(void)marker;
+ 	(void)seq;
++	(void)ts;
+ 
+ 	if (!vds || !frame || !intra || !mb)
+ 		return EINVAL;
+
+From d3c2e8ed7f5e5029164a6745a9aadccb0854258d Mon Sep 17 00:00:00 2001
+From: Sebastian Reimers <hallo@studio-link.de>
+Date: Thu, 22 Jun 2023 15:30:10 +0200
+Subject: [PATCH 3/3] video: add source and display name getters
+
+---
+ include/baresip.h |  2 ++
+ src/video.c       | 32 ++++++++++++++++++++++++++++++++
+ 2 files changed, 34 insertions(+)
+
+diff --git a/include/baresip.h b/include/baresip.h
+index 346939ce4..de27adea4 100644
+--- a/include/baresip.h
++++ b/include/baresip.h
+@@ -1382,6 +1382,8 @@ int   video_set_fullscreen(struct video *v, bool fs);
+ void  video_vidsrc_set_device(struct video *v, const char *dev);
+ int   video_set_source(struct video *v, const char *name, const char *dev);
+ void  video_set_devicename(struct video *v, const char *src, const char *disp);
++const char *video_get_src_dev(const struct video *v);
++const char *video_get_disp_dev(const struct video *v);
+ int   video_debug(struct re_printf *pf, const struct video *v);
+ struct stream *video_strm(const struct video *v);
+ const struct vidcodec *video_codec(const struct video *vid, bool tx);
+diff --git a/src/video.c b/src/video.c
+index 6adcdd34f..26075a7d9 100644
+--- a/src/video.c
++++ b/src/video.c
+@@ -1832,6 +1832,38 @@ void video_set_devicename(struct video *v, const char *src, const char *disp)
+ }
+ 
+ 
++/**
++ * Get the device name of video source
++ *
++ * @param v    Video object
++ *
++ * @return Video source device name, otherwise NULL
++ */
++const char *video_get_src_dev(const struct video *v)
++{
++	if (!v)
++		return NULL;
++
++	return v->vtx.device;
++}
++
++
++/**
++ * Get the device name of video display
++ *
++ * @param v    Video object
++ *
++ * @return Video display device name, otherwise NULL
++ */
++const char *video_get_disp_dev(const struct video *v)
++{
++	if (!v)
++		return NULL;
++
++	return v->vrx.device;
++}
++
++
+ /**
+  * Get video codec of video stream
+  *
