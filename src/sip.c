@@ -143,7 +143,8 @@ static void source_dealloc(void *arg)
 static void ua_event_handler(struct ua *ua, enum ua_event ev,
 			     struct call *call, const char *prm, void *arg)
 {
-	struct mix *mix = arg;
+	struct mix *mix	      = arg;
+	struct config *config = conf_config();
 	int err;
 
 	(void)ua;
@@ -183,7 +184,9 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 		struct le *le;
 		struct source_pc *src;
 		struct rtc_configuration pc_config = {.offerer = true};
-		const struct config *config	   = conf_config();
+
+		re_snprintf(config->video.src_mod,
+			    sizeof(config->video.src_mod), "vmix_pktsrc");
 
 		LIST_FOREACH(&mix->sessl, le)
 		{
@@ -231,6 +234,10 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 	default:
 		break;
 	}
+
+	/* restore default vmix source module config */
+	re_snprintf(config->video.src_mod, sizeof(config->video.src_mod),
+		    "vmix");
 }
 
 
