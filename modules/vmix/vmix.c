@@ -132,7 +132,8 @@ static int module_init(void)
 
 	list_init(&vmix_srcl);
 
-	vmix_codec_init();
+	err = vmix_codec_init();
+	IF_ERR_GOTO_OUT(err);
 
 	err = vmix_src_init();
 	IF_ERR_GOTO_OUT(err);
@@ -143,6 +144,9 @@ static int module_init(void)
 
 	err = vidsrc_register(&vidsrc, baresip_vidsrcl(), "vmix",
 			      vmix_src_alloc, NULL);
+	IF_ERR_GOTO_OUT(err);
+
+	err = vmix_pktsrc_init();
 	IF_ERR_GOTO_OUT(err);
 
 	err = vidmix_alloc(&vmix_mix);
@@ -172,6 +176,7 @@ static int module_close(void)
 
 	vmix_src_close();
 	vmix_codec_close();
+	vmix_pktsrc_close();
 
 	return 0;
 }
