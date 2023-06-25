@@ -47,6 +47,7 @@ int vmix_disp_alloc(struct vidisp_st **stp, const struct vidisp *vd,
 	st->vidsrc = vmix_src_find(dev);
 	if (!st->vidsrc || !st->vidsrc->vidmix_src) {
 		err = ENOKEY;
+		return 0; /* FIXME */
 		goto out;
 	}
 

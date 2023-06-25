@@ -183,14 +183,14 @@ int slmix_session_start(struct session *sess,
 	}
 
 	err = peerconnection_add_audio_track(sess->pc, config,
-					     baresip_aucodecl());
+					     baresip_aucodecl(), SDP_SENDRECV);
 	if (err) {
 		warning("mix: add_audio failed (%m)\n", err);
 		return err;
 	}
 
-	err = peerconnection_add_video_track(sess->pc, config,
-					     baresip_vidcodecl());
+	err = peerconnection_add_video_track(
+		sess->pc, config, baresip_vidcodecl(), SDP_SENDRECV);
 	if (err) {
 		warning("mix: add_video failed (%m)\n", err);
 		return err;

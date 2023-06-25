@@ -116,6 +116,7 @@ int main(int argc, char *const argv[])
 			   "avcodec_keyint	2\n"
 			   "avcodec_h265enc	nil\n"
 			   "avcodec_h265dec	nil\n"
+			   /* "video_source	vmix_pktsrc,pktsrc\n" */
 			   "audio_txmode	thread\n";
 
 	/*

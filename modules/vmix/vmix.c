@@ -175,8 +175,8 @@ static int module_close(void)
 	vmix_mix = mem_deref(vmix_mix);
 
 	vmix_src_close();
-	vmix_codec_close();
 	vmix_pktsrc_close();
+	vmix_codec_close();
 
 	return 0;
 }

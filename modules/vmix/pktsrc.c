@@ -48,6 +48,7 @@ static int pktsrc_alloc(struct vidsrc_st **stp, const struct vidsrc *vs,
 	if (err)
 		goto out;
 
+warning("add source\n");
 
 	mtx_lock(pktsrc.mtx);
 	list_append(&pktsrc.srcl, &st->le, st);
@@ -75,6 +76,8 @@ static int pktsrc_thread(void *arg)
 		LIST_FOREACH(&pktsrc.srcl, le)
 		{
 			struct vidsrc_st *st = le->data;
+
+			vmix_codec_pkt(st);
 #if 0
 			struct vidpacket packet = {
 
