@@ -10,6 +10,7 @@ static viddec_decode_h *dech;
 static viddec_update_h *decupdh;
 
 static struct hash *dec_list;
+static mtx_t *dec_mtx;
 
 enum {
 	MAX_PKT_TIME = 250, /**< in [ms] */
@@ -28,9 +29,12 @@ struct viddec_state {
 	const struct video *vid;
 	void *vdsp; /* Sub-Codec state */
 	struct list pktl;
+	uint64_t last_id;
+	mtx_t *mtx;
 };
 
 struct pkt {
+	uint64_t id;
 	struct le le;
 	struct mbuf *mb;
 	bool marker;
@@ -51,9 +55,16 @@ static void viddec_deref(void *arg)
 {
 	struct viddec_state *vds = arg;
 
-	mem_deref(vds->vdsp);
+	mtx_lock(dec_mtx);
 	hash_unlink(&vds->le);
+	mtx_unlock(dec_mtx);
+
+	mem_deref(vds->vdsp);
+
+	mtx_lock(vds->mtx);
 	list_flush(&vds->pktl);
+	mtx_unlock(vds->mtx);
+	mem_deref(vds->mtx);
 }
 
 
@@ -69,9 +80,10 @@ static int enc_update(struct videnc_state **vesp, const struct vidcodec *vc,
 		return ENOMEM;
 
 	const char *dev = video_get_src_dev(vid);
-	ves->is_pkt_src = str_ncmp("vmix_src", dev, 7) == 0;
+	ves->is_pkt_src = str_ncmp("pktsrc", dev, 6) == 0;
 
-	ves->vid = vid;
+	ves->vid  = vid;
+	ves->pkth = pkth;
 
 	err = encupdh((struct videnc_state **)&ves->vesp, vc, prm, fmtp, pkth,
 		      vid);
@@ -89,26 +101,18 @@ static int enc_update(struct videnc_state **vesp, const struct vidcodec *vc,
 static int encode(struct videnc_state *ves, bool update,
 		  const struct vidframe *frame, uint64_t timestamp)
 {
-#if 0
-
-#else
 	return ench(ves->vesp, update, frame, timestamp);
-#endif
 }
 
 
-static int packetize(struct videnc_state *ves, const struct vidpacket *packet)
+static int packetize(struct videnc_state *ves, const struct vidpacket *vpkt)
 {
-#if 0
 	if (ves->is_pkt_src) {
-		ves->pkth();
-typedef int (videnc_packet_h)(bool marker, uint64_t rtp_ts,
-			      const uint8_t *hdr, size_t hdr_len,
-			      const uint8_t *pld, size_t pld_len,
-			      void *arg);
+		uint64_t ts = video_calc_rtp_timestamp_fix(vpkt->timestamp);
+		return ves->pkth(vpkt->keyframe, ts, NULL, 0, vpkt->buf,
+				 vpkt->size, ves->vid);
 	}
-#endif
-	return packetizeh(ves->vesp, packet);
+	return packetizeh(ves->vesp, vpkt);
 }
 
 
@@ -124,13 +128,22 @@ static int dec_update(struct viddec_state **vdsp, const struct vidcodec *vc,
 
 	vds->vid = vid;
 
+	err = mutex_alloc(&vds->mtx);
+	if (err) {
+		mem_deref(vds);
+		return err;
+	}
+
 	err = decupdh((struct viddec_state **)&vds->vdsp, vc, fmtp, vid);
 	if (err) {
 		mem_deref(vds);
 		return err;
 	}
 
+	mtx_lock(dec_mtx);
 	hash_append(dec_list, (uint32_t)(uintptr_t)vid, &vds->le, vds);
+	mtx_unlock(dec_mtx);
+
 	*vdsp = vds;
 
 	return 0;
@@ -154,11 +167,13 @@ static int decode(struct viddec_state *vds, struct vidframe *frame,
 	if (!pkt)
 		return ENOMEM;
 
-	pkt->mb	    = mem_ref(mb);
+	pkt->mb	    = mbuf_dup(mb);
 	pkt->marker = marker;
 	pkt->ts	    = ts;
 	pkt->ts_eol = ts + MAX_PKT_TIME * 1000;
+	pkt->id	    = vds->last_id++;
 
+	mtx_lock(vds->mtx);
 	list_append(&vds->pktl, &pkt->le, pkt);
 
 	/* delayed queue cleanup */
@@ -173,6 +188,7 @@ static int decode(struct viddec_state *vds, struct vidframe *frame,
 		else
 			break;
 	}
+	mtx_unlock(vds->mtx);
 
 	return dech(vds->vdsp, frame, intra, marker, seq, ts, mb);
 }
@@ -200,9 +216,56 @@ static struct vidcodec h264_1 = {
 };
 
 
+static bool list_apply_handler(struct le *le, void *arg)
+{
+	struct vidsrc_st *st	 = arg;
+	struct viddec_state *vds = le->data;
+	struct pkt *pkt		 = NULL;
+
+	mtx_lock(vds->mtx);
+	struct le *ple = vds->pktl.head;
+	while (ple) {
+		pkt = ple->data;
+
+		ple = ple->next;
+
+		/* skip already send */
+		if (st->last_pkt && st->last_pkt >= pkt->id)
+			continue;
+
+		struct vidpacket packet = {.buf	      = mbuf_buf(pkt->mb),
+					   .size      = mbuf_get_left(pkt->mb),
+					   .timestamp = pkt->ts,
+					   .keyframe  = pkt->marker};
+
+		st->packeth(&packet, st->arg);
+
+		st->last_pkt = pkt->id;
+	}
+	mtx_unlock(vds->mtx);
+
+	/* FIXME */
+	return true;
+}
+
+
+/* called by pktsrc_thread */
+void vmix_codec_pkt(struct vidsrc_st *st)
+{
+	mtx_lock(dec_mtx);
+	(void)hash_apply(dec_list, list_apply_handler, st);
+	mtx_unlock(dec_mtx);
+}
+
+
 int vmix_codec_init(void)
 {
 	const struct vidcodec *v;
+	int err;
+
+	err = mutex_alloc(&dec_mtx);
+	if (err)
+		return err;
 
 	v = vidcodec_find(baresip_vidcodecl(), "H264", "packetization-mode=0");
 	if (!v) {
@@ -245,4 +308,5 @@ void vmix_codec_close(void)
 	vidcodec_unregister(&h264_1);
 
 	dec_list = mem_deref(dec_list);
+	dec_mtx  = mem_deref(dec_mtx);
 }

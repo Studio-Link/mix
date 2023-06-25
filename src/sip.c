@@ -187,6 +187,8 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 
 		re_snprintf(config->video.src_mod,
 			    sizeof(config->video.src_mod), "vmix_pktsrc");
+		re_snprintf(config->video.src_dev,
+			    sizeof(config->video.src_dev), "pktsrc");
 
 		LIST_FOREACH(&mix->sessl, le)
 		{
@@ -215,14 +217,16 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 			}
 
 			err = peerconnection_add_audio_track(
-				src->pc, config, baresip_aucodecl());
+				src->pc, config, baresip_aucodecl(),
+				SDP_SENDONLY);
 			if (err) {
 				warning("sip: add_audio failed (%m)\n", err);
 				return;
 			}
 
 			err = peerconnection_add_video_track(
-				src->pc, config, baresip_vidcodecl());
+				src->pc, config, baresip_vidcodecl(),
+				SDP_SENDONLY);
 			if (err) {
 				warning("sip: add_video failed (%m)\n", err);
 				return;

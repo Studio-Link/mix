@@ -17,6 +17,7 @@ struct vidsrc_st {
 	vidsrc_frame_h *frameh;
 	struct vidmix_source *vidmix_src;
 	void *arg;
+	uint64_t last_pkt;
 	RE_ATOMIC bool run;
 };
 
@@ -58,6 +59,7 @@ int vmix_record_start(const char *record_folder);
 int vmix_record(const uint8_t *buf, size_t size, RE_ATOMIC bool *update);
 int vmix_record_close(void);
 
+void vmix_codec_pkt(struct vidsrc_st *st);
 int vmix_codec_init(void);
 void vmix_codec_close(void);
 
