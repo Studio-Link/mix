@@ -48,8 +48,6 @@ static int pktsrc_alloc(struct vidsrc_st **stp, const struct vidsrc *vs,
 	if (err)
 		goto out;
 
-warning("add source\n");
-
 	mtx_lock(pktsrc.mtx);
 	list_append(&pktsrc.srcl, &st->le, st);
 	mtx_unlock(pktsrc.mtx);
@@ -70,7 +68,7 @@ static int pktsrc_thread(void *arg)
 	(void)arg;
 
 	while (re_atomic_rlx(&pktsrc.run)) {
-		sys_msleep(5);
+		sys_msleep(2);
 
 		mtx_lock(pktsrc.mtx);
 		LIST_FOREACH(&pktsrc.srcl, le)
@@ -78,13 +76,6 @@ static int pktsrc_thread(void *arg)
 			struct vidsrc_st *st = le->data;
 
 			vmix_codec_pkt(st);
-#if 0
-			struct vidpacket packet = {
-
-			}
-
-			st->packeth(&packet, st->arg);
-#endif
 		}
 		mtx_unlock(pktsrc.mtx);
 	}

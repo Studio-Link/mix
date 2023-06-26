@@ -74,6 +74,7 @@ struct source_pc {
 	struct le le;
 	struct peer_connection *pc;
 	struct session *sess;
+	char dev[128];
 };
 
 struct session {
