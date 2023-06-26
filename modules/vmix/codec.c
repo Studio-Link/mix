@@ -31,6 +31,7 @@ struct viddec_state {
 	struct list pktl;
 	uint64_t last_id;
 	mtx_t *mtx;
+	const char *dev;
 };
 
 struct pkt {
@@ -80,7 +81,7 @@ static int enc_update(struct videnc_state **vesp, const struct vidcodec *vc,
 		return ENOMEM;
 
 	const char *dev = video_get_src_dev(vid);
-	ves->is_pkt_src = str_ncmp("pktsrc", dev, 6) == 0;
+	ves->is_pkt_src = str_ncmp("pktsrc", dev, sizeof("pktsrc") - 1) == 0;
 
 	ves->vid  = vid;
 	ves->pkth = pkth;
@@ -126,6 +127,7 @@ static int dec_update(struct viddec_state **vdsp, const struct vidcodec *vc,
 	if (!vds)
 		return ENOMEM;
 
+	vds->dev = video_get_disp_dev(vid);
 	vds->vid = vid;
 
 	err = mutex_alloc(&vds->mtx);
@@ -222,6 +224,9 @@ static bool list_apply_handler(struct le *le, void *arg)
 	struct viddec_state *vds = le->data;
 	struct pkt *pkt		 = NULL;
 
+	if (0 != str_cmp(vds->dev, st->device + sizeof("pktsrc") - 1))
+		return false;
+
 	mtx_lock(vds->mtx);
 	struct le *ple = vds->pktl.head;
 	while (ple) {
@@ -244,7 +249,6 @@ static bool list_apply_handler(struct le *le, void *arg)
 	}
 	mtx_unlock(vds->mtx);
 
-	/* FIXME */
 	return true;
 }
 
@@ -308,5 +312,5 @@ void vmix_codec_close(void)
 	vidcodec_unregister(&h264_1);
 
 	dec_list = mem_deref(dec_list);
-	dec_mtx  = mem_deref(dec_mtx);
+	dec_mtx	 = mem_deref(dec_mtx);
 }

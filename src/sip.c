@@ -86,10 +86,10 @@ out:
 
 static void estab_handler(struct media_track *media, void *arg)
 {
-	int err = 0;
-	(void)arg;
+	int err		      = 0;
+	struct source_pc *src = arg;
 
-	info("sip: stream established: '%s'\n",
+	info("sip: webrtc stream established: '%s'\n",
 	     media_kind_name(mediatrack_kind(media)));
 
 	switch (mediatrack_kind(media)) {
@@ -103,6 +103,8 @@ static void estab_handler(struct media_track *media, void *arg)
 		break;
 
 	case MEDIA_KIND_VIDEO:
+		video_set_devicename(media_get_video(media), src->dev,
+				     "dummy");
 		err = mediatrack_start_video(media);
 		if (err) {
 			warning("sip: could not start video (%m)\n", err);
@@ -187,8 +189,6 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 
 		re_snprintf(config->video.src_mod,
 			    sizeof(config->video.src_mod), "vmix_pktsrc");
-		re_snprintf(config->video.src_dev,
-			    sizeof(config->video.src_dev), "pktsrc");
 
 		LIST_FOREACH(&mix->sessl, le)
 		{
@@ -199,12 +199,16 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 
 			warning("sip: add source connection\n");
 
+
 			src = mem_zalloc(sizeof(struct source_pc),
 					 source_dealloc);
 			if (!src)
 				return;
 
 			src->sess = sesse;
+
+			re_snprintf(src->dev, sizeof(src->dev), "pktsrc%s",
+				    peer);
 
 			err = peerconnection_new(&src->pc, &pc_config,
 						 mix->mnat, mix->menc,
