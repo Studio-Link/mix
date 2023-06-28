@@ -1,0 +1,139 @@
+diff --git a/modules/avcodec/decode.c b/modules/avcodec/decode.c
+index fe58d161..59bbf1b7 100644
+--- a/modules/avcodec/decode.c
++++ b/modules/avcodec/decode.c
+@@ -12,6 +12,8 @@
+ #include <libavutil/avutil.h>
+ #include <libavutil/mem.h>
+ #include <libavutil/pixdesc.h>
++#include <libswscale/swscale.h>
++#include <libavutil/imgutils.h>
+ #include "h26x.h"
+ #include "avcodec.h"
+ 
+@@ -32,6 +34,7 @@ struct viddec_state {
+ 	AVFrame *pict;
+ 	struct mbuf *mb;
+ 	bool got_keyframe;
++	struct SwsContext* scaler;
+ 	size_t frag_start;
+ 	bool frag;
+ 	uint16_t frag_seq;
+@@ -142,6 +145,11 @@ static int init_decoder(struct viddec_state *st, const char *name)
+ 		st->ctx->hw_device_ctx = av_buffer_ref(avcodec_hw_device_ctx);
+ 		st->ctx->get_format = get_hw_format;
+ 
++		int ret = av_image_alloc(st->pict->data, st->pict->linesize,
++					 1920, 1080, AV_PIX_FMT_YUV420P, 32);
++		if (ret < 0)
++			return ENOMEM;
++
+ 		info("avcodec: decode: hardware accel enabled (%s)\n",
+ 		     av_hwdevice_get_type_name(avcodec_hw_type));
+ 	}
+@@ -152,6 +160,7 @@ static int init_decoder(struct viddec_state *st, const char *name)
+ 	if (avcodec_open2(st->ctx, st->codec, NULL) < 0)
+ 		return ENOENT;
+ 
++
+ 	return 0;
+ }
+ 
+@@ -202,6 +211,7 @@ static int ffdecode(struct viddec_state *st, struct vidframe *frame,
+ 		    bool *intra)
+ {
+ 	AVFrame *hw_frame = NULL;
++	AVFrame *tmp_frame = NULL;
+ 	AVPacket *avpkt;
+ 	int i, got_picture, ret;
+ 	int err = 0;
+@@ -210,6 +220,9 @@ static int ffdecode(struct viddec_state *st, struct vidframe *frame,
+ 		hw_frame = av_frame_alloc();
+ 		if (!hw_frame)
+ 			return ENOMEM;
++		tmp_frame = av_frame_alloc();
++		if (!tmp_frame)
++			return ENOMEM;
+ 	}
+ 
+ 	err = mbuf_fill(st->mb, 0x00, AV_INPUT_BUFFER_PADDING_SIZE);
+@@ -245,13 +258,15 @@ static int ffdecode(struct viddec_state *st, struct vidframe *frame,
+ 		goto out;
+ 	}
+ 
+-	got_picture = true;
++	got_picture = (ret == 0);
+ 
+ 	if (got_picture) {
+ 
+ 		if (hw_frame) {
+ 			/* retrieve data from GPU to CPU */
+-			ret = av_hwframe_transfer_data(st->pict, hw_frame, 0);
++			/* use tmp_frame dest to avoid crashes (unclear if
++			 * this the root cause!) */
++			ret = av_hwframe_transfer_data(tmp_frame, hw_frame, 0);
+ 			if (ret < 0) {
+ 				warning("avcodec: decode: Error transferring"
+ 					" the data to system memory\n");
+@@ -259,21 +274,44 @@ static int ffdecode(struct viddec_state *st, struct vidframe *frame,
+ 			}
+ 
+ 			st->pict->key_frame = hw_frame->key_frame;
+-		}
+ 
+-		frame->fmt = avpixfmt_to_vidfmt(st->pict->format);
+-		if (frame->fmt == (enum vidfmt)-1) {
+-			warning("avcodec: decode: bad pixel format"
+-				" (%i) (%s)\n",
+-				st->pict->format,
+-				av_get_pix_fmt_name(st->pict->format));
+-			goto out;
++			st->scaler = sws_getContext(
++				st->ctx->width, st->ctx->height,
++				tmp_frame->format, st->ctx->width,
++				st->ctx->height, AV_PIX_FMT_YUV420P,
++				SWS_BICUBIC, NULL, NULL, NULL);
++			if (!st->scaler) {
++				warning("avcodec: sws_ctx: Error\n");
++				goto out;
++			}
++
++			ret = sws_scale(st->scaler,
++				  (const uint8_t *const *)tmp_frame->data,
++				  tmp_frame->linesize, 0, st->ctx->height,
++				  st->pict->data, st->pict->linesize);
++			if (ret < 0) {
++				warning("avcodec: sws_scale: Error\n");
++				goto out;
++			}
++
++			frame->fmt = VID_FMT_YUV420P;
++		}
++		else {
++			frame->fmt = avpixfmt_to_vidfmt(st->pict->format);
++			if (frame->fmt == (enum vidfmt) - 1) {
++				warning("avcodec: decode: bad pixel format"
++					" (%i) (%s)\n",
++					st->pict->format,
++					av_get_pix_fmt_name(st->pict->format));
++				goto out;
++			}
+ 		}
+ 
+ 		for (i=0; i<4; i++) {
+ 			frame->data[i]     = st->pict->data[i];
+ 			frame->linesize[i] = st->pict->linesize[i];
+ 		}
++
+ 		frame->size.w = st->ctx->width;
+ 		frame->size.h = st->ctx->height;
+ 
+@@ -287,6 +325,8 @@ static int ffdecode(struct viddec_state *st, struct vidframe *frame,
+ 
+  out:
+ 	av_frame_free(&hw_frame);
++	av_frame_free(&tmp_frame);
++	sws_freeContext(st->scaler);
+ 	av_packet_free(&avpkt);
+ 	return err;
+ }

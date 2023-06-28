@@ -51,7 +51,9 @@ external:
 		patch -p1 < ../../patches/2636.patch && \
 		patch -p1 < ../../patches/baresip_packet_dup_handler.patch && \
 		patch -p1 < ../../patches/baresip_stream_enable.patch && \
-		patch -p1 < ../../patches/baresip_video_remove_sendq_empty.patch
+		patch -p1 < ../../patches/baresip_video_remove_sendq_empty.patch && \
+		patch -p1 < ../../patches/avcodec_encode_refs.patch && \
+		patch -p1 < ../../patches/avcodec_decode_scale_crash.patch
 		# patch -p1 < ../../patches/baresip_video_latency.patch && \
 		# patch -p1 < ../../patches/baresip_video_burst_size.patch
 
