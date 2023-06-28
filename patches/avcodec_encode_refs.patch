@@ -1,0 +1,12 @@
+diff --git a/modules/avcodec/encode.c b/modules/avcodec/encode.c
+index b45cd094..865d04cd 100644
+--- a/modules/avcodec/encode.c
++++ b/modules/avcodec/encode.c
+@@ -181,6 +181,7 @@ static int open_encoder(struct videnc_state *st,
+ 	st->ctx->time_base.num = 1;
+ 	st->ctx->time_base.den = prm->fps;
+ 	st->ctx->gop_size = keyint * prm->fps;
++	st->ctx->refs = 0;
+ 
+ 	if (0 == str_cmp(st->codec->name, "libx264")) {
+ 
