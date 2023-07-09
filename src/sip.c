@@ -143,8 +143,17 @@ static void close_handler(int err, void *arg)
 static void source_dealloc(void *arg)
 {
 	struct source_pc *src = arg;
+	struct odict *od;
 
 	list_unlink(&src->le);
+
+	int err = odict_alloc(&od, 1);
+	if (!err) {
+		odict_entry_add(od, "type", ODICT_STRING, "source_close");
+		odict_entry_add(od, "id", ODICT_INT, src->id);
+		ws_json(src->sess, od);
+		mem_deref(od);
+	}
 
 	src->pc = mem_deref(src->pc);
 }
