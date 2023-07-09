@@ -127,6 +127,7 @@ int slmix_init(void)
 {
 	struct pl srv;
 	int err;
+#if 0
 	pl_set_str(&srv, "turn:195.201.63.86:3478");
 
 	err = stunuri_decode(&mix.pc_config.ice_server, &srv);
@@ -137,6 +138,8 @@ int slmix_init(void)
 
 	mix.pc_config.stun_user	 = "turn200301";
 	mix.pc_config.credential = "choh4zeem3foh1";
+
+#endif
 
 	mix.mnat = mnat_find(baresip_mnatl(), "ice");
 	if (!mix.mnat) {
