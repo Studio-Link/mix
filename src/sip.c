@@ -144,6 +144,8 @@ static void source_dealloc(void *arg)
 {
 	struct source_pc *src = arg;
 
+	list_unlink(&src->le);
+
 	src->pc = mem_deref(src->pc);
 }
 
@@ -170,6 +172,7 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 {
 	struct mix *mix	      = arg;
 	struct config *config = conf_config();
+	struct le *le;
 	int err;
 
 	(void)ua;
@@ -206,8 +209,6 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 		/* @TODO: move to UA_EVENT_CALL_ESTABLISHED */
 
 		/* Add source preview connections for host users */
-		struct le *le;
-		struct source_pc *src;
 		struct rtc_configuration pc_config = {.offerer = true};
 
 		re_snprintf(config->video.src_mod,
@@ -223,11 +224,12 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 			warning("sip: add source connection\n");
 
 
-			src = mem_zalloc(sizeof(struct source_pc),
-					 source_dealloc);
+			struct source_pc *src = mem_zalloc(
+				sizeof(struct source_pc), source_dealloc);
 			if (!src)
 				return;
 
+			src->call = call;
 			src->sess = sesse;
 
 			re_snprintf(src->dev, sizeof(src->dev), "pktsrc%s",
@@ -265,7 +267,27 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 
 			list_append(&sesse->source_pcl, &src->le, src);
 		}
+		break;
 
+	case UA_EVENT_CALL_CLOSED:
+
+		LIST_FOREACH(&mix->sessl, le)
+		{
+			struct session *sesse = le->data;
+			struct le *le2;
+
+			LIST_FOREACH(&sesse->source_pcl, le2)
+			{
+				struct source_pc *src = le2->data;
+
+				if (src->call == call) {
+					mem_deref(src);
+					return;
+				}
+			}
+		}
+
+		break;
 	default:
 		break;
 	}
