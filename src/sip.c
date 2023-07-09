@@ -64,6 +64,12 @@ static void gather_handler(void *arg)
 		goto out;
 	}
 
+	err = odict_entry_add(od, "id", ODICT_INT, src->id);
+	if (err) {
+		warning("sip: odict id error: %m\n", err);
+		goto out;
+	}
+
 	err = ws_json(src->sess, od);
 	if (err) {
 		warning("sip: reply ws error: %m\n", err);
@@ -139,6 +145,20 @@ static void source_dealloc(void *arg)
 	struct source_pc *src = arg;
 
 	src->pc = mem_deref(src->pc);
+}
+
+
+static int32_t source_id_next(struct source_pc *src)
+{
+	if (!src || !src->sess)
+		return -1;
+
+	struct source_pc *last = src->sess->source_pcl.tail->data;
+
+	if (!last)
+		return -1;
+
+	return last->id + 1;
 }
 
 
@@ -235,6 +255,10 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 				warning("sip: add_video failed (%m)\n", err);
 				return;
 			}
+
+			src->id = source_id_next(src);
+			if (src->id == -1)
+				warning("sip: set source id failed!\n");
 
 			list_append(&sesse->source_pcl, &src->le, src);
 		}

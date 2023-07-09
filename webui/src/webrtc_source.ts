@@ -46,14 +46,14 @@ export class WebRTCSource {
         }
     }
 
-    async setRemoteDescription(descr: any) {
+    async setRemoteDescription(descr: any, id: number) {
         try {
             await this.pc.setRemoteDescription(descr)
 
             const answer = await this.pc.createAnswer()
             await this.pc.setLocalDescription(answer)
 
-            await api.sdp_answer(answer)
+            await api.sdp_answer(answer, id)
 
         } catch (error) {
             console.error('Error setting remote description:', error)

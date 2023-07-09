@@ -138,8 +138,8 @@ export default {
         return await api_fetch('PUT', '/webrtc/sdp/offer', desc)
     },
 
-    async sdp_answer(desc: RTCSessionDescriptionInit | null) {
-        return await api_fetch('PUT', '/webrtc/sdp/answer', desc)
+    async sdp_answer(desc: RTCSessionDescriptionInit | null, id: number) {
+        return await api_fetch('PUT', '/webrtc/sdp/answer?id=' + id, desc)
     },
 
     async video(enable: boolean) {
