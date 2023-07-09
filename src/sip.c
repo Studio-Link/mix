@@ -153,6 +153,9 @@ static int32_t source_id_next(struct source_pc *src)
 	if (!src || !src->sess)
 		return -1;
 
+	if (!src->sess->source_pcl.tail)
+		return 0;
+
 	struct source_pc *last = src->sess->source_pcl.tail->data;
 
 	if (!last)
