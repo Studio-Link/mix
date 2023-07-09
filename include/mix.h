@@ -71,6 +71,7 @@ struct chat {
 };
 
 struct source_pc {
+	int32_t id;
 	struct le le;
 	struct peer_connection *pc;
 	struct session *sess;

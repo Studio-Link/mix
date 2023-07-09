@@ -10,6 +10,9 @@ static int handle_put_sdp(struct peer_connection *pc,
 	struct session_description sd = {SDP_NONE, NULL};
 	int err			      = 0;
 
+	if (!pc || !msg)
+		return EINVAL;
+
 	info("mix: handle PUT sdp: content is '%r/%r'\n", &msg->ctyp.type,
 	     &msg->ctyp.subtype);
 
@@ -249,18 +252,37 @@ static void http_req_handler(struct http_conn *conn,
 
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/sdp/answer") &&
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+		struct pl pl_id = PL_INIT;
+		struct le *le;
 
-		if (msg->clen &&
-		    msg_ctype_cmp(&msg->ctyp, "application", "json")) {
-			/* @FIXME */
-			err = handle_put_sdp(((struct source_pc *)sess
-						      ->source_pcl.head->data)
-						     ->pc,
-					     msg);
+		if (!msg->clen)
+			goto err;
+
+		if (!msg_ctype_cmp(&msg->ctyp, "application", "json"))
+			goto err;
+
+		err = re_regex(msg->prm.p, msg->prm.l, "id=[0-9]+", &pl_id);
+		if (err)
+			goto err;
+
+		int32_t src_id = pl_i32(&pl_id);
+
+		LIST_FOREACH(&sess->source_pcl, le)
+		{
+			struct source_pc *source = le->data;
+
+			if (source->id != src_id)
+				continue;
+
+			err = handle_put_sdp(source->pc, msg);
 			if (err)
 				goto err;
+
+			http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+			return;
 		}
-		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+
+		http_sreply(conn, 404, "Not found", "text/html", "", 0, sess);
 		return;
 	}
 
