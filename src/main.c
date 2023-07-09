@@ -98,26 +98,33 @@ int main(int argc, char *const argv[])
 	struct config *config;
 	struct mix *mix = slmix();
 
-	const char *conf = "call_max_calls	10\n" /* SIP incoming only */
-			   "sip_listen          0.0.0.0:5060\n"
-			   "sip_verify_server	yes\n"
-			   "audio_buffer	40-300\n"
-			   "audio_buffer_mode	adaptive\n"
-			   "audio_silence	-35.0\n"
-			   "audio_jitter_buffer_type	off\n"
-			   "video_jitter_buffer_type	fixed\n"
-			   "video_jitter_buffer_delay	1-500\n"
-			   "opus_bitrate	64000\n"
-			   "ice_policy		all\n"
-			   "video_size		1920x1080\n"
-			   "video_bitrate	2000000\n"
-			   "video_sendrate	8000000\n" /* max burst send */
-			   "video_fps		25\n"
-			   "avcodec_keyint	2\n"
-			   "avcodec_h265enc	nil\n"
-			   "avcodec_h265dec	nil\n"
-			   /* "video_source	vmix_pktsrc,pktsrc\n" */
-			   "audio_txmode	thread\n";
+	const char *conf =
+		"call_max_calls		10\n" /* SIP incoming only */
+		"slmix_http_listen	0.0.0.0:5060\n"
+		"sip_verify_server	yes\n"
+		"audio_buffer		40-300\n"
+		"audio_buffer_mode	adaptive\n"
+		"audio_silence		-35.0\n"
+		"audio_jitter_buffer_type	off\n"
+		"video_jitter_buffer_type	fixed\n"
+		"video_jitter_buffer_delay	1-500\n"
+		"opus_bitrate		64000\n"
+		"ice_policy		all\n"
+		"video_size		1920x1080\n"
+		"video_bitrate		4000000\n"
+		"video_sendrate		10000000\n" /* max burst send */
+		"video_burst_bit	1000000\n"  /* max burst send */
+		"video_fps		30\n"
+		"avcodec_keyint		10\n"
+		"avcodec_h265enc	nil\n"
+		"avcodec_h265dec	nil\n"
+#if 0
+		"videnc_format		nv12\n"
+		"avcodec_h264enc	h264_nvenc\n"
+		"avcodec_h264dec	h264\n"
+		"avcodec_hwaccel	cuda\n"
+#endif
+		"audio_txmode		thread\n";
 
 	/*
 	 * turn off buffering on stdout
