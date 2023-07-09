@@ -100,7 +100,7 @@ int main(int argc, char *const argv[])
 
 	const char *conf =
 		"call_max_calls		10\n" /* SIP incoming only */
-		"slmix_http_listen	0.0.0.0:5060\n"
+		"sip_listen		0.0.0.0:5060\n"
 		"sip_verify_server	yes\n"
 		"audio_buffer		40-300\n"
 		"audio_buffer_mode	adaptive\n"
