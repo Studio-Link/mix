@@ -1,5 +1,5 @@
 diff --git a/modules/avcodec/decode.c b/modules/avcodec/decode.c
-index fe58d161..59bbf1b7 100644
+index fe58d161..60079b82 100644
 --- a/modules/avcodec/decode.c
 +++ b/modules/avcodec/decode.c
 @@ -12,6 +12,8 @@
@@ -11,15 +11,7 @@ index fe58d161..59bbf1b7 100644
  #include "h26x.h"
  #include "avcodec.h"
  
-@@ -32,6 +34,7 @@ struct viddec_state {
- 	AVFrame *pict;
- 	struct mbuf *mb;
- 	bool got_keyframe;
-+	struct SwsContext* scaler;
- 	size_t frag_start;
- 	bool frag;
- 	uint16_t frag_seq;
-@@ -142,6 +145,11 @@ static int init_decoder(struct viddec_state *st, const char *name)
+@@ -142,6 +144,11 @@ static int init_decoder(struct viddec_state *st, const char *name)
  		st->ctx->hw_device_ctx = av_buffer_ref(avcodec_hw_device_ctx);
  		st->ctx->get_format = get_hw_format;
  
@@ -31,7 +23,7 @@ index fe58d161..59bbf1b7 100644
  		info("avcodec: decode: hardware accel enabled (%s)\n",
  		     av_hwdevice_get_type_name(avcodec_hw_type));
  	}
-@@ -152,6 +160,7 @@ static int init_decoder(struct viddec_state *st, const char *name)
+@@ -152,6 +159,7 @@ static int init_decoder(struct viddec_state *st, const char *name)
  	if (avcodec_open2(st->ctx, st->codec, NULL) < 0)
  		return ENOENT;
  
@@ -39,11 +31,12 @@ index fe58d161..59bbf1b7 100644
  	return 0;
  }
  
-@@ -202,6 +211,7 @@ static int ffdecode(struct viddec_state *st, struct vidframe *frame,
+@@ -202,6 +210,8 @@ static int ffdecode(struct viddec_state *st, struct vidframe *frame,
  		    bool *intra)
  {
  	AVFrame *hw_frame = NULL;
 +	AVFrame *tmp_frame = NULL;
++	struct SwsContext* scaler = NULL;
  	AVPacket *avpkt;
  	int i, got_picture, ret;
  	int err = 0;
@@ -88,17 +81,17 @@ index fe58d161..59bbf1b7 100644
 -				st->pict->format,
 -				av_get_pix_fmt_name(st->pict->format));
 -			goto out;
-+			st->scaler = sws_getContext(
++			scaler = sws_getContext(
 +				st->ctx->width, st->ctx->height,
 +				tmp_frame->format, st->ctx->width,
 +				st->ctx->height, AV_PIX_FMT_YUV420P,
 +				SWS_BICUBIC, NULL, NULL, NULL);
-+			if (!st->scaler) {
++			if (!scaler) {
 +				warning("avcodec: sws_ctx: Error\n");
 +				goto out;
 +			}
 +
-+			ret = sws_scale(st->scaler,
++			ret = sws_scale(scaler,
 +				  (const uint8_t *const *)tmp_frame->data,
 +				  tmp_frame->linesize, 0, st->ctx->height,
 +				  st->pict->data, st->pict->linesize);
@@ -133,7 +126,7 @@ index fe58d161..59bbf1b7 100644
   out:
  	av_frame_free(&hw_frame);
 +	av_frame_free(&tmp_frame);
-+	sws_freeContext(st->scaler);
++	sws_freeContext(scaler);
  	av_packet_free(&avpkt);
  	return err;
  }
