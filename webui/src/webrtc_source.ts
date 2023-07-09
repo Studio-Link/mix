@@ -59,4 +59,8 @@ export class WebRTCSource {
             console.error('Error setting remote description:', error)
         }
     }
+
+    close() {
+        this.pc.close()
+    }
 }

@@ -274,8 +274,24 @@ export const Users: Users = {
                 src.rtc?.setRemoteDescription(data, data.id)
 
                 this.sources.value.push(src);
+
+                return
             }
 
+            if (data.type === 'source_close') {
+
+                for (var i = 0; i < this.sources.value.length; i++) {
+                    if (data.id !== this.sources.value[i].id) {
+                        continue
+                    }
+
+                    this.sources.value[i].rtc?.close()
+                    this.sources.value.splice(i, 1)
+                    return
+                }
+
+                return
+            }
         }
     },
 }
