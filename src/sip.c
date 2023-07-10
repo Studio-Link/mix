@@ -51,7 +51,11 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 			if (!sesse->user->host)
 				continue;
 
-			err = slmix_source_alloc(&src, sesse, peer, mix);
+			err = slmix_source_alloc(&src, sesse, peer);
+			if (err)
+				return;
+
+			err = slmix_source_start(src, mix);
 			if (err)
 				return;
 

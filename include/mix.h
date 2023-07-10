@@ -252,4 +252,5 @@ void amix_mute(char *device, bool mute, uint16_t id);
  * source.c
  */
 int slmix_source_alloc(struct source_pc **srcp, struct session *sess,
-		       const char *dev, struct mix *mix);
+		       const char *dev);
+int slmix_source_start(struct source_pc *src, struct mix *mix);
