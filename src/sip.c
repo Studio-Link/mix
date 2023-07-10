@@ -134,8 +134,6 @@ static void close_handler(int err, void *arg)
 	struct source_pc *src = arg;
 	(void)err;
 
-	list_unlink(&src->le);
-
 	mem_deref(src);
 }
 
@@ -281,14 +279,17 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 
 	case UA_EVENT_CALL_CLOSED:
 
-		LIST_FOREACH(&mix->sessl, le)
-		{
+		le = mix->sessl.head;
+		while (le) {
 			struct session *sesse = le->data;
 			struct le *le2;
+			le = le->next;
 
-			LIST_FOREACH(&sesse->source_pcl, le2)
-			{
+			le2 = sesse->source_pcl.head;
+			while (le2) {
 				struct source_pc *src = le2->data;
+
+				le2 = le2->next;
 
 				if (src->call == call) {
 					mem_deref(src);
