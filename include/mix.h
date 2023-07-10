@@ -157,9 +157,8 @@ int slmix_session_new(struct mix *mix, struct session **sessp,
 int slmix_session_auth(struct mix *mix, struct session *sess,
 		       const struct http_msg *msg);
 int slmix_session_alloc(struct session **sessp, struct mix *mix,
-			       const struct pl *sess_id,
-			       const struct pl *user_id, const struct pl *name,
-			       bool host, bool speaker);
+			const struct pl *sess_id, const struct pl *user_id,
+			const struct pl *name, bool host, bool speaker);
 int slmix_session_start(struct session *sess,
 			const struct rtc_configuration *pc_config,
 			const struct mnat *mnat, const struct menc *menc);
@@ -247,3 +246,10 @@ int sl_httpc_req(struct sl_httpconn *conn, enum sl_httpc_met sl_met,
  * @TODO: convert to registered functions or shared header
  */
 void amix_mute(char *device, bool mute, uint16_t id);
+
+
+/******************************************************************************
+ * source.c
+ */
+int slmix_source_alloc(struct source_pc **srcp, struct session *sess,
+		       const char *dev, struct mix *mix);
