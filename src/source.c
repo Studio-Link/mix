@@ -45,7 +45,8 @@ static void gather_handler(void *arg)
 		break;
 	}
 
-	info("sip: session gathered -- send sdp '%s'\n", sdptype_name(type));
+	info("source: session gathered -- send sdp '%s'\n",
+	     sdptype_name(type));
 
 	if (type == SDP_OFFER)
 		err = peerconnection_create_offer(src->pc, &mb_sdp);
@@ -56,26 +57,26 @@ static void gather_handler(void *arg)
 
 	err = session_description_encode(&od, type, mb_sdp);
 	if (err) {
-		warning("sip: sdp encode error: %m\n", err);
+		warning("source: sdp encode error: %m\n", err);
 		goto out;
 	}
 
 	err = odict_entry_add(od, "id", ODICT_INT, src->id);
 	if (err) {
-		warning("sip: odict id error: %m\n", err);
+		warning("source: odict id error: %m\n", err);
 		goto out;
 	}
 
 	err = ws_json(src->sess, od);
 	if (err) {
-		warning("sip: reply ws error: %m\n", err);
+		warning("source: reply ws error: %m\n", err);
 		goto out;
 	}
 
 	if (type == SDP_ANSWER) {
 		err = peerconnection_start_ice(src->pc);
 		if (err) {
-			warning("sip: failed to start ice (%m)\n", err);
+			warning("source: failed to start ice (%m)\n", err);
 			goto out;
 		}
 	}
@@ -91,7 +92,7 @@ static void estab_handler(struct media_track *media, void *arg)
 	int err		      = 0;
 	struct source_pc *src = arg;
 
-	info("sip: webrtc stream established: '%s'\n",
+	info("source: webrtc stream established: '%s'\n",
 	     media_kind_name(mediatrack_kind(media)));
 
 	switch (mediatrack_kind(media)) {
@@ -100,7 +101,7 @@ static void estab_handler(struct media_track *media, void *arg)
 		err = mediatrack_start_audio(media, baresip_ausrcl(),
 					     baresip_aufiltl());
 		if (err) {
-			warning("sip: could not start audio (%m)\n", err);
+			warning("source: could not start audio (%m)\n", err);
 		}
 		break;
 
@@ -109,7 +110,7 @@ static void estab_handler(struct media_track *media, void *arg)
 				     "dummy");
 		err = mediatrack_start_video(media);
 		if (err) {
-			warning("sip: could not start video (%m)\n", err);
+			warning("source: could not start video (%m)\n", err);
 		}
 		break;
 
@@ -171,14 +172,9 @@ static int32_t source_id_next(struct source_pc *src)
 
 
 int slmix_source_alloc(struct source_pc **srcp, struct session *sess,
-		       const char *dev, struct mix *mix)
+		       const char *dev)
 {
-	struct config config		   = *conf_config();
-	struct rtc_configuration pc_config = {.offerer = true};
-	int err;
-
-	re_snprintf(config.video.src_mod, sizeof(config.video.src_mod),
-		    "vmix_pktsrc");
+	int err = 0;
 
 	struct source_pc *src =
 		mem_zalloc(sizeof(struct source_pc), source_dealloc);
@@ -188,31 +184,9 @@ int slmix_source_alloc(struct source_pc **srcp, struct session *sess,
 	src->sess = sess;
 	re_snprintf(src->dev, sizeof(src->dev), "pktsrc%s", dev);
 
-	err = peerconnection_new(&src->pc, &pc_config, mix->mnat, mix->menc,
-				 gather_handler, estab_handler, close_handler,
-				 src);
-	if (err) {
-		warning("sip: peerconnection failed (%m)\n", err);
-		goto out;
-	}
-
-	err = peerconnection_add_audio_track(src->pc, &config,
-					     baresip_aucodecl(), SDP_SENDONLY);
-	if (err) {
-		warning("sip: add_audio failed (%m)\n", err);
-		goto out;
-	}
-
-	err = peerconnection_add_video_track(
-		src->pc, &config, baresip_vidcodecl(), SDP_SENDONLY);
-	if (err) {
-		warning("sip: add_video failed (%m)\n", err);
-		goto out;
-	}
-
 	src->id = source_id_next(src);
 	if (src->id == -1) {
-		warning("sip: set source id failed!\n");
+		warning("source: set source id failed!\n");
 		err = EINVAL;
 		goto out;
 	}
@@ -224,4 +198,41 @@ out:
 		*srcp = src;
 
 	return err;
+}
+
+
+int slmix_source_start(struct source_pc *src, struct mix *mix)
+{
+	struct config config		   = *conf_config();
+	struct rtc_configuration pc_config = {.offerer = true};
+	int err;
+
+	re_snprintf(config.video.src_mod, sizeof(config.video.src_mod),
+		    "vmix_pktsrc");
+
+	src->pc = mem_deref(src->pc); /* clear old connection */
+
+	err = peerconnection_new(&src->pc, &pc_config, mix->mnat, mix->menc,
+				 gather_handler, estab_handler, close_handler,
+				 src);
+	if (err) {
+		warning("source: peerconnection failed (%m)\n", err);
+		return err;
+	}
+
+	err = peerconnection_add_audio_track(src->pc, &config,
+					     baresip_aucodecl(), SDP_SENDONLY);
+	if (err) {
+		warning("source: add_audio failed (%m)\n", err);
+		return err;
+	}
+
+	err = peerconnection_add_video_track(
+		src->pc, &config, baresip_vidcodecl(), SDP_SENDONLY);
+	if (err) {
+		warning("source: add_video failed (%m)\n", err);
+		return err;
+	}
+
+	return 0;
 }
