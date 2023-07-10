@@ -11,7 +11,7 @@ export class WebRTCSource {
     private pc: RTCPeerConnection
     public audio: MediaStream | null
     public video: MediaStream | null
-    public id: Number
+    public id: number
 
     constructor(id: number) {
         this.pc = new RTCPeerConnection(pc_configuration)
