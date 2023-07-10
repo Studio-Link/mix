@@ -90,6 +90,7 @@ struct session {
 	struct media_track *maudio;
 	struct media_track *mvideo;
 	struct mix *mix;
+	struct call *call;
 };
 
 

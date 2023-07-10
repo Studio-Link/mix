@@ -211,6 +211,7 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 		(void)call_answer(call, 200, VIDMODE_ON);
 		info("auto answer call with %s\n", call_peeruri(call));
 
+		sess->call	= call;
 		sess->connected = true;
 
 		slmix_disp_enable(mix, peer, true);
@@ -291,9 +292,11 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 
 				if (src->call == call) {
 					mem_deref(src);
-					return;
 				}
 			}
+
+			if (sesse->call == call)
+				mem_deref(sesse);
 		}
 
 		break;
