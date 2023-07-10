@@ -11,12 +11,14 @@ export class WebRTCSource {
     private pc: RTCPeerConnection
     public audio: MediaStream | null
     public video: MediaStream | null
+    public id: Number
 
-    constructor() {
+    constructor(id: number) {
         this.pc = new RTCPeerConnection(pc_configuration)
 
         this.audio = null
         this.video = null
+        this.id = id
 
         this.pc.onicecandidate = (event) => {
             console.log('WebRTCSource/icecandidate: ' + event.candidate?.type + ' IP: ' + event.candidate?.candidate)
@@ -32,7 +34,7 @@ export class WebRTCSource {
 
             if (track.kind == 'video') {
                 this.video = event.streams[0]
-                const video: HTMLVideoElement | null = document.querySelector('video#source0')
+                const video: HTMLVideoElement | null = document.querySelector('video#source' + this.id)
 
                 if (!video) {
                     return
@@ -46,14 +48,14 @@ export class WebRTCSource {
         }
     }
 
-    async setRemoteDescription(descr: any, id: number) {
+    async setRemoteDescription(descr: any) {
         try {
             await this.pc.setRemoteDescription(descr)
 
             const answer = await this.pc.createAnswer()
             await this.pc.setLocalDescription(answer)
 
-            await api.sdp_answer(answer, id)
+            await api.sdp_answer(answer, this.id)
 
         } catch (error) {
             console.error('Error setting remote description:', error)

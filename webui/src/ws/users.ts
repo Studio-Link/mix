@@ -20,7 +20,6 @@ interface Stats {
 
 interface Source {
     rtc: WebRTCSource | null
-    id: number
 }
 
 interface User {
@@ -267,11 +266,10 @@ export const Users: Users = {
             if (data.type === 'offer') {
 
                 const src: Source = {
-                    rtc: new WebRTCSource(),
-                    id: data.id
+                    rtc: new WebRTCSource(data.id),
                 }
 
-                src.rtc?.setRemoteDescription(data, data.id)
+                src.rtc?.setRemoteDescription(data)
 
                 this.sources.value.push(src);
 
@@ -281,7 +279,7 @@ export const Users: Users = {
             if (data.type === 'source_close') {
 
                 for (var i = 0; i < this.sources.value.length; i++) {
-                    if (data.id !== this.sources.value[i].id) {
+                    if (data.id !== this.sources.value[i].rtc?.id) {
                         continue
                     }
 

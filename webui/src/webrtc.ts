@@ -36,14 +36,7 @@ const constraintsVideo: any = {
 const configuration: RTCConfiguration = {
     bundlePolicy: 'balanced',
 
-    iceTransportPolicy: 'relay',
-    iceServers: [
-        {
-            urls: 'turn:195.201.63.86:3478',
-            username: 'turn200301',
-            credential: 'choh4zeem3foh1',
-        },
-    ],
+    iceTransportPolicy: 'all',
 }
 
 /** Start AVdummy **/
