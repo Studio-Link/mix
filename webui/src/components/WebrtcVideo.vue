@@ -1,7 +1,7 @@
 <template>
   <div class="flex">
     <div v-show="Webrtc.state.value >= WebrtcState.Listening" class="w-1/3 mr-2">
-      <div v-for="(item) in sources" class="h-24 border-black border my-2">
+      <div v-for="(item) in sources" class="my-1">
         <video :id="'source' + item.rtc?.id" playsinline autoplay muted preload="none"></video>
       </div>
     </div>
