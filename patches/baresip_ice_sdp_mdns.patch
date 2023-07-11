@@ -1,0 +1,70 @@
+diff --git a/modules/ice/ice.c b/modules/ice/ice.c
+index 3c9d3970..467d4ca1 100644
+--- a/modules/ice/ice.c
++++ b/modules/ice/ice.c
+@@ -35,6 +35,7 @@ struct mnat_sess {
+ 	struct stun_dns *dnsq;
+ 	struct sdp_session *sdp;
+ 	struct tmr tmr_async;
++	struct tmr tmr_async_sdp;
+ 	char lufrag[8];
+ 	char lpwd[32];
+ 	uint64_t tiebrk;
+@@ -312,6 +313,7 @@ static void session_destructor(void *arg)
+ 	struct mnat_sess *sess = arg;
+ 
+ 	tmr_cancel(&sess->tmr_async);
++	tmr_cancel(&sess->tmr_async_sdp);
+ 	list_flush(&sess->medial);
+ 	mem_deref(sess->dnsq);
+ 	mem_deref(sess->user);
+@@ -485,6 +487,24 @@ static void tmr_async_handler(void *arg)
+ }
+ 
+ 
++static void tmr_async_sdp_handler(void *arg)
++{
++	struct mnat_sess *sess = arg;
++	struct le *le;
++	LIST_FOREACH(&sess->medial, le)
++	{
++		struct mnat_media *m = le->data;
++
++		if (!sdp_media_has_media(m->sdpm))
++			continue;
++
++		/* start ice if we have remote candidates */
++		if (!list_isempty(icem_rcandl(m->icem)))
++			icem_conncheck_start(m->icem);
++	}
++}
++
++
+ static int session_alloc(struct mnat_sess **sessp,
+ 			 const struct mnat *mnat, struct dnsc *dnsc,
+ 			 int af, const struct stun_uri *srv,
+@@ -797,14 +817,6 @@ static int ice_start(struct mnat_sess *sess)
+ 		if (sdp_media_has_media(m->sdpm)) {
+ 			m->complete = false;
+ 
+-			/* start ice if we have remote candidates */
+-			if (!list_isempty(icem_rcandl(m->icem))) {
+-
+-				err = icem_conncheck_start(m->icem);
+-				if (err)
+-					return err;
+-			}
+-
+ 			/* set the pair states
+ 			   -- first media stream only */
+ 			if (sess->medial.head == le) {
+@@ -816,6 +828,9 @@ static int ice_start(struct mnat_sess *sess)
+ 		}
+ 	}
+ 
++	/* @TODO: detect if sdp is ready */
++	tmr_start(&sess->tmr_async_sdp, 10, tmr_async_sdp_handler, sess);
++
+ 	sess->started = true;
+ 
+ 	return 0;
