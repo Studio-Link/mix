@@ -38,6 +38,8 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 		(void)call_answer(call, 200, VIDMODE_ON);
 		info("auto answer call with %s\n", call_peeruri(call));
 
+		amix_mute(peer, false, 100);
+
 		sess->call	= call;
 		sess->connected = true;
 

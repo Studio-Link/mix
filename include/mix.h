@@ -245,7 +245,7 @@ int sl_httpc_req(struct sl_httpconn *conn, enum sl_httpc_met sl_met,
  * external modules (amix, vmix etc.)
  * @TODO: convert to registered functions or shared header
  */
-void amix_mute(char *device, bool mute, uint16_t id);
+void amix_mute(const char *device, bool mute, uint16_t id);
 
 
 /******************************************************************************

@@ -228,8 +228,8 @@ out:
 }
 
 
-void amix_mute(char *device, bool mute, uint16_t id);
-void amix_mute(char *device, bool mute, uint16_t id)
+void amix_mute(const char *device, bool mute, uint16_t id);
+void amix_mute(const char *device, bool mute, uint16_t id)
 {
 	struct le *le;
 
