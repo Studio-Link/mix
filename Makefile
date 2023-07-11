@@ -43,13 +43,16 @@ external:
 	git clone --depth 1 -b v3.2.0 https://github.com/baresip/re.git external/re
 	git clone --depth 1 -b v3.2.0 \
 		https://github.com/baresip/baresip.git external/baresip
+	cd external/re && \
+		patch -p1 < ../../patches/re_icesdp_getaddr.patch
 	cd external/baresip && \
 		patch -p1 < ../../patches/2634.patch && \
 		patch -p1 < ../../patches/baresip_packet_dup_handler.patch && \
 		patch -p1 < ../../patches/baresip_stream_enable.patch && \
 		patch -p1 < ../../patches/baresip_video_remove_sendq_empty.patch && \
 		patch -p1 < ../../patches/avcodec_encode_refs.patch && \
-		patch -p1 < ../../patches/avcodec_decode_scale_crash.patch
+		patch -p1 < ../../patches/avcodec_decode_scale_crash.patch && \
+		patch -p1 < ../../patches/baresip_ice_sdp_mdns.patch
 		# patch -p1 < ../../patches/baresip_video_latency.patch && \
 		# patch -p1 < ../../patches/baresip_video_burst_size.patch
 
