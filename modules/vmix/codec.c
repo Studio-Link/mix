@@ -38,7 +38,7 @@ struct pkt {
 	uint64_t id;
 	struct le le;
 	struct mbuf *mb;
-	bool keyframe;
+	bool marker;
 	uint64_t ts;
 	uint64_t ts_eol;
 };
@@ -165,20 +165,15 @@ static int decode(struct viddec_state *vds, struct vidframe *frame,
 		  bool *intra, bool marker, uint16_t seq, uint64_t ts,
 		  struct mbuf *mb)
 {
-	int err = 0;
-
 	struct pkt *pkt = mem_zalloc(sizeof(struct pkt), pkt_deref);
 	if (!pkt)
 		return ENOMEM;
 
 	pkt->mb	    = mbuf_dup(mb);
+	pkt->marker = marker;
 	pkt->ts	    = ts;
 	pkt->ts_eol = ts + MAX_PKT_TIME * 1000;
 	pkt->id	    = vds->last_id++;
-
-	err = dech(vds->vdsp, frame, intra, marker, seq, ts, mb);
-
-	pkt->keyframe = *intra;
 
 	mtx_lock(vds->mtx);
 	list_append(&vds->pktl, &pkt->le, pkt);
@@ -197,7 +192,7 @@ static int decode(struct viddec_state *vds, struct vidframe *frame,
 	}
 	mtx_unlock(vds->mtx);
 
-	return err;
+	return dech(vds->vdsp, frame, intra, marker, seq, ts, mb);
 }
 
 
@@ -246,7 +241,7 @@ static bool list_apply_handler(struct le *le, void *arg)
 		struct vidpacket packet = {.buf	      = mbuf_buf(pkt->mb),
 					   .size      = mbuf_get_left(pkt->mb),
 					   .timestamp = pkt->ts,
-					   .keyframe  = pkt->keyframe};
+					   .keyframe  = pkt->marker};
 
 		st->packeth(&packet, st->arg);
 
