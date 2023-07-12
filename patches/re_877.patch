@@ -1,0 +1,141 @@
+From e25ce258f55d2a540061c37bc5af4b3b921203ac Mon Sep 17 00:00:00 2001
+From: Sebastian Reimers <hallo@studio-link.de>
+Date: Wed, 12 Jul 2023 17:10:00 +0200
+Subject: [PATCH 1/2] aumix: add record sum handler
+
+---
+ include/rem_aumix.h |  1 +
+ rem/aumix/aumix.c   | 57 ++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 57 insertions(+), 1 deletion(-)
+
+diff --git a/include/rem_aumix.h b/include/rem_aumix.h
+index 0f17db0a3..41f715df6 100644
+--- a/include/rem_aumix.h
++++ b/include/rem_aumix.h
+@@ -21,6 +21,7 @@ typedef void (aumix_read_h)(struct auframe *af, void *arg);
+ int aumix_alloc(struct aumix **mixp, uint32_t srate,
+ 		uint8_t ch, uint32_t ptime);
+ void aumix_recordh(struct aumix *mix, aumix_record_h *recordh);
++void aumix_record_sumh(struct aumix *mix, aumix_record_h *recordh);
+ int aumix_playfile(struct aumix *mix, const char *filepath);
+ uint32_t aumix_source_count(const struct aumix *mix);
+ int aumix_source_alloc(struct aumix_source **srcp, struct aumix *mix,
+diff --git a/rem/aumix/aumix.c b/rem/aumix/aumix.c
+index 4ac348bb1..1ce3ef3da 100644
+--- a/rem/aumix/aumix.c
++++ b/rem/aumix/aumix.c
+@@ -31,6 +31,8 @@ struct aumix {
+ 	uint32_t srate;
+ 	uint8_t ch;
+ 	aumix_record_h *recordh;
++	aumix_record_h *record_sumh;
++	struct auframe rec_sum;
+ 	bool run;
+ };
+ 
+@@ -202,6 +204,38 @@ static int aumix_thread(void *arg)
+ 			src->fh(mix_frame, mix->frame_size, src->arg);
+ 		}
+ 
++		if (mix->record_sumh) {
++			struct le *cle;
++
++			memcpy(mix_frame, base_frame, mix->frame_size * 2);
++
++			LIST_FOREACH(&mix->srcl, cle)
++			{
++				struct aumix_source *csrc = cle->data;
++				int32_t sample;
++
++				if (csrc->muted)
++					continue;
++
++				for (size_t i = 0; i < mix->frame_size; i++) {
++					sample = mix_frame[i] + csrc->frame[i];
++
++					/* soft clipping */
++					if (sample >= 32767)
++						sample = 32767;
++					if (sample <= -32767)
++						sample = -32767;
++
++					mix_frame[i] = (int16_t)sample;
++				}
++			}
++
++			mix->rec_sum.timestamp = now;
++			mix->rec_sum.sampv     = mix_frame;
++
++			mix->record_sumh(&mix->rec_sum);
++		}
++
+ 		ts += mix->ptime;
+ 	}
+ 
+@@ -245,6 +279,10 @@ int aumix_alloc(struct aumix **mixp, uint32_t srate,
+ 	mix->ch         = ch;
+ 	mix->recordh    = NULL;
+ 
++	mix->rec_sum.ch	  = ch;
++	mix->rec_sum.srate = srate;
++	mix->rec_sum.sampc = mix->frame_size;
++
+ 	err = mtx_init(&mix->mutex, mtx_plain) != thrd_success;
+ 	if (err) {
+ 		err = ENOMEM;
+@@ -276,7 +314,7 @@ int aumix_alloc(struct aumix **mixp, uint32_t srate,
+ 
+ 
+ /**
+- * Add record handler
++ * Add mulitrack record handler (each source can be identified by auframe->id)
+  *
+  * @param mix      Audio mixer
+  * @param recordh  Record Handler
+@@ -292,6 +330,23 @@ void aumix_recordh(struct aumix *mix, aumix_record_h *recordh)
+ }
+ 
+ 
++/**
++ * Add single track record handler
++ *
++ * @param mix      Audio mixer
++ * @param recordh  Record Handler
++ */
++void aumix_record_sumh(struct aumix *mix, aumix_record_h *recordh)
++{
++	if (!mix)
++		return;
++
++	mtx_lock(&mix->mutex);
++	mix->record_sumh = recordh;
++	mtx_unlock(&mix->mutex);
++}
++
++
+ /**
+  * Load audio file for mixer announcements
+  *
+
+From 42d40c8793234360d9c0ac6f56954e1ce0b46e03 Mon Sep 17 00:00:00 2001
+From: Sebastian Reimers <hallo@studio-link.de>
+Date: Wed, 12 Jul 2023 17:14:00 +0200
+Subject: [PATCH 2/2] fix wording
+
+---
+ rem/aumix/aumix.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/rem/aumix/aumix.c b/rem/aumix/aumix.c
+index 1ce3ef3da..acc0e2ab0 100644
+--- a/rem/aumix/aumix.c
++++ b/rem/aumix/aumix.c
+@@ -314,7 +314,7 @@ int aumix_alloc(struct aumix **mixp, uint32_t srate,
+ 
+ 
+ /**
+- * Add mulitrack record handler (each source can be identified by auframe->id)
++ * Add multitrack record handler (each source can be identified by auframe->id)
+  *
+  * @param mix      Audio mixer
+  * @param recordh  Record Handler
