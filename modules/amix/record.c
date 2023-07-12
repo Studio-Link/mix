@@ -189,6 +189,7 @@ struct ffmpeg_work {
 };
 
 
+#if 0
 static int ffmpeg_final(void *arg)
 {
 	struct ffmpeg_work *work = arg;
@@ -225,6 +226,7 @@ out:
 
 	return err;
 }
+#endif
 
 
 static void ffmpeg_destruct(void *arg)
