@@ -272,7 +272,13 @@ int amix_record_close(void)
 	mbuf_set_pos(work->mb, 0);
 
 	str_dup(&work->folder, record.folder);
+
+/* Enabled/Disable ffmpeg worker */
+#if 0
 	re_thread_async(ffmpeg_final, NULL, work);
+#else
+	mem_deref(work);
+#endif
 
 out:
 	record.folder = mem_deref(record.folder);

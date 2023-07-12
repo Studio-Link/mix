@@ -10,10 +10,10 @@
 #include <re_atomic.h>
 #include "vmix.h"
 
-static struct vidpacket vp     = {.buf = NULL, .size = 0, .timestamp = 0};
+static struct vidpacket vp = {
+	.buf = NULL, .size = 0, .timestamp = 0, .keyframe = false};
 static struct mbuf *packet_dup = NULL;
 static RE_ATOMIC bool reset    = false;
-static bool is_keyframe	       = false;
 static mtx_t *vmix_mutex;
 
 
@@ -106,7 +106,7 @@ static void frame_handler(uint64_t ts, const struct vidframe *frame, void *arg)
 			break;
 
 		/* wait until keyframe arrive if src is not running */
-		if (!re_atomic_rlx(&st->run) && !is_keyframe) {
+		if (!re_atomic_rlx(&st->run) && !vp.keyframe) {
 			le = le->next;
 			continue;
 		}
@@ -117,7 +117,7 @@ static void frame_handler(uint64_t ts, const struct vidframe *frame, void *arg)
 	}
 	vmix_unlock();
 
-	vmix_record(vp.buf, vp.size, &reset);
+	vmix_record(&vp, &reset);
 
 	/* prevent sending packets multiple times */
 	vp.buf = NULL;
@@ -134,7 +134,7 @@ int packet_dup_handler(uint64_t ts, uint8_t *buf, size_t size, int keyframe)
 
 	if (re_atomic_rlx(&reset)) {
 		re_atomic_rlx_set(&reset, false);
-		err   = ECONNRESET;
+		err = ECONNRESET;
 		goto out;
 	}
 
@@ -150,7 +150,7 @@ int packet_dup_handler(uint64_t ts, uint8_t *buf, size_t size, int keyframe)
 	vp.timestamp = ts;
 	vp.size	     = size;
 	vp.buf	     = packet_dup->buf;
-	is_keyframe  = keyframe;
+	vp.keyframe  = keyframe;
 
 out:
 	return err;
