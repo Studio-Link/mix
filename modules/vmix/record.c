@@ -65,14 +65,13 @@ static int record_thread(void *arg)
 
 			videoPacket->dts = videoPacket->pts = av_rescale_q(
 				e->ts - record.start_time, timebase,
-				record.outputFormatContext->streams[0]
-					->time_base);
+				record.videoStream->time_base);
 #if 0
 			warning("ts: %llu, %lld %d/%d\n",
 				e->ts - record.start_time, videoPacket->pts,
-				record.outputFormatContext->streams[0]
+				record.videoStream
 					->time_base.num,
-				record.outputFormatContext->streams[0]
+				record.videoStream
 					->time_base.den);
 #endif
 			ret = av_write_frame(record.outputFormatContext,
