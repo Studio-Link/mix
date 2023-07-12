@@ -238,10 +238,10 @@ int vmix_record_close(void)
 	info("vidmix: record close avg %.2f fps\n", avg_fps);
 	thrd_join(record.thread, NULL);
 
-	// Write the trailer and close the output file
+	/* Write the trailer and close the output file */
 	av_write_trailer(record.outputFormatContext);
 
-	// Clean up
+	/* Clean up */
 	avcodec_close(record.videoCodecContext);
 	avformat_free_context(record.outputFormatContext);
 
