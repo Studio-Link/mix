@@ -297,6 +297,7 @@ static int audio_rec_h(const char *folder, bool enable)
 }
 
 
+void vmix_audio_record(struct auframe *af);
 static int module_init(void)
 {
 	int err;
@@ -311,6 +312,7 @@ static int module_init(void)
 	IF_ERR_GOTO_OUT(err);
 
 	aumix_recordh(aumix, amix_record);
+	aumix_record_sumh(aumix, vmix_audio_record);
 
 	list_init(&auplayl);
 	list_init(&ausrcl);
