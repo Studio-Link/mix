@@ -1,7 +1,7 @@
 /**
  * @file vidmix/record.c vidmix recording
  *
- * Copyright (C) 2022 Sebastian Reimers
+ * Copyright (C) 2023 Sebastian Reimers
  */
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -76,7 +76,7 @@ static int record_thread(void *arg)
 	struct auframe af;
 	struct le *le;
 	AVRational timebase_video = {1, 1000000};
-	AVRational timebase_audio = {1, 1000};
+	int64_t audio_pts	  = 0;
 	(void)arg;
 	FILE *fp = fopen("test.pcm", "w");
 
@@ -153,16 +153,9 @@ static int record_thread(void *arg)
 				return ENOMEM;
 			}
 
-			af.sampc = 960;
-
 			aubuf_read_auframe(record.ab, &af);
 
 			fwrite(af.sampv, 1, auframe_size(&af), fp);
-			warning("size %zu\n", auframe_size(&af));
-			continue;
-
-			if (!record.video_start_time)
-				continue;
 
 			swr_convert(record.resample_context,
 				    audioFrame->extended_data,
@@ -170,10 +163,15 @@ static int record_thread(void *arg)
 				    (const uint8_t **)&af.sampv,
 				    (int)af.sampc);
 
+#if 0
 			audioFrame->pts = av_rescale_q(
 				af.timestamp -
 					(record.video_start_time / 1000),
 				timebase_audio, record.audioStream->time_base);
+#else
+			audioFrame->pts = audio_pts;
+			audio_pts += audioFrame->nb_samples;
+#endif
 
 			ret = avcodec_send_frame(record.audioCodecContext,
 						 audioFrame);
@@ -197,7 +195,9 @@ static int record_thread(void *arg)
 				}
 #if 0
 				warning("audio ts: %llu, %lld %lld %d/%d\n",
-					af.timestamp - (record.video_start_time / 1000),
+					af.timestamp -
+						(record.video_start_time /
+						 1000),
 					audioFrame->pts, audioPacket->pts,
 					record.audioStream->time_base.num,
 					record.audioStream->time_base.den);
