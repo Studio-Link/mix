@@ -124,8 +124,8 @@ static void frame_handler(uint64_t ts, const struct vidframe *frame, void *arg)
 }
 
 
-int packet_dup_handler(uint64_t ts, uint8_t *buf, size_t size, int keyframe);
-int packet_dup_handler(uint64_t ts, uint8_t *buf, size_t size, int keyframe)
+int packet_dup_handler(uint64_t ts, uint8_t *buf, size_t size, bool keyframe);
+int packet_dup_handler(uint64_t ts, uint8_t *buf, size_t size, bool keyframe)
 {
 	int err = 0;
 
