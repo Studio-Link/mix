@@ -346,10 +346,10 @@ static void entry_destruct(void *arg)
 void vmix_audio_record(struct auframe *af);
 void vmix_audio_record(struct auframe *af)
 {
-	if (!re_atomic_rlx(&record.run))
+	if (!re_atomic_rlx(&record.run) || !record.video_start_time)
 		return;
 
-	if (!record.audio_start_time && record.video_start_time)
+	if (!record.audio_start_time)
 		record.audio_start_time = af->timestamp;
 
 	aubuf_write_auframe(record.ab, af);
