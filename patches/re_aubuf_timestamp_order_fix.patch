@@ -1,0 +1,20 @@
+diff --git a/rem/aubuf/aubuf.c b/rem/aubuf/aubuf.c
+index 71409bc..142d3a4 100644
+--- a/rem/aubuf/aubuf.c
++++ b/rem/aubuf/aubuf.c
+@@ -266,7 +266,14 @@ int aubuf_append_auframe(struct aubuf *ab, struct mbuf *mb,
+ 			auframe_bytes_to_timestamp(&f->af, ab->wr_sz);
+ 	}
+ 
+-	list_insert_sorted(&ab->afl, frame_less_equal, NULL, &f->le, f);
++	/* Workaround: looks like read timestamp calculation is not accurate
++	 * enough if 960 samples are written and 1024 are read regulary */
++	if (ab->live)
++		list_insert_sorted(&ab->afl, frame_less_equal, NULL, &f->le,
++				   f);
++	else
++		list_append(&ab->afl, &f->le, f);
++
+ 	ab->cur_sz += sz;
+ 	ab->wr_sz += sz;
+ 
