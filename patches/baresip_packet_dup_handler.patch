@@ -1,12 +1,12 @@
 diff --git a/modules/avcodec/encode.c b/modules/avcodec/encode.c
-index b45cd094..6c92be76 100644
+index b45cd09..d9b4dd8 100644
 --- a/modules/avcodec/encode.c
 +++ b/modules/avcodec/encode.c
 @@ -385,6 +385,7 @@ int avcodec_encode_update(struct videnc_state **vesp,
  	return err;
  }
  
-+int packet_dup_handler(uint64_t ts, uint8_t *buf, size_t size, int keyframe);
++int packet_dup_handler(uint64_t ts, uint8_t *buf, size_t size, bool keyframe);
  
  int avcodec_encode(struct videnc_state *st, bool update,
  		   const struct vidframe *frame, uint64_t timestamp)
@@ -35,7 +35,7 @@ index b45cd094..6c92be76 100644
  
  	ts = video_calc_rtp_timestamp_fix(pkt->pts);
  
-+	ret = packet_dup_handler(timestamp, pkt->data, pkt->size, pict->pict_type == AV_PICTURE_TYPE_I);
++	ret = packet_dup_handler(timestamp, pkt->data, pkt->size, !!(pkt->flags & AV_PKT_FLAG_KEY));
 +	if (ret)
 +		update2 = true;
 +
