@@ -251,6 +251,8 @@ int vmix_record_start(const char *record_folder)
 		return err;
 	}
 
+	aubuf_set_live(record.ab, false);
+
 	ret = avformat_alloc_output_context2(&record.outputFormatContext, NULL,
 					     NULL, record.filename);
 	if (ret < 0) {
