@@ -77,9 +77,8 @@ static int record_thread(void *arg)
 	struct le *le;
 	AVRational timebase_video = {1, 1000000};
 	AVRational timebase_audio = {1, 1000};
-	int64_t audio_pts	  = 0;
 	(void)arg;
-
+	FILE *fp = fopen("test.pcm", "w");
 
 	AVPacket *videoPacket = av_packet_alloc();
 	AVPacket *audioPacket = av_packet_alloc();
@@ -107,8 +106,6 @@ static int record_thread(void *arg)
 	auframe_init(&af, AUFMT_S16LE, sampv,
 		     record.audioCodecContext->frame_size, 48000, 1);
 
-	videoPacket->stream_index = record.videoStream->index;
-
 	while (re_atomic_rlx(&record.run)) {
 		sys_msleep(2);
 
@@ -118,8 +115,9 @@ static int record_thread(void *arg)
 		while (le) {
 			struct record_entry *e = le->data;
 
-			videoPacket->data = e->mb->buf;
-			videoPacket->size = (int)e->size;
+			videoPacket->data	  = e->mb->buf;
+			videoPacket->size	  = (int)e->size;
+			videoPacket->stream_index = record.videoStream->index;
 
 			videoPacket->dts = videoPacket->pts = av_rescale_q(
 				e->ts - record.video_start_time,
@@ -132,7 +130,7 @@ static int record_thread(void *arg)
 				record.videoStream->time_base.den);
 #endif
 
-			ret = av_write_frame(
+			ret = av_interleaved_write_frame(
 				record.outputFormatContext, videoPacket);
 			if (ret < 0) {
 				warning("av_frame_write video error\n");
@@ -145,15 +143,24 @@ static int record_thread(void *arg)
 			mtx_unlock(record.lock);
 		}
 
-		while (aubuf_cur_size(record.ab)) {
+		while (aubuf_cur_size(record.ab) >= auframe_size(&af)) {
+			audioFrame->nb_samples =
+				record.audioCodecContext->frame_size;
+
 			ret = av_frame_make_writable(audioFrame);
 			if (ret < 0) {
 				warning("av_frame_make_writable error\n");
 				return ENOMEM;
 			}
 
+			af.sampc = 960;
+
 			aubuf_read_auframe(record.ab, &af);
-			
+
+			fwrite(af.sampv, 1, auframe_size(&af), fp);
+			warning("size %zu\n", auframe_size(&af));
+			continue;
+
 			if (!record.video_start_time)
 				continue;
 
@@ -164,7 +171,8 @@ static int record_thread(void *arg)
 				    (int)af.sampc);
 
 			audioFrame->pts = av_rescale_q(
-				af.timestamp - (record.video_start_time / 1000),
+				af.timestamp -
+					(record.video_start_time / 1000),
 				timebase_audio, record.audioStream->time_base);
 
 			ret = avcodec_send_frame(record.audioCodecContext,
@@ -197,7 +205,7 @@ static int record_thread(void *arg)
 				audioPacket->stream_index =
 					record.audioStream->index;
 
-				ret2 = av_write_frame(
+				ret2 = av_interleaved_write_frame(
 					record.outputFormatContext,
 					audioPacket);
 				if (ret2 < 0) {
@@ -211,6 +219,7 @@ static int record_thread(void *arg)
 		}
 	}
 
+	fclose(fp);
 	av_packet_free(&videoPacket);
 	av_packet_free(&audioPacket);
 	av_frame_free(&audioFrame);
@@ -340,7 +349,7 @@ void vmix_audio_record(struct auframe *af)
 	if (!re_atomic_rlx(&record.run))
 		return;
 
-	if (!record.audio_start_time)
+	if (!record.audio_start_time && record.video_start_time)
 		record.audio_start_time = af->timestamp;
 
 	aubuf_write_auframe(record.ab, af);
@@ -351,6 +360,7 @@ int vmix_record(struct vidpacket *vp, RE_ATOMIC bool *update)
 {
 	struct record_entry *e;
 	int err;
+	(void)update;
 
 	if (!re_atomic_rlx(&record.run))
 		return ESHUTDOWN;
@@ -361,7 +371,8 @@ int vmix_record(struct vidpacket *vp, RE_ATOMIC bool *update)
 	if (!record.video_start_time) {
 		/* wait until keyframe */
 		if (!vp->keyframe) {
-			re_atomic_rlx_set(update, true);
+			/* FIXME: update request disabled for hardware enc */
+			/* re_atomic_rlx_set(update, true); */
 			return 0;
 		}
 		record.video_start_time = vp->timestamp;
