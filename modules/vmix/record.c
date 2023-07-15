@@ -24,8 +24,8 @@ static struct {
 	mtx_t *lock;
 	thrd_t thread;
 	struct aubuf *ab;
-	uint64_t video_start_time;
-	uint64_t audio_start_time;
+	RE_ATOMIC uint64_t video_start_time;
+	RE_ATOMIC uint64_t audio_start_time;
 	char filename[512];
 	AVFormatContext *outputFormatContext;
 	AVStream *videoStream;
@@ -120,7 +120,8 @@ static int record_thread(void *arg)
 			videoPacket->stream_index = record.videoStream->index;
 
 			videoPacket->dts = videoPacket->pts = av_rescale_q(
-				e->ts - record.video_start_time,
+				e->ts - re_atomic_rlx(
+						&record.video_start_time),
 				timebase_video, record.videoStream->time_base);
 #if 0
 			warning("ts: %llu, %lld %d/%d\n",
@@ -348,11 +349,12 @@ static void entry_destruct(void *arg)
 void vmix_audio_record(struct auframe *af);
 void vmix_audio_record(struct auframe *af)
 {
-	if (!re_atomic_rlx(&record.run) || !record.video_start_time)
+	if (!re_atomic_rlx(&record.run) ||
+	    !re_atomic_rlx(&record.video_start_time))
 		return;
 
-	if (!record.audio_start_time)
-		record.audio_start_time = af->timestamp;
+	if (!re_atomic_rlx(&record.audio_start_time))
+		re_atomic_rlx_set(&record.audio_start_time, af->timestamp);
 
 	aubuf_write_auframe(record.ab, af);
 }
@@ -370,14 +372,14 @@ int vmix_record(struct vidpacket *vp, RE_ATOMIC bool *update)
 	if (!vp->buf || !vp->size)
 		return EINVAL;
 
-	if (!record.video_start_time) {
+	if (!re_atomic_rlx(&record.video_start_time)) {
 		/* wait until keyframe */
 		if (!vp->keyframe) {
 			/* FIXME: update request disabled for hardware enc */
 			/* re_atomic_rlx_set(update, true); */
 			return 0;
 		}
-		record.video_start_time = vp->timestamp;
+		re_atomic_rlx_set(&record.video_start_time, vp->timestamp);
 	}
 
 	e = mem_zalloc(sizeof(struct record_entry), entry_destruct);
@@ -418,8 +420,8 @@ int vmix_record_close(void)
 	re_atomic_rlx_set(&record.run, false);
 	thrd_join(record.thread, NULL);
 
-	record.video_start_time = 0;
-	record.audio_start_time = 0;
+	re_atomic_rlx_set(&record.audio_start_time, 0);
+	re_atomic_rlx_set(&record.video_start_time, 0);
 
 	/* Write the trailer and close the output file */
 	av_write_trailer(record.outputFormatContext);
