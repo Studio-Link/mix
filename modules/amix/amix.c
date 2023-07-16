@@ -243,7 +243,8 @@ void amix_mute(const char *device, bool mute, uint16_t id)
 
 		aumix_source_mute(st->aumix_src, mute);
 		st->muted      = mute;
-		st->speaker_id = id;
+		if (id)
+			st->speaker_id = id;
 
 		return;
 	}
@@ -257,7 +258,8 @@ void amix_mute(const char *device, bool mute, uint16_t id)
 			continue;
 
 		st->muted      = mute;
-		st->speaker_id = id;
+		if (id)
+			st->speaker_id = id;
 	}
 }
 
