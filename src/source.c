@@ -62,6 +62,7 @@ static void gather_handler(void *arg)
 	}
 
 	err = odict_entry_add(od, "id", ODICT_INT, src->id);
+	err = odict_entry_add(od, "dev", ODICT_STRING, src->dev);
 	if (err) {
 		warning("source: odict id error: %m\n", err);
 		goto out;
@@ -106,7 +107,7 @@ static void estab_handler(struct media_track *media, void *arg)
 		break;
 
 	case MEDIA_KIND_VIDEO:
-		video_set_devicename(media_get_video(media), src->dev,
+		video_set_devicename(media_get_video(media), src->source_dev,
 				     "dummy");
 		err = mediatrack_start_video(media);
 		if (err) {
@@ -182,7 +183,8 @@ int slmix_source_alloc(struct source_pc **srcp, struct session *sess,
 		return ENOMEM;
 
 	src->sess = sess;
-	re_snprintf(src->dev, sizeof(src->dev), "pktsrc%s", dev);
+	re_snprintf(src->source_dev, sizeof(src->source_dev), "pktsrc%s", dev);
+	re_snprintf(src->dev, sizeof(src->dev), "%s", dev);
 
 	src->id = source_id_next(src);
 	if (src->id == -1) {

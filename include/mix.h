@@ -76,6 +76,7 @@ struct source_pc {
 	struct peer_connection *pc;
 	struct session *sess;
 	struct call *call;
+	char source_dev[128];
 	char dev[128];
 };
 
@@ -247,6 +248,7 @@ int sl_httpc_req(struct sl_httpconn *conn, enum sl_httpc_met sl_met,
  */
 void amix_mute(const char *device, bool mute, uint16_t id);
 void vmix_disp_focus(const char *device);
+void vmix_disp_solo(const char *device);
 
 
 /******************************************************************************
