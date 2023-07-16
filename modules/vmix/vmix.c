@@ -122,6 +122,24 @@ static uint32_t disp_enable_h(const char *device, bool enable)
 }
 
 
+void vmix_disp_focus(const char *device);
+void vmix_disp_focus(const char *device)
+{
+	struct vidsrc_st *src;
+	struct vidsrc_st *main_src;
+
+	src = vmix_src_find(device);
+	if (!src)
+		return;
+
+	main_src = vmix_srcl.head->data;
+	if (!main_src)
+		return;
+
+	vidmix_source_set_focus(main_src->vidmix_src, src->vidmix_src, true);
+}
+
+
 static int module_init(void)
 {
 	int err;
