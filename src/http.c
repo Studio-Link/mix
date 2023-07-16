@@ -450,6 +450,23 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/focus") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+		char user[512] = {0};
+
+		/* check permission */
+		if (!sess->user->host)
+			goto err;
+
+		mbuf_read_str(msg->mb, user, sizeof(user));
+
+		warning("focus %s\n", user);
+		vmix_disp_focus(user);
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/hangup") &&
 	    0 == pl_strcasecmp(&msg->met, "POST")) {
 
