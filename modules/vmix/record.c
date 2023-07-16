@@ -365,7 +365,7 @@ static int record_thread(void *arg)
 				warning("audio ts: %llu, %lld %lld %d/%d\n",
 					af.timestamp -
 						(re_atomic_rlx(
-							 &record.video_start_time) /
+						&record.video_start_time) /
 						 1000),
 					audioFrame->pts, audioPacket->pts,
 					record.audioStreamStream->time_base

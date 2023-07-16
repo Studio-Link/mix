@@ -13,7 +13,7 @@ static struct hash *dec_list;
 static mtx_t *dec_mtx;
 
 enum {
-	MAX_PKT_TIME = 250, /**< in [ms] */
+	MAX_PKT_TIME = 50, /**< in [ms] */
 };
 
 struct videnc_state {
@@ -184,6 +184,10 @@ static int decode(struct viddec_state *vds, struct vidframe *frame,
 		pkt = le->data;
 
 		le = le->next;
+
+		/* FIXME: Keep SPS/PPS workaround */
+		if (pkt->id < 200)
+			continue;
 
 		if (ts > pkt->ts_eol)
 			mem_deref(pkt);
