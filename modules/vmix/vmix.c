@@ -140,6 +140,28 @@ void vmix_disp_focus(const char *device)
 }
 
 
+void vmix_disp_solo(const char *device);
+void vmix_disp_solo(const char *device)
+{
+	struct vidsrc_st *src;
+	struct le *le;
+
+	src = vmix_src_find(device);
+	if (!src)
+		return;
+
+	LIST_FOREACH(&vmix_srcl, le)
+	{
+		struct vidsrc_st *srce = le->data;
+
+		if (srce == src)
+			vidmix_source_enable(srce->vidmix_src, true);
+		else
+			vidmix_source_enable(srce->vidmix_src, false);
+	}
+}
+
+
 static int module_init(void)
 {
 	int err;

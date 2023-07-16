@@ -453,6 +453,52 @@ static void http_req_handler(struct http_conn *conn,
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/focus") &&
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
 		char user[512] = {0};
+		struct pl user_id = PL_INIT;
+
+		/* check permission */
+		if (!sess->user->host)
+			goto err;
+
+		err = re_regex((char *)mbuf_buf(msg->mb),
+			       mbuf_get_left(msg->mb), "[a-zA-Z0-9@:]+",
+			       &user_id);
+		if (err)
+			goto err;
+
+		pl_strcpy(&user_id, user, sizeof(user));
+
+		vmix_disp_focus(user);
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/solo") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+		char user[512] = {0};
+		struct pl user_id = PL_INIT;
+
+		/* check permission */
+		if (!sess->user->host)
+			goto err;
+
+		err = re_regex((char *)mbuf_buf(msg->mb),
+			       mbuf_get_left(msg->mb), "[a-zA-Z0-9@:]+",
+			       &user_id);
+		if (err)
+			goto err;
+
+		pl_strcpy(&user_id, user, sizeof(user));
+
+		vmix_disp_solo(user);
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/disp/enable") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+		char user[512] = {0};
 
 		/* check permission */
 		if (!sess->user->host)
@@ -460,8 +506,75 @@ static void http_req_handler(struct http_conn *conn,
 
 		mbuf_read_str(msg->mb, user, sizeof(user));
 
-		warning("focus %s\n", user);
-		vmix_disp_focus(user);
+		mix->disp_enable_h(user, true);
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/disp/disable") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+		char user[512] = {0};
+
+		/* check permission */
+		if (!sess->user->host)
+			goto err;
+
+		mbuf_read_str(msg->mb, user, sizeof(user));
+
+		mix->disp_enable_h(user, false);
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/amix/enable") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+		char user[512]	  = {0};
+		struct pl user_id = PL_INIT;
+
+		/* check permission */
+		if (!sess->user->host)
+			goto err;
+
+		mbuf_read_str(msg->mb, user, sizeof(user));
+
+		pl_set_str(&user_id, user);
+		struct session *sess_listener =
+			slmix_session_lookup_user_id(&mix->sessl, &user_id);
+		if (!sess_listener)
+			goto err;
+
+		sess_listener->user->audio = true;
+		amix_mute(user, false, 0);
+
+		slmix_session_user_updated(sess_listener);
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/amix/disable") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+		char user[512]	  = {0};
+		struct pl user_id = PL_INIT;
+
+		/* check permission */
+		if (!sess->user->host)
+			goto err;
+
+		mbuf_read_str(msg->mb, user, sizeof(user));
+
+		pl_set_str(&user_id, user);
+		struct session *sess_listener =
+			slmix_session_lookup_user_id(&mix->sessl, &user_id);
+		if (!sess_listener)
+			goto err;
+
+		sess_listener->user->audio = false;
+		amix_mute(user, true, 0);
+
+		slmix_session_user_updated(sess_listener);
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;
