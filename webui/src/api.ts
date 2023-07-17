@@ -152,6 +152,14 @@ export default {
         else await api_fetch('PUT', '/webrtc/audio/disable', null)
     },
 
+    async source_focus(dev: string) {
+        await api_fetch('PUT', '/webrtc/focus', dev)
+    },
+
+    async source_solo(dev: string) {
+        await api_fetch('PUT', '/webrtc/solo', dev)
+    },
+
     async record_switch(type: RecordType) {
         if (!Users.host_status.value) return
 

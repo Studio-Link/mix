@@ -20,6 +20,8 @@ interface Stats {
 
 interface Source {
     rtc: WebRTCSource | null
+    dev: string
+    solo: boolean
 }
 
 interface User {
@@ -267,6 +269,8 @@ export const Users: Users = {
 
                 const src: Source = {
                     rtc: new WebRTCSource(data.id),
+                    dev: data.dev,
+                    solo: false
                 }
 
                 src.rtc?.setRemoteDescription(data)
