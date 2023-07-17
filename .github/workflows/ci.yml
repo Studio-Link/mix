@@ -56,7 +56,8 @@ jobs:
       if: ${{ runner.os == 'Linux' }}
       run: |
         sudo apt-get install -y libgd-dev libopus-dev libz-dev libssl-dev \
-          libavformat-dev libavcodec-dev libswscale-dev libflac-dev liblmdb-dev
+          libavformat-dev libavcodec-dev libswscale-dev libflac-dev liblmdb-dev \
+          libswresample-dev
           
     - uses: actions/download-artifact@v3
       with:
@@ -99,7 +100,8 @@ jobs:
       if: ${{ runner.os == 'Linux' }}
       run: |
         sudo apt-get install -y libgd-dev libopus-dev libz-dev libssl-dev \
-          libavformat-dev libavcodec-dev libswscale-dev libflac-dev liblmdb-dev
+          libavformat-dev libavcodec-dev libswscale-dev libflac-dev liblmdb-dev \
+          libswresample-dev
 
     - uses: actions/cache@v3
       with:
