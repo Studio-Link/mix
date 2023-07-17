@@ -1,8 +1,18 @@
 <template>
   <div class="flex">
     <div v-show="Webrtc.state.value >= WebrtcState.Listening" class="w-1/3 mr-2">
-      <div v-for="(item) in sources" class="my-1">
+      <div v-for="item in sources" class="my-1">
         <video :id="'source' + item.rtc?.id" playsinline autoplay muted preload="none"></video>
+        <div>
+          {{ item.dev }}
+          <button
+            @click="solo(item.dev)"
+            :class="{ 'bg-red-600 hover:bg-red-500': item.solo }"
+            class="rounded bg-indigo-600 px-2 py-1 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          >
+            Solo
+          </button>
+        </div>
       </div>
     </div>
 
@@ -288,6 +298,14 @@ function calc_left(idx: number) {
   }
 
   return w * (idx % rows) + offset + 'px'
+}
+
+function solo(dev: string) {
+  api.source_solo(dev)
+  sources.value.forEach((item) => {
+    if (dev === item.dev) item.solo = true
+    else item.solo = false
+  })
 }
 
 function enable_stats() {
