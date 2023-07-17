@@ -129,6 +129,10 @@ export const Users: Users = {
                         this.speaker_status.value = data.users[key].speaker
                         this.host_status.value = data.users[key].host
                     }
+
+                    if (data.users[key].name.startsWith('sip:'))
+                        continue
+
                     if (data.users[key].speaker) {
                         if (data.users[key].video && data.users[key].pidx) {
                             this.vspeakers.value.push(data.users[key])
