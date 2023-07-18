@@ -238,3 +238,33 @@ int slmix_source_start(struct source_pc *src, struct mix *mix)
 
 	return 0;
 }
+
+
+int slmix_handle_ice_candidate(struct peer_connection *pc,
+			       const struct odict *od)
+{
+	const char *cand, *mid;
+	struct pl pl_cand;
+	char *cand2 = NULL;
+	int err;
+
+	cand = odict_string(od, "candidate");
+	mid  = odict_string(od, "sdpMid");
+	if (!cand || !mid) {
+		warning("mix: candidate: missing 'candidate' or "
+			"'mid'\n");
+		return EPROTO;
+	}
+
+	err = re_regex(cand, str_len(cand), "candidate:[^]+", &pl_cand);
+	if (err)
+		return err;
+
+	pl_strdup(&cand2, &pl_cand);
+
+	peerconnection_add_ice_candidate(pc, cand2, mid);
+
+	mem_deref(cand2);
+
+	return 0;
+}

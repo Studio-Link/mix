@@ -385,36 +385,6 @@ struct session *slmix_session_lookup_user_id(const struct list *sessl,
 }
 
 
-int slmix_session_handle_ice_candidate(struct session *sess,
-				       const struct odict *od)
-{
-	const char *cand, *mid;
-	struct pl pl_cand;
-	char *cand2 = NULL;
-	int err;
-
-	cand = odict_string(od, "candidate");
-	mid  = odict_string(od, "sdpMid");
-	if (!cand || !mid) {
-		warning("mix: candidate: missing 'candidate' or "
-			"'mid'\n");
-		return EPROTO;
-	}
-
-	err = re_regex(cand, str_len(cand), "candidate:[^]+", &pl_cand);
-	if (err)
-		return err;
-
-	pl_strdup(&cand2, &pl_cand);
-
-	peerconnection_add_ice_candidate(sess->pc, cand2, mid);
-
-	mem_deref(cand2);
-
-	return 0;
-}
-
-
 void slmix_session_close(struct session *sess, int err)
 {
 	if (err)
