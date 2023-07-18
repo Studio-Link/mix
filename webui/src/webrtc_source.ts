@@ -21,7 +21,7 @@ export class WebRTCSource {
         this.id = id
 
         this.pc.onicecandidate = (event) => {
-            console.log('WebRTCSource/icecandidate: ' + event.candidate?.type + ' IP: ' + event.candidate?.candidate)
+            api.sdp_candidate(event.candidate, this.id)
         }
 
         this.pc.ontrack = (event) => {

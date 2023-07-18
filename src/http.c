@@ -286,6 +286,58 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/sdp/candidate") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+		struct pl pl_id = PL_INIT;
+		struct le *le;
+
+		if (!msg->clen)
+			goto err;
+
+		if (!msg_ctype_cmp(&msg->ctyp, "application", "json"))
+			goto err;
+
+		err = re_regex(msg->prm.p, msg->prm.l, "id=[0-9]+", &pl_id);
+		if (err)
+			goto err;
+
+		enum { HASH_SIZE = 4, MAX_DEPTH = 2 };
+		struct odict *od = NULL;
+
+		err = json_decode_odict(&od, HASH_SIZE,
+					(char *)mbuf_buf(msg->mb),
+					mbuf_get_left(msg->mb), MAX_DEPTH);
+		if (err) {
+			warning("http: candidate could not decode json (%m)\n",
+				err);
+			goto err;
+		}
+
+		int32_t src_id = pl_i32(&pl_id);
+
+		LIST_FOREACH(&sess->source_pcl, le)
+		{
+			struct source_pc *source = le->data;
+
+			if (source->id != src_id)
+				continue;
+
+			err = slmix_handle_ice_candidate(source->pc, od);
+			if (err)
+				goto err;
+
+			mem_deref(od);
+
+			http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+			return;
+		}
+
+		mem_deref(od);
+
+		http_sreply(conn, 404, "Not found", "text/html", "", 0, sess);
+		return;
+	}
+
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/record/enable") &&
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
 		/* check permission */
@@ -452,7 +504,7 @@ static void http_req_handler(struct http_conn *conn,
 
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/focus") &&
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
-		char user[512] = {0};
+		char user[512]	  = {0};
 		struct pl user_id = PL_INIT;
 
 		/* check permission */
@@ -475,7 +527,7 @@ static void http_req_handler(struct http_conn *conn,
 
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/solo") &&
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
-		char user[512] = {0};
+		char user[512]	  = {0};
 		struct pl user_id = PL_INIT;
 
 		/* check permission */

@@ -142,6 +142,11 @@ export default {
         return await api_fetch('PUT', '/webrtc/sdp/answer?id=' + id, desc)
     },
 
+    async sdp_candidate(cand: RTCIceCandidate | null, id: number)
+    {
+        return await api_fetch('PUT', '/webrtc/sdp/candidate?id=' + id, cand)
+    },
+
     async video(enable: boolean) {
         if (enable) await api_fetch('PUT', '/webrtc/video/enable', null)
         else await api_fetch('PUT', '/webrtc/video/disable', null)

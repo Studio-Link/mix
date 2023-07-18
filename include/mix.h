@@ -169,8 +169,6 @@ struct session *slmix_session_lookup(const struct list *sessl,
 				     const struct pl *sessid);
 struct session *slmix_session_lookup_user_id(const struct list *sessl,
 					     const struct pl *user_id);
-int slmix_session_handle_ice_candidate(struct session *sess,
-				       const struct odict *od);
 void slmix_session_close(struct session *sess, int err);
 void http_sreply(struct http_conn *conn, uint16_t scode, const char *reason,
 		 const char *ctype, const char *fmt, size_t size,
@@ -257,3 +255,5 @@ void vmix_disp_solo(const char *device);
 int slmix_source_alloc(struct source_pc **srcp, struct session *sess,
 		       const char *dev);
 int slmix_source_start(struct source_pc *src, struct mix *mix);
+int slmix_handle_ice_candidate(struct peer_connection *pc,
+			       const struct odict *od);
