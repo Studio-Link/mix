@@ -55,6 +55,13 @@ export default {
         return false
     },
 
+    async reauth(token: string | string[]) {
+        if (!token)
+            return
+
+        await api_fetch('POST', '/client/reauth', token)
+    },
+
     async connect(token?: string | null) {
         if (!token)
             token = window.localStorage.getItem('token')

@@ -245,48 +245,53 @@ static int slmix_session_create(struct session **sessp, struct mix *mix,
 }
 
 
-int slmix_session_new(struct mix *mix, struct session **sessp,
-		      const struct http_msg *msg)
+int slmix_session_auth(struct mix *mix, struct session *sess,
+		       const struct http_msg *msg)
 {
 	struct pl token = PL_INIT;
-	bool speaker = false, host = false;
-	int err;
 
 	re_regex((char *)mbuf_buf(msg->mb), mbuf_get_left(msg->mb),
 		 "[a-zA-Z0-9]+", &token);
-
 
 	if (token.l > 0) {
 		if (str_isset(mix->token_host) &&
 		    0 == pl_strcmp(&token, mix->token_host)) {
 
 			info("sess: host token\n");
-			speaker = true;
-			host	= true;
+			sess->user->speaker = true;
+			sess->user->host    = true;
 		}
 		else if (str_isset(mix->token_guests) &&
 			 0 == pl_strcmp(&token, mix->token_guests)) {
 
 			info("sess: guest token\n");
-			speaker = true;
+			sess->user->speaker = true;
 		}
 		else if (str_isset(mix->token_listeners) &&
 			 0 == pl_strcmp(&token, mix->token_listeners)) {
 
 			info("sess: listener token\n");
-			speaker = false;
+			sess->user->speaker = false;
 		}
 		else {
 			return EAUTH;
 		}
 	}
 
-	err = slmix_session_create(sessp, mix, NULL, NULL, NULL, host,
-				   speaker);
+	return 0;
+}
+
+
+int slmix_session_new(struct mix *mix, struct session **sessp,
+		      const struct http_msg *msg)
+{
+	int err;
+
+	err = slmix_session_create(sessp, mix, NULL, NULL, NULL, false, false);
 	if (err)
 		return err;
 
-	return 0;
+	return slmix_session_auth(mix, *sessp, msg);
 }
 
 

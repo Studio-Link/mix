@@ -178,6 +178,23 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/reauth") &&
+	    0 == pl_strcasecmp(&msg->met, "POST")) {
+		err = slmix_session_auth(mix, sess, msg);
+		if (err == EAUTH) {
+			http_sreply(conn, 401, "Unauthorized", "text/html", "",
+				    0, NULL);
+			return;
+		}
+		if (err)
+			goto err;
+
+		slmix_session_user_updated(sess);
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/name") &&
 	    0 == pl_strcasecmp(&msg->met, "POST")) {
 

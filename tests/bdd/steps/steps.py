@@ -12,6 +12,27 @@ def step_impl1(context, user):
         "Session-ID"]
 
 
+@given('"{user}" connects with token "{token}"')
+def step_impl1(context, user, token):
+    response = requests.post(context.base_url + '/api/v1/client/connect', 
+                             data=token)
+    assert response.ok, f'Error: {response}'
+    context.sessid[user] = response.headers['Session-ID']
+    assert response.headers['Session-ID'] is not None, response.headers[
+        "Session-ID"]
+
+
+@given('"{user}" reauth with token "{token}"')
+def step_impl1(context, user, token):
+    headers = {'Session-ID': context.sessid[user]}
+    response = requests.post(context.base_url + '/api/v1/client/reauth',
+                             headers=headers,
+                             data=token)
+    assert response.ok, f'Error: {response}'
+    assert response.headers['Session-ID'] is not None, response.headers[
+        "Session-ID"]
+
+
 @then('"{user}" WebSocket receives "{count}" users')
 def step_impl2(context, user, count):
     ws = create_connection("ws://127.0.0.1:9999/ws/v1/users")
@@ -74,11 +95,13 @@ def step_impl8(context, user, updated_user):
     assert resp["name"] == updated_user, f'name: {resp}'
 
 
-@then('"{user}" WebSocket receives rooms update')
-def step_impl8a(context, user):
+@then('"{user}" WebSocket receives updated "{updated_user}" user')
+def step_impl8(context, user, updated_user):
     response = context.ws[user].recv()
     resp = json.loads(response)
-    assert resp["type"] == 'rooms', f'type: {resp}'
+    assert resp["type"] == 'user', f'type: {resp}'
+    assert resp["event"] == 'updated', f'event: {resp}'
+    assert resp["name"] == updated_user, f'name: {resp}'
 
 
 @then('"{user}" WebSocket receives "{delete_user}" delete')
@@ -88,6 +111,13 @@ def step_impl9(context, user, delete_user):
     assert resp["type"] == 'user', f'user type: {resp}'
     assert resp["event"] == 'deleted', f'deleted event: {resp}'
     assert resp["name"] == delete_user, f'user name: {resp}'
+
+
+@then('"{user}" WebSocket receives rooms update')
+def step_impl8a(context, user):
+    response = context.ws[user].recv()
+    resp = json.loads(response)
+    assert resp["type"] == 'rooms', f'type: {resp}'
 
 
 @then('"{user}" logouts')

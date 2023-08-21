@@ -137,6 +137,8 @@ void slmix_session_video(struct session *sess, bool enable);
 int slmix_session_speaker(struct session *sess, bool enable);
 int slmix_session_new(struct mix *mix, struct session **sessp,
 		      const struct http_msg *msg);
+int slmix_session_auth(struct mix *mix, struct session *sess,
+		       const struct http_msg *msg);
 int slmix_session_start(struct session *sess,
 			const struct rtc_configuration *pc_config,
 			const struct mnat *mnat, const struct menc *menc);

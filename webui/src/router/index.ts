@@ -30,6 +30,8 @@ router.beforeEach(async (to) => {
     return { name: 'Login' }
   }
   if (auth && to.name === 'Login') {
+    if (to.params.token)
+        await api.reauth(to.params.token) 
     return { name: 'Home' }
   }
 })

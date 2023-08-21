@@ -1,0 +1,8 @@
+Feature: Auth
+
+    Scenario: Host login 
+        Given "Alice" connects with a token "ot5eelath2xuocheiw8iDot8ho3pha8I"
+        And "Alice" set client name
+        And "Alice" upload a avatar
+        Then "Alice" authorized as "host" user
+        Then "Alice" WebSocket receives "1" users
