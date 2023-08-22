@@ -134,7 +134,7 @@ Audio RTT: {{ item.stats.artt }} ms
           </span>
 
           <button
-            v-if="api.is_host()"
+            v-if="Users.host_status.value"
             @click="api.listener(item.id)"
             type="button"
             class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -143,7 +143,7 @@ Audio RTT: {{ item.stats.artt }} ms
             To Audience
           </button>
           <button
-            v-if="!api.is_host() && item.id === api.session().user_id && room?.show"
+            v-if="!Users.host_status.value && item.id === api.session().user_id && room?.show"
             @click="api.listener(item.id)"
             type="button"
             class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
