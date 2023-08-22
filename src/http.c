@@ -190,6 +190,7 @@ static void http_req_handler(struct http_conn *conn,
 			goto err;
 
 		slmix_session_user_updated(sess);
+		slmix_session_save(sess);
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;

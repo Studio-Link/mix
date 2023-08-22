@@ -7,7 +7,6 @@ import { Error } from './error'
 interface Session {
     id: string
     auth: boolean
-    host: boolean
     user_id: string | null
 }
 
@@ -78,7 +77,7 @@ export default {
         }
 
         /* Readonly! Use ws/users for updated states */
-        sess = { id: session_id, auth: false, host: false, user_id: null }
+        sess = { id: session_id, auth: false, user_id: null }
 
         window.localStorage.setItem('sess', JSON.stringify(sess))
     },
@@ -95,7 +94,6 @@ export default {
         const user = JSON.parse(await resp?.text())
 
         sess.user_id = user.id
-        sess.host = user.host
         window.localStorage.setItem('sess', JSON.stringify(sess))
 
         router.push({ name: 'Home' })
@@ -150,12 +148,8 @@ export default {
         else await api_fetch('PUT', '/webrtc/audio/disable', null)
     },
 
-    is_host(): boolean {
-        return sess.host
-    },
-
     async record_switch(type: RecordType) {
-        if (!sess.host) return
+        if (!Users.host_status.value) return
 
         if (Users.record.value) {
             Users.record.value = false

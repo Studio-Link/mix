@@ -258,19 +258,21 @@ int slmix_session_auth(struct mix *mix, struct session *sess,
 		    0 == pl_strcmp(&token, mix->token_host)) {
 
 			info("sess: host token\n");
-			sess->user->speaker = true;
 			sess->user->host    = true;
+			sess->user->speaker = true;
 		}
 		else if (str_isset(mix->token_guests) &&
 			 0 == pl_strcmp(&token, mix->token_guests)) {
 
 			info("sess: guest token\n");
+			sess->user->host    = false;
 			sess->user->speaker = true;
 		}
 		else if (str_isset(mix->token_listeners) &&
 			 0 == pl_strcmp(&token, mix->token_listeners)) {
 
 			info("sess: listener token\n");
+			sess->user->host    = false;
 			sess->user->speaker = false;
 		}
 		else {
