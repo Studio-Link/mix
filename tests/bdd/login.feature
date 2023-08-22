@@ -5,6 +5,20 @@ Feature: Login/Logout
         Then "Alice" WebSocket receives "1" users
         And "Alice" closes WebSocket
 
+    Scenario: WebSocket Session Login re-auth
+        Given "Alice" connects without a token
+        And "Alice" set client name
+        Then "Alice" WebSocket receives "1" users
+        And "Alice" WebSocket receives rooms update
+        Given "Alice" reauth with token "TOKENHOST"
+        Then "Alice" WebSocket receives updated "Alice" user
+        And "Alice" closes WebSocket
+
+    Scenario: WebSocket Session Login with token host
+        Given "Alice" connects with token "TOKENHOST"
+        Then "Alice" WebSocket receives "1" users
+        And "Alice" closes WebSocket
+
     Scenario: Login as a audience user
         Given "Alice" connects without a token
         And "Alice" set client name
