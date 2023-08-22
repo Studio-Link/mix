@@ -9,6 +9,6 @@ const commitHash = execSync('git rev-parse --short HEAD')
 export default defineConfig({
     plugins: [vue()],
     define: {
-        APP_VERSION: JSON.stringify("v0.5.2-" + commitHash)
+        APP_VERSION: JSON.stringify("v0.5.3-" + commitHash)
     },
 })
