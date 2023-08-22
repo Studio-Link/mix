@@ -60,6 +60,7 @@ interface Users {
     record_type: Ref<RecordType>
     hand_status: Ref<boolean>
     speaker_status: Ref<boolean>
+    host_status: Ref<boolean>
 }
 
 function pad(num: number, size: number) {
@@ -81,6 +82,7 @@ export const Users: Users = {
     record_type: ref(RecordType.AudioVideo),
     hand_status: ref(false),
     speaker_status: ref(false),
+    host_status: ref(false),
 
     ws_close() {
         this.socket?.close()
@@ -116,6 +118,7 @@ export const Users: Users = {
                     if (data.users[key].id === api.session().user_id) {
                         this.hand_status.value = data.users[key].hand
                         this.speaker_status.value = data.users[key].speaker
+                        this.host_status.value = data.users[key].host
                     }
                     if (data.users[key].speaker) {
                         if (data.users[key].video && data.users[key].pidx) {
@@ -157,6 +160,7 @@ export const Users: Users = {
                     if (user.id === api.session().user_id) {
                         this.hand_status.value = user.hand
                         this.speaker_status.value = data.speaker
+                        this.host_status.value = data.host
 
                         /* Only allow remote disable */
                         if (!data.speaker) {
