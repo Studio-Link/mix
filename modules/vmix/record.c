@@ -20,6 +20,8 @@
 #include <re_atomic.h>
 #include "vmix.h"
 
+#define STREAM 0
+
 static struct {
 	RE_ATOMIC bool run;
 	RE_ATOMIC bool run_stream;
@@ -49,10 +51,11 @@ struct record_entry {
 	bool keyframe;
 };
 
-
-static const char *stream_url	 = "rtmp://live.podstock.de/live/mux123";
-static AVRational timebase_video = {1, 1000000};
+#if STREAM
+static const char *stream_url	 = "rtmp://example.net/stream";
 static AVRational timebase_audio = {1, 48000};
+#endif
+static AVRational timebase_video = {1, 1000000};
 
 
 static int init_resampler(void)
@@ -80,7 +83,7 @@ static int init_resampler(void)
 	return 0;
 }
 
-
+#if STREAM
 static int init_stream(void)
 {
 	int ret;
@@ -225,6 +228,7 @@ static int write_stream(AVPacket *pkt, AVRational *time_base_src,
 
 	return 0;
 }
+#endif
 
 
 static int record_thread(void *arg)
@@ -233,7 +237,9 @@ static int record_thread(void *arg)
 	struct auframe af;
 	struct le *le;
 	int64_t audio_pts = 0;
+#if STREAM
 	int err		  = 0;
+#endif
 	(void)arg;
 
 	AVPacket *videoPacket = av_packet_alloc();
@@ -289,11 +295,13 @@ static int record_thread(void *arg)
 				record.videoStream->time_base.den);
 #endif
 
+#if STREAM
 			err = write_stream(
 				videoPacket, &record.videoStream->time_base,
 				&record.videoStreamStream->time_base);
 			if (err)
 				return err;
+#endif
 
 			ret = av_interleaved_write_frame(
 				record.outputFormatContext, videoPacket);
@@ -375,12 +383,13 @@ static int record_thread(void *arg)
 #endif
 				audioPacket->stream_index =
 					record.audioStream->index;
-
+#if STREAM
 				err = write_stream(
 					audioPacket, &timebase_audio,
 					&record.audioStreamStream->time_base);
 				if (err)
 					return err;
+#endif
 
 				ret2 = av_interleaved_write_frame(
 					record.outputFormatContext,
@@ -507,7 +516,10 @@ int vmix_record_start(const char *record_folder)
 	}
 
 	init_resampler();
+
+#if STREAM
 	init_stream();
+#endif
 
 	re_atomic_rlx_set(&record.run, true);
 	info("vidmix: record started\n");
@@ -604,7 +616,9 @@ int vmix_record_close(void)
 	re_atomic_rlx_set(&record.audio_start_time, 0);
 	re_atomic_rlx_set(&record.video_start_time, 0);
 
+#if STREAM
 	close_stream();
+#endif
 
 	/* Write the trailer and close the output file */
 	av_write_trailer(record.outputFormatContext);
