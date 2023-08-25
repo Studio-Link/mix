@@ -135,53 +135,52 @@ export const Users: Users = {
             }
 
             if (data.type === 'user') {
-                // keep delete before add order!
-                if (data.event === 'deleted' || data.event === 'updated') {
-                    this.speakers.value = this.speakers.value?.filter((u) => u.id !== data.id)
-                    this.listeners.value = this.listeners.value?.filter((u) => u.id !== data.id)
-                    this.vspeakers.value = this.vspeakers.value?.filter((u) => u.id !== data.id)
+                // keep delete before add/update order!
+                this.speakers.value = this.speakers.value?.filter((u) => u.id !== data.id)
+                this.listeners.value = this.listeners.value?.filter((u) => u.id !== data.id)
+                this.vspeakers.value = this.vspeakers.value?.filter((u) => u.id !== data.id)
+
+                if (data.event === 'deleted')
+                    return
+
+                const user: User = {
+                    id: data.id,
+                    speaker_id: data.speaker_id,
+                    pidx: data.pidx,
+                    name: data.name,
+                    host: data.host,
+                    video: data.video,
+                    audio: data.audio,
+                    hand: data.hand,
+                    webrtc: data.webrtc,
+                    talk: false,
+                    stats: { artt: 0, vrtt: 0 }
                 }
 
-                if (data.event === 'added' || data.event === 'updated') {
-                    const user: User = {
-                        id: data.id,
-                        speaker_id: data.speaker_id,
-                        pidx: data.pidx,
-                        name: data.name,
-                        host: data.host,
-                        video: data.video,
-                        audio: data.audio,
-                        hand: data.hand,
-                        webrtc: data.webrtc,
-                        talk: false,
-                        stats: { artt: 0, vrtt: 0 }
+                if (user.id === api.session().user_id) {
+                    this.hand_status.value = user.hand
+                    this.speaker_status.value = data.speaker
+                    this.host_status.value = data.host
+
+                    /* Only allow remote disable */
+                    if (!data.speaker) {
+                        if (!Webrtc.audio_muted.value)
+                            Webrtc.audio_mute(true)
+
+                        if (!Webrtc.video_muted.value)
+                            Webrtc.video_mute(true)
                     }
+                }
 
-                    if (user.id === api.session().user_id) {
-                        this.hand_status.value = user.hand
-                        this.speaker_status.value = data.speaker
-                        this.host_status.value = data.host
-
-                        /* Only allow remote disable */
-                        if (!data.speaker) {
-                            if (!Webrtc.audio_muted.value)
-                                Webrtc.audio_mute(true)
-
-                            if (!Webrtc.video_muted.value)
-                                Webrtc.video_mute(true)
-                        }
+                if (data.speaker) {
+                    if (user.video && user.pidx) {
+                        this.vspeakers.value.push(user)
+                        this.vspeakers.value.sort((a, b) => a.pidx - b.pidx)
+                        return
                     }
-
-                    if (data.speaker) {
-                        if (user.video && user.pidx) {
-                            this.vspeakers.value.push(user)
-                            this.vspeakers.value.sort((a, b) => a.pidx - b.pidx)
-                            return
-                        }
-                        this.speakers.value?.unshift(user)
-                    } else {
-                        this.listeners.value?.unshift(user)
-                    }
+                    this.speakers.value?.unshift(user)
+                } else {
+                    this.listeners.value?.unshift(user)
                 }
 
                 return
