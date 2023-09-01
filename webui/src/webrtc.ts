@@ -44,6 +44,9 @@ const configuration: RTCConfiguration = {
             credential: 'choh4zeem3foh1',
         },
     ],
+
+    /* default on Firefox/Chrome but needed by Safari */
+    rtcpMuxPolicy: 'require'
 }
 
 /** Start AVdummy **/
