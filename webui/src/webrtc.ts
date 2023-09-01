@@ -37,6 +37,9 @@ const configuration: RTCConfiguration = {
     bundlePolicy: 'balanced',
 
     iceTransportPolicy: 'all',
+
+    /* default on Firefox/Chrome but needed by Safari */
+    rtcpMuxPolicy: 'require'
 }
 
 /** Start AVdummy **/
