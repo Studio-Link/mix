@@ -6,7 +6,7 @@
 .PHONY: build
 build: external
 	@[ -f "build/build.ninja" ] || cmake -B build -G Ninja \
-		-DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-gdwarf-4"
+		-DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-gdwarf-4 -g3"
 	@cmake --build build --parallel
 
 .PHONY: webui
@@ -21,20 +21,20 @@ webui:
 .PHONY: release
 release: external
 	make clean
-	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-g"
 	make build
 
 .PHONY: systemd
 systemd: external
 	make clean
-	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-g" \
 		-DUSE_SD_SOCK=ON
 	make build
 
 .PHONY: unix
 unix: external
 	make clean
-	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-g" \
 		-DUSE_UNIX_SOCK=ON
 	make build
 
