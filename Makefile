@@ -44,7 +44,8 @@ external:
 	git clone --depth 1 -b v3.2.0 \
 		https://github.com/baresip/baresip.git external/baresip
 	cd external/re && \
-		patch -p1 < ../../patches/re_vidmix_clear.patch
+		patch -p1 < ../../patches/re_vidmix_clear.patch && \
+		patch -p1 < ../../patches/re_jbuf_stat.patch
 	cd external/baresip && \
 		patch -p1 < ../../patches/baresip_packet_dup_handler.patch && \
 		patch -p1 < ../../patches/baresip_stream_enable.patch && \
