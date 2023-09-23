@@ -60,12 +60,12 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
 endif()
 
 if(USE_SD_SOCK)
-  list(APPEND MIX_DEFS -DSLMIX_SD_SOCK)
+  list(APPEND MIX_DEFS SLMIX_SD_SOCK)
   list(APPEND LINKLIBS systemd)
 endif()
 
 if(USE_UNIX_SOCK)
-  list(APPEND MIX_DEFS -DSLMIX_UNIX_SOCK)
+  list(APPEND MIX_DEFS SLMIX_UNIX_SOCK)
 endif()
 
 list(APPEND LINKLIBS gd ${LMDB_LIBRARIES})
@@ -88,7 +88,7 @@ add_subdirectory(external/baresip EXCLUDE_FROM_ALL)
 find_package(re CONFIG REQUIRED)
 
 list(APPEND RE_DEFINITIONS
-  -D_GNU_SOURCE
+  _GNU_SOURCE
 )
 
 include_directories(
