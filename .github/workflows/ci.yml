@@ -51,6 +51,13 @@ jobs:
         sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-15 main"
         sudo apt-get update
         sudo apt-get install -y clang-tools-15 clang-15 clang-tidy-15 ninja-build cppcheck gdb
+    
+    - name: install ffmpeg6
+      if: ${{ runner.os == 'Linux' }}
+      run: |
+        sudo add-apt-repository ppa:ubuntuhandbook1/ffmpeg6
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
 
     - name: install libs
       if: ${{ runner.os == 'Linux' }}
