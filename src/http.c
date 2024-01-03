@@ -732,7 +732,7 @@ int slmix_http_listen(struct http_sock **sock, struct mix *mix)
 	err = http_listen_fd(sock, fd, http_req_handler, mix);
 #else
 	struct sa srv;
-	err = sa_set_str(&srv, "127.0.0.1", 9999);
+	err = sa_set_str(&srv, slmix_config_listen(), 9999);
 	if (err)
 		return err;
 

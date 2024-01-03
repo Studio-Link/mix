@@ -17,6 +17,15 @@ static const char *modv[] = {
 };
 
 static char *config_file = NULL;
+static char *config_listen = NULL;
+
+
+const char *slmix_config_listen(void)
+{
+	if (!config_listen)
+		return "127.0.0.1";
+	return config_listen;
+}
 
 
 static void signal_handler(int sig)
@@ -32,6 +41,7 @@ static void usage(void)
 				 "options:\n"
 				 "\t-h		Help\n"
 				 "\t-c --config	Load config file\n"
+				 "\t-l          Listen IP\n"
 				 "\t-v		Verbose debug\n");
 }
 
@@ -42,6 +52,8 @@ static int slmix_getopt(int argc, char *const argv[])
 	int index		= 0;
 	struct option options[] = {{"config", required_argument, 0, 'c'},
 				   {"help", 0, 0, 'h'},
+				   {"verbose", 0, 0, 'v'},
+				   {"listen", required_argument, 0, 'l'},
 				   {0, 0, 0, 0}};
 	(void)re_printf(
 		"   _____ __            ___         __    _       __\n"
@@ -52,20 +64,18 @@ static int slmix_getopt(int argc, char *const argv[])
 		"\n");
 
 	(void)re_printf("Mix v%s-%s"
-			" Copyright (C) 2013 - 2023"
+			" Copyright (C) 2013 - 2024"
 			" Sebastian Reimers\n\n",
 			SLMIX_VERSION, slmix_git_revision());
 
 	for (;;) {
-		const int c = getopt_long(argc, argv, "vhc:", options, &index);
+		const int c =
+			getopt_long(argc, argv, "c:hvl:", options, &index);
 		if (c < 0)
 			break;
 
 		switch (c) {
 
-		case 'h':
-			usage();
-			return -2;
 		case 'c':
 			if (!fs_isfile(optarg)) {
 				warning("config not found: %s\n", optarg);
@@ -73,8 +83,14 @@ static int slmix_getopt(int argc, char *const argv[])
 			}
 			str_dup(&config_file, optarg);
 			break;
+		case 'h':
+			usage();
+			return -2;
 		case 'v':
 			log_enable_debug(true);
+			break;
+		case 'l':
+			str_dup(&config_listen, optarg);
 			break;
 		default:
 			usage();
@@ -209,6 +225,7 @@ int main(int argc, char *const argv[])
 	conf_close();
 
 	config_file = mem_deref(config_file);
+	config_listen = mem_deref(config_listen);
 
 	baresip_close();
 	mod_close();
