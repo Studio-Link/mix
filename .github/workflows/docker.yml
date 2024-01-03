@@ -8,7 +8,7 @@ on:
       - '.github/workflows/docker.yml'
 
 env:
-  VERSION_SLMIX: v0.6.0
+  VERSION_SLMIX: v0.6.0-dev
 
 jobs:
   docker:
