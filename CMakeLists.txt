@@ -52,6 +52,7 @@ else()
     -Wstrict-prototypes
     -Wuninitialized
     -Wvla
+    -Wno-gnu-zero-variadic-macro-arguments
   )
 endif()
 

@@ -434,9 +434,10 @@ void slmix_session_video(struct session *sess, bool enable)
 
 	sess->user->pidx =
 		slmix_disp_enable(sess->mix, sess->user->id, enable);
-
+#if 0
 	if (enable)
 		stream_flush(media_get_stream(sess->mvideo));
+#endif
 
 	slmix_session_user_updated(sess);
 }
