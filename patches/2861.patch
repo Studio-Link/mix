@@ -1,0 +1,485 @@
+From 3713515846f796511fb31f7b2ecadd7c1ed58e0e Mon Sep 17 00:00:00 2001
+From: Sebastian Reimers <hallo@studio-link.de>
+Date: Wed, 3 Jan 2024 13:43:43 +0100
+Subject: [PATCH] video: use viddec_packet
+
+---
+ include/baresip.h         | 10 ++++++++--
+ modules/av1/av1.h         |  4 ++--
+ modules/av1/decode.c      | 15 ++++++++-------
+ modules/avcodec/avcodec.h |  4 ++--
+ modules/avcodec/decode.c  | 31 ++++++++++++++++---------------
+ modules/vp8/decode.c      | 15 ++++++++-------
+ modules/vp8/vp8.h         |  2 +-
+ modules/vp9/decode.c      | 15 ++++++++-------
+ modules/vp9/vp9.h         |  2 +-
+ src/video.c               | 14 +++++++-------
+ test/mock/mock_vidcodec.c |  9 ++++-----
+ 11 files changed, 65 insertions(+), 56 deletions(-)
+
+diff --git a/include/baresip.h b/include/baresip.h
+index a26b0d0b87..b716324fa0 100644
+--- a/include/baresip.h
++++ b/include/baresip.h
+@@ -1210,6 +1210,13 @@ struct videnc_state;
+ struct viddec_state;
+ struct vidcodec;
+ 
++struct viddec_packet {
++	bool intra;		      /**< True=keyframe, False=deltaframe   */
++	const struct rtp_header *hdr; /**< RTP Header                        */
++	uint64_t timestamp;	      /**< Timestamp in VIDEO_TIMEBASE units */
++	struct mbuf *mb;	      /**< RTP Buffer memory                 */
++};
++
+ typedef int (videnc_packet_h)(bool marker, uint64_t rtp_ts,
+ 			      const uint8_t *hdr, size_t hdr_len,
+ 			      const uint8_t *pld, size_t pld_len,
+@@ -1232,8 +1239,7 @@ typedef int(viddec_update_h)(struct viddec_state **vdsp,
+ 			     const struct video *vid);
+ 
+ typedef int (viddec_decode_h)(struct viddec_state *vds, struct vidframe *frame,
+-                              bool *intra, bool marker, uint16_t seq,
+-                              struct mbuf *mb);
++                              struct viddec_packet *pkt);
+ 
+ struct vidcodec {
+ 	struct le le;
+diff --git a/modules/av1/av1.h b/modules/av1/av1.h
+index f2a967b080..d5c4ea968a 100644
+--- a/modules/av1/av1.h
++++ b/modules/av1/av1.h
+@@ -18,5 +18,5 @@ int av1_encode_packetize(struct videnc_state *ves,
+ /* Decode */
+ int av1_decode_update(struct viddec_state **vdsp, const struct vidcodec *vc,
+ 		      const char *fmtp, const struct video *vid);
+-int av1_decode(struct viddec_state *vds, struct vidframe *frame, bool *intra,
+-	       bool marker, uint16_t seq, struct mbuf *mb);
++int av1_decode(struct viddec_state *vds, struct vidframe *frame,
++	       struct viddec_packet *pkt);
+diff --git a/modules/av1/decode.c b/modules/av1/decode.c
+index 907fa0784d..135e0c4384 100644
+--- a/modules/av1/decode.c
++++ b/modules/av1/decode.c
+@@ -142,7 +142,7 @@ static int copy_obu(struct mbuf *mb_bs, const uint8_t *buf, size_t size)
+ 
+ 
+ int av1_decode(struct viddec_state *vds, struct vidframe *frame,
+-	       bool *intra, bool marker, uint16_t seq, struct mbuf *mb)
++	       struct viddec_packet *pkt)
+ {
+ 	aom_codec_frame_flags_t flags;
+ 	aom_codec_iter_t iter = NULL;
+@@ -152,10 +152,11 @@ int av1_decode(struct viddec_state *vds, struct vidframe *frame,
+ 	struct mbuf *mb2 = NULL;
+ 	int err;
+ 
+-	if (!vds || !frame || !intra || !mb)
++	if (!vds || !frame || !pkt || !pkt->mb)
+ 		return EINVAL;
+ 
+-	*intra = false;
++	pkt->intra = false;
++	struct mbuf *mb = pkt->mb;
+ 
+ 	err = av1_aggr_hdr_decode(&hdr, mb);
+ 	if (err)
+@@ -183,7 +184,7 @@ int av1_decode(struct viddec_state *vds, struct vidframe *frame,
+ 		if (!vds->started)
+ 			return 0;
+ 
+-		if (rtp_seq_diff(vds->seq, seq) != 1) {
++		if (rtp_seq_diff(vds->seq, pkt->hdr->seq) != 1) {
+ 			mbuf_rewind(vds->mb);
+ 			vds->started = false;
+ 			return 0;
+@@ -197,13 +198,13 @@ int av1_decode(struct viddec_state *vds, struct vidframe *frame,
+ 		vds->started = true;
+ 	}
+ 
+-	vds->seq = seq;
++	vds->seq = pkt->hdr->seq;
+ 
+ 	err = mbuf_write_mem(vds->mb, mbuf_buf(mb), mbuf_get_left(mb));
+ 	if (err)
+ 		goto out;
+ 
+-	if (!marker) {
++	if (!pkt->hdr->m) {
+ 
+ 		if (vds->mb->end > DECODE_MAXSZ) {
+ 			warning("av1: decode buffer size exceeded\n");
+@@ -298,7 +299,7 @@ int av1_decode(struct viddec_state *vds, struct vidframe *frame,
+ 	res = aom_codec_control(&vds->ctx, AOMD_GET_FRAME_FLAGS, &flags);
+ 	if (res == AOM_CODEC_OK) {
+ 		if (flags & AOM_FRAME_IS_KEY)
+-			*intra = true;
++			pkt->intra = true;
+ 	}
+ 
+ 	if (img->fmt != AOM_IMG_FMT_I420) {
+diff --git a/modules/avcodec/avcodec.h b/modules/avcodec/avcodec.h
+index 82d51b4490..6d28d8cdfb 100644
+--- a/modules/avcodec/avcodec.h
++++ b/modules/avcodec/avcodec.h
+@@ -41,9 +41,9 @@ int avcodec_decode_update(struct viddec_state **vdsp,
+ 			  const struct vidcodec *vc, const char *fmtp,
+ 			  const struct video *vid);
+ int avcodec_decode_h264(struct viddec_state *st, struct vidframe *frame,
+-		bool *intra, bool eof, uint16_t seq, struct mbuf *src);
++			struct viddec_packet *pkt);
+ int avcodec_decode_h265(struct viddec_state *st, struct vidframe *frame,
+-			bool *intra, bool eof, uint16_t seq, struct mbuf *src);
++			struct viddec_packet *pkt);
+ 
+ 
+ int avcodec_resolve_codecid(const char *s);
+diff --git a/modules/avcodec/decode.c b/modules/avcodec/decode.c
+index c2af23d90c..ece99a8646 100644
+--- a/modules/avcodec/decode.c
++++ b/modules/avcodec/decode.c
+@@ -304,17 +304,17 @@ static int ffdecode(struct viddec_state *st, struct vidframe *frame,
+ 
+ 
+ int avcodec_decode_h264(struct viddec_state *st, struct vidframe *frame,
+-			bool *intra, bool marker, uint16_t seq,
+-			struct mbuf *src)
++			struct viddec_packet *pkt)
+ {
+ 	struct h264_nal_header h264_hdr;
+ 	const uint8_t nal_seq[3] = {0, 0, 1};
+ 	int err;
+ 
+-	if (!st || !frame || !intra || !src)
++	if (!st || !frame || !pkt || !pkt->mb)
+ 		return EINVAL;
+ 
+-	*intra = false;
++	pkt->intra = false;
++	struct mbuf *src = pkt->mb;
+ 
+ 	err = h264_nal_header_decode(&h264_hdr, src);
+ 	if (err)
+@@ -393,7 +393,7 @@ int avcodec_decode_h264(struct viddec_state *st, struct vidframe *frame,
+ 				return 0;
+ 			}
+ 
+-			if (rtp_seq_diff(st->frag_seq, seq) != 1) {
++			if (rtp_seq_diff(st->frag_seq, pkt->hdr->seq) != 1) {
+ 				debug("avcodec: lost fragments detected\n");
+ 				fragment_rewind(st);
+ 				st->frag = false;
+@@ -410,7 +410,7 @@ int avcodec_decode_h264(struct viddec_state *st, struct vidframe *frame,
+ 		if (fu.e)
+ 			st->frag = false;
+ 
+-		st->frag_seq = seq;
++		st->frag_seq = pkt->hdr->seq;
+ 	}
+ 	else if (H264_NALU_STAP_A == h264_hdr.type) {
+ 
+@@ -442,7 +442,7 @@ int avcodec_decode_h264(struct viddec_state *st, struct vidframe *frame,
+ 		return EBADMSG;
+ 	}
+ 
+-	if (!marker) {
++	if (!pkt->hdr->m) {
+ 
+ 		if (st->mb->end > DECODE_MAXSZ) {
+ 			warning("avcodec: decode buffer size exceeded\n");
+@@ -458,7 +458,7 @@ int avcodec_decode_h264(struct viddec_state *st, struct vidframe *frame,
+ 		goto out;
+ 	}
+ 
+-	err = ffdecode(st, frame, intra);
++	err = ffdecode(st, frame, &pkt->intra);
+ 	if (err)
+ 		goto out;
+ 
+@@ -499,16 +499,17 @@ static inline int h265_fu_decode(struct h265_fu *fu, struct mbuf *mb)
+ 
+ 
+ int avcodec_decode_h265(struct viddec_state *vds, struct vidframe *frame,
+-		       bool *intra, bool marker, uint16_t seq, struct mbuf *mb)
++			struct viddec_packet *pkt)
+ {
+ 	static const uint8_t nal_seq[3] = {0, 0, 1};
+ 	struct h265_nal hdr;
+ 	int err;
+ 
+-	if (!vds || !frame || !intra || !mb)
++	if (!vds || !frame || !pkt || !pkt->mb)
+ 		return EINVAL;
+ 
+-	*intra = false;
++	pkt->intra = false;
++	struct mbuf *mb = pkt->mb;
+ 
+ 	if (mbuf_get_left(mb) < H265_HDR_SIZE)
+ 		return EBADMSG;
+@@ -573,7 +574,7 @@ int avcodec_decode_h265(struct viddec_state *vds, struct vidframe *frame,
+ 				return 0;
+ 			}
+ 
+-			if (rtp_seq_diff(vds->frag_seq, seq) != 1) {
++			if (rtp_seq_diff(vds->frag_seq, pkt->hdr->seq) != 1) {
+ 				debug("h265: lost fragments detected\n");
+ 				fragment_rewind(vds);
+ 				vds->frag = false;
+@@ -588,7 +589,7 @@ int avcodec_decode_h265(struct viddec_state *vds, struct vidframe *frame,
+ 		if (fu.e)
+ 			vds->frag = false;
+ 
+-		vds->frag_seq = seq;
++		vds->frag_seq = pkt->hdr->seq;
+ 	}
+ 	else if (hdr.nal_unit_type == H265_NAL_AP) {
+ 
+@@ -615,7 +616,7 @@ int avcodec_decode_h265(struct viddec_state *vds, struct vidframe *frame,
+ 		return EPROTO;
+ 	}
+ 
+-	if (!marker) {
++	if (!pkt->hdr->m) {
+ 
+ 		if (vds->mb->end > DECODE_MAXSZ) {
+ 			warning("avcodec: h265 decode buffer size exceeded\n");
+@@ -631,7 +632,7 @@ int avcodec_decode_h265(struct viddec_state *vds, struct vidframe *frame,
+ 		goto out;
+ 	}
+ 
+-	err = ffdecode(vds, frame, intra);
++	err = ffdecode(vds, frame, &pkt->intra);
+ 	if (err)
+ 		goto out;
+ 
+diff --git a/modules/vp8/decode.c b/modules/vp8/decode.c
+index c8a76dc7e9..3ad1a60185 100644
+--- a/modules/vp8/decode.c
++++ b/modules/vp8/decode.c
+@@ -187,7 +187,7 @@ static inline bool is_keyframe(struct mbuf *mb)
+ 
+ 
+ int vp8_decode(struct viddec_state *vds, struct vidframe *frame,
+-	       bool *intra, bool marker, uint16_t seq, struct mbuf *mb)
++	       struct viddec_packet *pkt)
+ {
+ 	vpx_codec_iter_t iter = NULL;
+ 	vpx_codec_err_t res;
+@@ -195,10 +195,11 @@ int vp8_decode(struct viddec_state *vds, struct vidframe *frame,
+ 	struct hdr hdr;
+ 	int err, i;
+ 
+-	if (!vds || !frame || !intra || !mb)
++	if (!vds || !frame || !pkt || !pkt->mb)
+ 		return EINVAL;
+ 
+-	*intra = false;
++	pkt->intra = false;
++	struct mbuf *mb = pkt->mb;
+ 
+ 	err = hdr_decode(&hdr, mb);
+ 	if (err)
+@@ -216,7 +217,7 @@ int vp8_decode(struct viddec_state *vds, struct vidframe *frame,
+ 	if (hdr.start && hdr.partid == 0) {
+ 
+ 		if (is_keyframe(mb))
+-			*intra = true;
++			pkt->intra = true;
+ 
+ 		mbuf_rewind(vds->mb);
+ 		vds->started = true;
+@@ -225,20 +226,20 @@ int vp8_decode(struct viddec_state *vds, struct vidframe *frame,
+ 		if (!vds->started)
+ 			return 0;
+ 
+-		if (rtp_seq_diff(vds->seq, seq) != 1) {
++		if (rtp_seq_diff(vds->seq, pkt->hdr->seq) != 1) {
+ 			mbuf_rewind(vds->mb);
+ 			vds->started = false;
+ 			return 0;
+ 		}
+ 	}
+ 
+-	vds->seq = seq;
++	vds->seq = pkt->hdr->seq;
+ 
+ 	err = mbuf_write_mem(vds->mb, mbuf_buf(mb), mbuf_get_left(mb));
+ 	if (err)
+ 		goto out;
+ 
+-	if (!marker) {
++	if (!pkt->hdr->m) {
+ 
+ 		if (vds->mb->end > DECODE_MAXSZ) {
+ 			warning("vp8: decode buffer size exceeded\n");
+diff --git a/modules/vp8/vp8.h b/modules/vp8/vp8.h
+index 65da82ca12..af6c996fec 100644
+--- a/modules/vp8/vp8.h
++++ b/modules/vp8/vp8.h
+@@ -23,7 +23,7 @@ int vp8_encode_packetize(struct videnc_state *ves,
+ int vp8_decode_update(struct viddec_state **vdsp, const struct vidcodec *vc,
+ 		      const char *fmtp, const struct video *vid);
+ int vp8_decode(struct viddec_state *vds, struct vidframe *frame,
+-	       bool *intra, bool marker, uint16_t seq, struct mbuf *mb);
++	       struct viddec_packet *pkt);
+ 
+ 
+ /* SDP */
+diff --git a/modules/vp9/decode.c b/modules/vp9/decode.c
+index f12d66cc2c..26cdd7ce0d 100644
+--- a/modules/vp9/decode.c
++++ b/modules/vp9/decode.c
+@@ -263,7 +263,7 @@ static inline bool is_keyframe(const struct mbuf *mb)
+ 
+ 
+ int vp9_decode(struct viddec_state *vds, struct vidframe *frame,
+-	       bool *intra, bool marker, uint16_t seq, struct mbuf *mb)
++	       struct viddec_packet *pkt)
+ {
+ 	vpx_codec_iter_t iter = NULL;
+ 	vpx_codec_err_t res;
+@@ -271,10 +271,11 @@ int vp9_decode(struct viddec_state *vds, struct vidframe *frame,
+ 	struct hdr hdr;
+ 	int err, i;
+ 
+-	if (!vds || !frame || !intra || !mb)
++	if (!vds || !frame || !pkt || !pkt->mb)
+ 		return EINVAL;
+ 
+-	*intra = false;
++	pkt->intra = false;
++	struct mbuf *mb = pkt->mb;
+ 
+ 	vds->n_bytes += mbuf_get_left(mb);
+ 
+@@ -292,7 +293,7 @@ int vp9_decode(struct viddec_state *vds, struct vidframe *frame,
+ 	if (hdr.b) {
+ 
+ 		if (is_keyframe(mb))
+-			*intra = true;
++			pkt->intra = true;
+ 
+ 		mbuf_rewind(vds->mb);
+ 		vds->started = true;
+@@ -301,20 +302,20 @@ int vp9_decode(struct viddec_state *vds, struct vidframe *frame,
+ 		if (!vds->started)
+ 			return 0;
+ 
+-		if (rtp_seq_diff(vds->seq, seq) != 1) {
++		if (rtp_seq_diff(vds->seq, pkt->hdr->seq) != 1) {
+ 			mbuf_rewind(vds->mb);
+ 			vds->started = false;
+ 			return 0;
+ 		}
+ 	}
+ 
+-	vds->seq = seq;
++	vds->seq = pkt->hdr->seq;
+ 
+ 	err = mbuf_write_mem(vds->mb, mbuf_buf(mb), mbuf_get_left(mb));
+ 	if (err)
+ 		goto out;
+ 
+-	if (!marker) {
++	if (!pkt->hdr->m) {
+ 
+ 		if (vds->mb->end > DECODE_MAXSZ) {
+ 			warning("vp9: decode buffer size exceeded\n");
+diff --git a/modules/vp9/vp9.h b/modules/vp9/vp9.h
+index 3be2375698..043e5953cb 100644
+--- a/modules/vp9/vp9.h
++++ b/modules/vp9/vp9.h
+@@ -23,7 +23,7 @@ int vp9_encode_packetize(struct videnc_state *ves,
+ int vp9_decode_update(struct viddec_state **vdsp, const struct vidcodec *vc,
+ 		      const char *fmtp, const struct video *vid);
+ int vp9_decode(struct viddec_state *vds, struct vidframe *frame,
+-	       bool *intra, bool marker, uint16_t seq, struct mbuf *mb);
++	       struct viddec_packet *pkt);
+ 
+ 
+ /* SDP */
+diff --git a/src/video.c b/src/video.c
+index 4619d5de15..b663c7e23b 100644
+--- a/src/video.c
++++ b/src/video.c
+@@ -750,9 +750,8 @@ static int video_stream_decode(struct vrx *vrx, const struct rtp_header *hdr,
+ 	struct video *v = vrx->video;
+ 	struct vidframe *frame_filt = NULL;
+ 	struct vidframe frame_store, *frame = &frame_store;
++	struct viddec_packet pkt = {.mb = mb, .hdr = hdr};
+ 	struct le *le;
+-	uint64_t timestamp;
+-	bool intra;
+ 	int err = 0;
+ 
+ 	if (!hdr || !mbuf_get_left(mb))
+@@ -769,13 +768,13 @@ static int video_stream_decode(struct vrx *vrx, const struct rtp_header *hdr,
+ 	update_rtp_timestamp(&vrx->ts_recv, hdr->ts);
+ 
+ 	/* convert the RTP timestamp to VIDEO_TIMEBASE timestamp */
+-	timestamp = video_calc_timebase_timestamp(
++	pkt.timestamp = video_calc_timebase_timestamp(
+ 			  timestamp_calc_extended(vrx->ts_recv.num_wraps,
+ 						  vrx->ts_recv.last));
+ 
+ 	vidframe_clear(frame);
+ 
+-	err = vrx->vc->dech(vrx->dec, frame, &intra, hdr->m, hdr->seq, mb);
++	err = vrx->vc->dech(vrx->dec, frame, &pkt);
+ 	if (err) {
+ 
+ 		if (err != EPROTO) {
+@@ -791,7 +790,7 @@ static int video_stream_decode(struct vrx *vrx, const struct rtp_header *hdr,
+ 		goto out;
+ 	}
+ 
+-	if (intra) {
++	if (pkt.intra) {
+ 		tmr_cancel(&vrx->tmr_picup);
+ 		++vrx->n_intra;
+ 	}
+@@ -827,13 +826,14 @@ static int video_stream_decode(struct vrx *vrx, const struct rtp_header *hdr,
+ 		struct vidfilt_dec_st *st = le->data;
+ 
+ 		if (st->vf && st->vf->dech)
+-			err |= st->vf->dech(st, frame, &timestamp);
++			err |= st->vf->dech(st, frame, &pkt.timestamp);
+ 	}
+ 
+ 	++vrx->stats.disp_frames;
+ 
+ 	if (vrx->vd && vrx->vd->disph && vrx->vidisp)
+-		err = vrx->vd->disph(vrx->vidisp, v->peer, frame, timestamp);
++		err = vrx->vd->disph(vrx->vidisp, v->peer, frame,
++				     pkt.timestamp);
+ 
+ 	frame_filt = mem_deref(frame_filt);
+ 	if (err == ENODEV) {
+diff --git a/test/mock/mock_vidcodec.c b/test/mock/mock_vidcodec.c
+index 84300dbf53..0a9c5640a3 100644
+--- a/test/mock/mock_vidcodec.c
++++ b/test/mock/mock_vidcodec.c
+@@ -144,18 +144,17 @@ static int mock_decode_update(struct viddec_state **vdsp,
+ 
+ 
+ static int mock_decode(struct viddec_state *vds, struct vidframe *frame,
+-		       bool *intra, bool marker, uint16_t seq, struct mbuf *mb)
++		       struct viddec_packet *pkt)
+ {
+ 	struct vidsz size;
+ 	struct hdr hdr;
+ 	int err, i;
+-	(void)marker;
+-	(void)seq;
+ 
+-	if (!vds || !frame || !intra || !mb)
++	if (!vds || !frame || !pkt || !pkt->mb)
+ 		return EINVAL;
+ 
+-	*intra = false;
++	pkt->intra = false;
++	struct mbuf *mb = pkt->mb;
+ 
+ 	err = hdr_decode(&hdr, mb);
+ 	if (err) {

@@ -162,17 +162,19 @@ static void pkt_deref(void *arg)
 
 
 static int decode(struct viddec_state *vds, struct vidframe *frame,
-		  bool *intra, bool marker, uint16_t seq, uint64_t ts,
-		  struct mbuf *mb)
+		  struct viddec_packet *vpkt)
 {
+	if (!vds || !frame || !vpkt || !vpkt->mb)
+		return EINVAL;
+
 	struct pkt *pkt = mem_zalloc(sizeof(struct pkt), pkt_deref);
 	if (!pkt)
 		return ENOMEM;
 
-	pkt->mb	    = mbuf_dup(mb);
-	pkt->marker = marker;
-	pkt->ts	    = ts;
-	pkt->ts_eol = ts + MAX_PKT_TIME * 1000;
+	pkt->mb	    = mbuf_dup(vpkt->mb);
+	pkt->marker = vpkt->hdr->m;
+	pkt->ts	    = vpkt->timestamp;
+	pkt->ts_eol = pkt->ts + MAX_PKT_TIME * 1000;
 	pkt->id	    = vds->last_id++;
 
 	mtx_lock(vds->mtx);
@@ -189,14 +191,14 @@ static int decode(struct viddec_state *vds, struct vidframe *frame,
 		if (pkt->id < 200)
 			continue;
 
-		if (ts > pkt->ts_eol)
+		if (pkt->ts > pkt->ts_eol)
 			mem_deref(pkt);
 		else
 			break;
 	}
 	mtx_unlock(vds->mtx);
 
-	return dech(vds->vdsp, frame, intra, marker, seq, ts, mb);
+	return dech(vds->vdsp, frame, vpkt);
 }
 
 

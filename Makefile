@@ -40,17 +40,17 @@ unix: external
 
 external:
 	mkdir -p external
-	git clone --depth 1 -b v3.7.0 \
+	git clone --depth 1 -b v3.8.0 \
 		https://github.com/baresip/re.git external/re
-	git clone --depth 1 -b v3.7.0 \
+	git clone --depth 1 -b v3.8.1 \
 		https://github.com/baresip/baresip.git external/baresip
 	cd external/re && \
 		patch -p1 < ../../patches/re_aubuf_timestamp_order_fix.patch
 	cd external/baresip && \
-		patch -p1 < ../../patches/2634.patch && \
-		patch -p1 < ../../patches/baresip_packet_dup_handler.patch && \
-		patch -p1 < ../../patches/baresip_stream_enable.patch && \
-		patch -p1 < ../../patches/baresip_video_remove_sendq_empty.patch
+		patch -p1 < ../../patches/2861.patch
+#		patch -p1 < ../../patches/baresip_packet_dup_handler.patch 
+#		patch -p1 < ../../patches/baresip_stream_enable.patch && \
+#     	patch -p1 < ../../patches/baresip_video_remove_sendq_empty.patch
 #		patch -p1 < ../../patches/avcodec_encode_refs.patch
 #		patch -p1 < ../../patches/avcodec_decode_scale_crash.patch
 		# patch -p1 < ../../patches/baresip_video_latency.patch && \
