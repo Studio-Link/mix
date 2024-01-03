@@ -13,7 +13,7 @@ env:
 jobs:
   docker:
     env:
-        IMAGE_NAME: ${{ github.repository }}/slmix
+        IMAGE_NAME: studio-link/mix/slmix
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
