@@ -1,0 +1,38 @@
+name: docker 
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '*/Dockerfile'
+      - '.github/workflows/docker.yml'
+
+env:
+  VERSION_SLMIX: v0.6.0
+
+jobs:
+  docker:
+    env:
+        IMAGE_NAME: ${{ github.repository }}/slmix
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Log into registry
+      uses: docker/login-action@v3
+      with:
+        registry: "ghcr.io"
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build
+      run: |
+        docker build -t slmix
+
+    - name: Tag and Push image
+      if: github.event_name != 'pull_request'
+      run: |
+        docker tag slmix ghcr.io/${{ env.IMAGE_NAME }}:${{ env.VERSION_SLMIX }}
+        docker tag slmix ghcr.io/${{ env.IMAGE_NAME }}:latest
+        docker push ghcr.io/${{ env.IMAGE_NAME }}:${{ env.VERSION_SLMIX }}
+        docker push ghcr.io/${{ env.IMAGE_NAME }}:latest
+
