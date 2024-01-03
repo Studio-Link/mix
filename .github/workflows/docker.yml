@@ -31,8 +31,8 @@ jobs:
     - name: Tag and Push image
       if: github.event_name != 'pull_request'
       run: |
-        docker tag baresip ghcr.io/${{ env.IMAGE_NAME }}:${{ env.VERSION_SLMIX }}
-        docker tag baresip ghcr.io/${{ env.IMAGE_NAME }}:latest
+        docker tag slmix ghcr.io/${{ env.IMAGE_NAME }}:${{ env.VERSION_SLMIX }}
+        docker tag slmix ghcr.io/${{ env.IMAGE_NAME }}:latest
         docker push ghcr.io/${{ env.IMAGE_NAME }}:${{ env.VERSION_SLMIX }}
         docker push ghcr.io/${{ env.IMAGE_NAME }}:latest
 
