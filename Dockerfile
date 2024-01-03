@@ -26,5 +26,7 @@ ENV USER=root
 
 ADD entrypoint.sh /entrypoint.sh
 
+EXPOSE 9999/tcp
+
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["slmix"]
