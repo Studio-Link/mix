@@ -246,8 +246,8 @@ static void ws_send_rtcp_stats(struct mix *mix)
 		re_snprintf(json, sizeof(json),
 			    "{\"type\": \"stats\","
 			    "\"id\": %u, \"stats\": {"
-			    "\"artt\": %lu," /* rtt in ms */
-			    "\"vrtt\": %lu" /* rtt in ms */
+			    "\"artt\": %u," /* rtt in ms */
+			    "\"vrtt\": %u" /* rtt in ms */
 			    "}}",
 			    sess->user->speaker_id, audio_stat->rtt / 1000,
 			    video_stat->rtt / 1000);
