@@ -102,20 +102,20 @@ jobs:
     - name: install and ninja
       run: |
         sudo apt-get update && sudo apt-get install -y ninja-build
-
-    - name: install sound libs
-      if: ${{ runner.os == 'Linux' }}
-      run: |
-        sudo apt-get install -y libgd-dev libopus-dev libz-dev libssl-dev \
-          libavformat-dev libavcodec-dev libswscale-dev libflac-dev liblmdb-dev \
-          libswresample-dev
-
+ 
     - name: install ffmpeg6
       if: ${{ runner.os == 'Linux' }}
       run: |
         sudo add-apt-repository ppa:ubuntuhandbook1/ffmpeg6
         sudo apt-get update
         sudo apt-get install -y ffmpeg
+
+    - name: install libs
+      if: ${{ runner.os == 'Linux' }}
+      run: |
+        sudo apt-get install -y libgd-dev libopus-dev libz-dev libssl-dev \
+          libavformat-dev libavcodec-dev libswscale-dev libflac-dev liblmdb-dev \
+          libswresample-dev
 
     - uses: actions/cache@v3
       with:
