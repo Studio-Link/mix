@@ -178,7 +178,7 @@ int main(int argc, char *const argv[])
 		return err;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(modv); i++) {
+	for (size_t i = 0; i < RE_ARRAY_SIZE(modv); i++) {
 
 		err = module_load(".", modv[i]);
 		if (err) {
