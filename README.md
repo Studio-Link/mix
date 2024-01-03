@@ -10,15 +10,21 @@ You can use a hosted version at https://my.studio.link/mixrooms
 
 ### Requirements
 
-#### Debian/Ubuntu
+#### Ubuntu
 
 ```bash
-apt install curl wget ninja-build pkg-config clang cmake make git patch ca-certificates \
+sudo add-apt-repository ppa:ubuntuhandbook1/ffmpeg6
+sudo apt-get update
+sudo apt-get install -y ffmpeg
+```
+
+```bash
+sudo apt install curl wget ninja-build pkg-config clang cmake make git patch ca-certificates \
     libgd-dev libopus-dev libz-dev libssl-dev libavformat-dev libavcodec-dev libflac-dev \
     liblmdb-dev
 ```
 
-##### Node.js v18.x LTS or v19.x (Current)
+##### Node.js v20.x LTS or v21.x (Current)
 
 https://github.com/nodesource/distributions/blob/master/README.md#debinstall
 
