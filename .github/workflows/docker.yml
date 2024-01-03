@@ -26,7 +26,7 @@ jobs:
 
     - name: Build
       run: |
-        docker build -t slmix
+        docker build -t slmix .
 
     - name: Tag and Push image
       if: github.event_name != 'pull_request'
