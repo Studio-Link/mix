@@ -1,126 +1,98 @@
 import { defineConfig, type DefaultTheme } from 'vitepress'
 
 export const de = defineConfig({
-  lang: 'de',
-  description: 'Mix Rooms',
+    lang: 'de-DE',
+    description: 'Mix Rooms',
 
-  themeConfig: {
-    nav: nav(),
+    themeConfig: {
+        nav: nav(),
 
-    sidebar: {
-      '/de/guide/': { base: '/de/hosted/', items: sidebarGuide() },
-      '/de/self-hosted/': { base: '/de/self-hosted/', items: sidebarSelfHosted() }
-    },
+        sidebar: {
+            '/de/hosted/': { base: '/de/hosted/', items: sidebarHosted() },
+            '/de/self-hosting/': { base: '/de/self-hosting/', items: sidebarSelfHosted() }
+        },
 
-    footer: {
-      message: 'Released under the MIT License.',
-      copyright: 'Copyright © 2013-present IT-Service Sebastian Reimers'
+        footer: {
+            message: 'Veröffentlicht unter der MIT Lizenz. <br> <a href="https://studio-link.de/impressum.html">Impressum</a> | <a href="https://studio-link.de/datenschutz.html">Datenschutz</a>',
+            copyright: 'Copyright © 2013-heute IT-Service Sebastian Reimers'
+        }
     }
-  }
 })
 
 function nav(): DefaultTheme.NavItem[] {
-  return [
-    {
-      text: 'Guide',
-      link: '/de/guide/what-is-vitepress',
-      activeMatch: '/guide/'
-    },
-    {
-      text: 'Reference',
-      link: '/de/reference/site-config',
-      activeMatch: '/reference/'
-    },
-    {
-      text: '0.6.0-beta',
-      items: [
+    return [
         {
-          text: 'Changelog',
-          link: 'https://github.com/studio-link/mix/blob/main/CHANGELOG.md'
+            text: 'Jetzt loslegen',
+            link: '/de/hosted/started',
+            activeMatch: '/de/hosted/'
+        },
+        {
+            text: 'Open Source',
+            link: '/de/self-hosting/install-intro',
+            activeMatch: '/de/self-hosting/'
+        },
+        {
+            text: '0.6.0-beta',
+            items: [
+                {
+                    text: 'Änderungen',
+                    link: 'https://github.com/studio-link/mix/blob/main/CHANGELOG.md'
+                }
+            ]
         }
-      ]
-    }
-  ]
+    ]
 }
 
-function sidebarGuide(): DefaultTheme.SidebarItem[] {
-  return [
-    {
-      text: 'Introduction',
-      collapsed: false,
-      items: [
-        { text: 'What is VitePress?', link: 'what-is-vitepress' },
-        { text: 'Getting Started', link: 'getting-started' },
-        { text: 'Routing', link: 'routing' },
-        { text: 'Deploy', link: 'deploy' }
-      ]
-    },
-    {
-      text: 'Writing',
-      collapsed: false,
-      items: [
-        { text: 'Markdown Extensions', link: 'markdown' },
-        { text: 'Asset Handling', link: 'asset-handling' },
-        { text: 'Frontmatter', link: 'frontmatter' },
-        { text: 'Using Vue in Markdown', link: 'using-vue' },
-        { text: 'Internationalization', link: 'i18n' }
-      ]
-    },
-    {
-      text: 'Customization',
-      collapsed: false,
-      items: [
-        { text: 'Using a Custom Theme', link: 'custom-theme' },
+function sidebarHosted(): DefaultTheme.SidebarItem[] {
+    return [
         {
-          text: 'Extending the Default Theme',
-          link: 'extending-default-theme'
+            text: 'Einführung',
+            collapsed: false,
+            items: [
+                { text: 'Was ist Mix Rooms?', link: 'what-is-mix-rooms' },
+                { text: 'Jetzt loslegen', link: 'started' },
+            ]
         },
-        { text: 'Build-Time Data Loading', link: 'data-loading' },
-        { text: 'SSR Compatibility', link: 'ssr-compat' },
-        { text: 'Connecting to a CMS', link: 'cms' }
-      ]
-    },
-    {
-      text: 'Experimental',
-      collapsed: false,
-      items: [
-        { text: 'MPA Mode', link: 'mpa-mode' },
-        { text: 'Sitemap Generation', link: 'sitemap-generation' }
-      ]
-    },
-    { text: 'Config & API Reference', base: '/reference/', link: 'site-config' }
-  ]
+        {
+            text: 'Bedienung - Howto',
+            collapsed: false,
+            base: '/de/hosted/howto/',
+            items: [
+                { text: 'Überblick', link: 'overview' },
+                { text: 'Login', link: 'login' },
+                { text: 'Aufnahmen', link: 'recording' },
+                { text: 'Chat', link: 'chat' },
+            ]
+        },
+    ]
 }
 
 function sidebarSelfHosted(): DefaultTheme.SidebarItem[] {
-  return [
-    {
-      text: 'Reference',
-      items: [
-        { text: 'Site Config', link: 'site-config' },
-        { text: 'Frontmatter Config', link: 'frontmatter-config' },
-        { text: 'Runtime API', link: 'runtime-api' },
-        { text: 'CLI', link: 'cli' },
+    return [
         {
-          text: 'Default Theme',
-          base: '/reference/default-theme-',
-          items: [
-            { text: 'Overview', link: 'config' },
-            { text: 'Nav', link: 'nav' },
-            { text: 'Sidebar', link: 'sidebar' },
-            { text: 'Home Page', link: 'home-page' },
-            { text: 'Footer', link: 'footer' },
-            { text: 'Layout', link: 'layout' },
-            { text: 'Badge', link: 'badge' },
-            { text: 'Team Page', link: 'team-page' },
-            { text: 'Prev / Next Links', link: 'prev-next-links' },
-            { text: 'Edit Link', link: 'edit-link' },
-            { text: 'Last Updated Timestamp', link: 'last-updated' },
-            { text: 'Search', link: 'search' },
-            { text: 'Carbon Ads', link: 'carbon-ads' }
-          ]
+            text: 'Self-Hosting',
+            items: [
+                {
+                    text: 'Installation',
+                    base: '/de/self-hosting/install-',
+                    collapsed: false,
+                    items: [
+                        { text: 'Einführung', link: 'intro' },
+                        { text: 'Docker', link: 'docker' },
+                        {
+                            text: 'Quellcode',
+                            base: '/de/self-hosting/install-source-',
+                            items: [
+                                { text: 'Ubuntu 22.04', link: 'ubuntu' },
+                                { text: 'Arch Linux', link: 'archlinux' },
+                                { text: 'Bauen und konfigurieren', link: 'build' },
+                                { text: 'Update', link: 'update' },
+                            ]
+                        },
+                    ]
+
+                }
+            ]
         }
-      ]
-    }
-  ]
+    ]
 }

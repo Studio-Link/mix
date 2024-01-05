@@ -9,15 +9,16 @@ hero:
   actions:
     - theme: brand
       text: Jetzt loslegen
-      link: /hosted
+      link: /de/hosted/started
     - theme: alt
       text: Self-Hosting Guide 
-      link: /open-source
+      link: /de/self-hosting/install-intro
 
 features:
   - title: Spontane Einbindung in Echtzeit
     details: Hol die Community auf deine virtuelle Bühne oder in den Podcast
   - title: Open Source
     details: Du kannst dein Studio auch selber hosten
+    link: /de/self-hosting/install-intro
 ---
 

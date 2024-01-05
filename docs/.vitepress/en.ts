@@ -13,7 +13,7 @@ export const en = defineConfig({
         },
 
         footer: {
-            message: 'Released under the MIT License.',
+            message: 'Released under the MIT License. <br> <a href="https://studio-link.de/impressum.html">About</a> | <a href="https://studio-link.de/datenschutz_en.html">Privacy Policy</a>',
             copyright: 'Copyright © 2013-present IT-Service Sebastian Reimers'
         }
     }

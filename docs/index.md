@@ -19,5 +19,6 @@ features:
     details: Bring the community onto your virtual stage or into the podcast
   - title: Open Source
     details: No secrets, the code is available for free forever
+    link: /self-hosting/install-intro
 ---
 
