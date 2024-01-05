@@ -27,7 +27,7 @@ mix_token_guests        $TOKENGUEST # invite url
 mix_token_api           $TOKENAPI # api token
 #mix_path               /opt/slmix/ 
 EOF
-    /opt/mix/build/slmix -c /opt/mix/config "$@" -l 0.0.0.0
+    /opt/mix/build/slmix -l 0.0.0.0 -c /opt/mix/config "$@"
 else
     exec "$@"
 fi
