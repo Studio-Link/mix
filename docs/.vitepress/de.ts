@@ -35,8 +35,8 @@ function nav(): DefaultTheme.NavItem[] {
             text: '0.6.0-beta',
             items: [
                 {
-                    text: 'Änderungen',
-                    link: 'https://github.com/studio-link/mix/blob/main/CHANGELOG.md'
+                    text: 'Changelog',
+                    link: '/de/changelog'
                 }
             ]
         }

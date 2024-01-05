@@ -36,7 +36,7 @@ function nav(): DefaultTheme.NavItem[] {
             items: [
                 {
                     text: 'Changelog',
-                    link: 'https://github.com/studio-link/mix/blob/main/CHANGELOG.md'
+                    link: '/changelog'
                 }
             ]
         }
