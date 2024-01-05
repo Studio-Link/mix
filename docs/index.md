@@ -12,7 +12,7 @@ hero:
       link: /hosted/started
     - theme: alt
       text: Self-Hosting Guide 
-      link: /self-hosting/
+      link: /self-hosting/install-intro
 
 features:
   - title: Realtime Communication

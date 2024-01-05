@@ -23,7 +23,7 @@ export default defineConfig({
             ...en
         },
         de: {
-            label: 'German',
+            label: 'Deutsch',
             ...de 
         }
     }
