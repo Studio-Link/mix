@@ -10,9 +10,9 @@ jobs:
   webui:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Use Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '19'
         cache: 'npm'
@@ -21,7 +21,7 @@ jobs:
       run: |
         cd webui && npm install && npm run build && cd ..
         zip -r webui.zip webui/dist
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: webui
         path: webui.zip
@@ -30,7 +30,7 @@ jobs:
   ccheck:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: ccheck
       run: |
         make ccheck
@@ -42,7 +42,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: install clang-15 and ninja
       if: ${{ runner.os == 'Linux' }}
@@ -97,7 +97,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     
     - name: install and ninja
       run: |
@@ -122,7 +122,7 @@ jobs:
         path: third_party
         key: ${{ runner.os }}-gcc-${{ hashFiles('versions.mk') }}
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: webui
 
