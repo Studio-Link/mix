@@ -12,34 +12,35 @@
 
 static struct auplay *auplay = NULL;
 static struct ausrc *ausrc   = NULL;
-static struct list auplayl   = LIST_INIT;
-static struct list ausrcl    = LIST_INIT;
+static struct list amixl     = LIST_INIT;
 static struct aumix *aumix   = NULL;
 
 struct ausrc_st {
-	struct le le;
 	struct ausrc_prm prm;
 	ausrc_read_h *rh;
 	struct auplay_st *st_play;
 	void *arg;
-	const char *device;
-	bool muted;
-	uint16_t speaker_id;
+	struct amix *amix;
 };
 
 struct auplay_st {
-	struct le le;
 	struct auplay_prm prm;
 	auplay_write_h *wh;
 	int16_t *sampv;
-	struct aumix_source *aumix_src;
-	struct ausrc_st *st_src;
-	uint16_t speaker_id;
-	void *arg;
 	uint64_t ts;
-	const char *device;
-	bool muted;
 	RE_ATOMIC int16_t level;
+	void *arg;
+	struct amix *amix;
+};
+
+struct amix {
+	struct le le;
+	struct ausrc_st *src;
+	struct auplay_st *play;
+	struct aumix_source *aumix_src;
+	const char *device;
+	uint16_t speaker_id;
+	bool muted;
 };
 
 
@@ -69,40 +70,82 @@ static int16_t amix_level(const int16_t *sampv, size_t frames)
 
 static void mix_readh(struct auframe *af, void *arg)
 {
-	struct auplay_st *st_play = arg;
+	struct amix *amix = arg;
 
-	if (!st_play || !af)
+	if (!amix || !af || !amix->play)
 		return;
 
-	st_play->wh(af, st_play->arg);
-	af->id = st_play->speaker_id;
+	amix->play->wh(af, amix->play->arg);
+	af->id = amix->speaker_id;
 
-	re_atomic_rlx_set(&st_play->level,
+	re_atomic_rlx_set(&amix->play->level,
 			  amix_level(af->sampv, af->sampc / CH));
 }
 
 
 static void mix_handler(const int16_t *sampv, size_t sampc, void *arg)
 {
-	struct auplay_st *st_play = arg;
+	struct amix *amix = arg;
 	struct auframe af;
 
-	if (!st_play->st_src)
+	if (!amix || !amix->src || !amix->play)
 		return;
 
-	auframe_init(&af, st_play->st_src->prm.fmt, (int16_t *)sampv, sampc,
-		     st_play->st_src->prm.srate, st_play->prm.ch);
-	af.timestamp = st_play->ts;
-	st_play->st_src->rh(&af, st_play->st_src->arg);
+	auframe_init(&af, amix->src->prm.fmt, (int16_t *)sampv, sampc,
+		     amix->src->prm.srate, amix->src->prm.ch);
+	af.timestamp = amix->play->ts;
+
+	amix->src->rh(&af, amix->src->arg);
+}
+
+
+static void amix_destructor(void *arg)
+{
+	struct amix *amix = arg;
+
+	mem_deref(amix->aumix_src);
+	list_unlink(&amix->le);
+}
+
+
+static int amix_alloc(struct amix **amixp)
+{
+	struct amix *amix;
+	int err;
+
+	if (!amixp)
+		return EINVAL;
+
+	amix = mem_zalloc(sizeof(struct amix), amix_destructor);
+	if (!amix)
+		return ENOMEM;
+
+	err = aumix_source_alloc(&amix->aumix_src, aumix, mix_handler, amix);
+	if (err) {
+		mem_deref(amix);
+		return err;
+	}
+
+	aumix_source_readh(amix->aumix_src, mix_readh);
+
+	amix->muted = true;
+
+	*amixp = amix;
+
+	return 0;
 }
 
 
 static void ausrc_destructor(void *arg)
 {
 	struct ausrc_st *st = arg;
-	if (st->st_play && st->st_play->aumix_src)
-		aumix_source_enable(st->st_play->aumix_src, false);
-	list_unlink(&st->le);
+
+	if (st->amix)
+		st->amix->src = NULL;
+
+	aumix_source_enable(st->amix->aumix_src, false);
+
+	mem_deref(st->amix);
 }
 
 
@@ -111,7 +154,10 @@ static int src_alloc(struct ausrc_st **stp, const struct ausrc *as,
 		     ausrc_read_h *rh, ausrc_error_h *errh, void *arg)
 {
 	struct ausrc_st *st;
+	struct amix *amix = NULL;
 	struct le *le;
+	int err = 0;
+
 	(void)errh;
 
 	if (!stp || !as || !prm)
@@ -121,35 +167,43 @@ static int src_alloc(struct ausrc_st **stp, const struct ausrc *as,
 	if (!st)
 		return ENOMEM;
 
-	st->prm	   = *prm;
-	st->rh	   = rh;
-	st->arg	   = arg;
-	st->device = device;
-	st->muted  = true;
+	st->prm = *prm;
+	st->rh	= rh;
+	st->arg = arg;
 
 	/* setup if auplay is started before ausrc */
-	for (le = list_head(&auplayl); le; le = le->next) {
-		struct auplay_st *st_play = le->data;
+	for (le = list_head(&amixl); le; le = le->next) {
+		amix = le->data;
 
-		/* compare struct audio arg */
-		if (st->arg == st_play->arg) {
-			st_play->st_src = st;
-			st->st_play	= st_play;
+		if (str_cmp(device, amix->device))
+			continue;
 
-			if (!st_play->muted) {
-				st->muted = st_play->muted;
-			}
-			aumix_source_mute(st_play->aumix_src, st->muted);
-			aumix_source_enable(st_play->aumix_src, true);
-			break;
-		}
+		st->amix = mem_ref(amix);
+
+		aumix_source_mute(amix->aumix_src, amix->muted);
+		aumix_source_enable(amix->aumix_src, true);
+
+		goto out;
 	}
 
-	list_append(&ausrcl, &st->le, st);
+	err = amix_alloc(&amix);
+	if (err)
+		goto out;
 
-	*stp = st;
+	st->amix     = amix;
+	amix->device = device;
 
-	return 0;
+	list_append(&amixl, &amix->le, amix);
+
+out:
+	if (err)
+		mem_deref(st);
+	else {
+		amix->src = st;
+		*stp	  = st;
+	}
+
+	return err;
 }
 
 
@@ -157,9 +211,12 @@ static void auplay_destructor(void *arg)
 {
 	struct auplay_st *st = arg;
 
-	mem_deref(st->aumix_src);
+	aumix_source_enable(st->amix->aumix_src, false);
+
 	mem_deref(st->sampv);
-	list_unlink(&st->le);
+	if (st->amix)
+		st->amix->play = NULL;
+	mem_deref(st->amix);
 }
 
 
@@ -168,8 +225,9 @@ static int play_alloc(struct auplay_st **stp, const struct auplay *ap,
 		      auplay_write_h *wh, void *arg)
 {
 	struct auplay_st *st;
-	int err;
+	struct amix *amix = NULL;
 	struct le *le;
+	int err = 0;
 
 	if (!stp || !ap || !prm)
 		return EINVAL;
@@ -185,44 +243,41 @@ static int play_alloc(struct auplay_st **stp, const struct auplay *ap,
 		goto out;
 	}
 
-	st->prm	   = *prm;
-	st->wh	   = wh;
-	st->arg	   = arg;
-	st->device = device;
-	st->muted  = true;
+	st->prm = *prm;
+	st->wh	= wh;
+	st->arg = arg;
 
-	err = aumix_source_alloc(&st->aumix_src, aumix, mix_handler, st);
+	/* setup if ausrc is started before auplay */
+	for (le = list_head(&amixl); le; le = le->next) {
+		amix = le->data;
+
+		if (str_cmp(device, amix->device))
+			continue;
+
+		st->amix = mem_ref(amix);
+
+		aumix_source_mute(amix->aumix_src, amix->muted);
+		aumix_source_enable(amix->aumix_src, true);
+
+		goto out;
+	}
+
+	err = amix_alloc(&amix);
 	if (err)
 		goto out;
 
-	aumix_source_readh(st->aumix_src, mix_readh);
+	st->amix     = amix;
+	amix->device = device;
 
-	/* setup if ausrc is started before auplay */
-	for (le = list_head(&ausrcl); le; le = le->next) {
-		struct ausrc_st *st_src = le->data;
-
-		/* compare struct audio arg */
-		if (st->arg == st_src->arg) {
-			st_src->st_play = st;
-			st->st_src	= st_src;
-
-			if (!st_src->muted) {
-				st->muted = false;
-			}
-			st->speaker_id = st_src->speaker_id;
-			aumix_source_mute(st->aumix_src, st->muted);
-			aumix_source_enable(st->aumix_src, true);
-			break;
-		}
-	}
-
-	list_append(&auplayl, &st->le, st);
+	list_append(&amixl, &amix->le, st);
 
 out:
 	if (err)
 		mem_deref(st);
-	else
-		*stp = st;
+	else {
+		amix->play = st;
+		*stp	   = st;
+	}
 
 	return err;
 }
@@ -233,33 +288,18 @@ void amix_mute(const char *device, bool mute, uint16_t id)
 {
 	struct le *le;
 
-	info("aumix_mute %s %d %d\n", device, mute, id);
-	LIST_FOREACH(&auplayl, le)
+	LIST_FOREACH(&amixl, le)
 	{
-		struct auplay_st *st = le->data;
+		struct amix *amix = le->data;
 
-		if (str_cmp(st->device, device))
+		if (str_cmp(device, amix->device))
 			continue;
 
-		aumix_source_mute(st->aumix_src, mute);
-		st->muted      = mute;
+		aumix_source_mute(amix->aumix_src, mute);
+		amix->muted = mute;
 		if (id)
-			st->speaker_id = id;
-
+			amix->speaker_id = id;
 		return;
-	}
-
-	/* Fallback if auplay is not started yet */
-	LIST_FOREACH(&ausrcl, le)
-	{
-		struct ausrc_st *st = le->data;
-
-		if (str_cmp(st->device, device))
-			continue;
-
-		st->muted      = mute;
-		if (id)
-			st->speaker_id = id;
 	}
 }
 
@@ -271,17 +311,17 @@ static uint16_t talk_detection_h(void)
 	int16_t max	    = 0;
 	int16_t level	    = 0;
 
-	LIST_FOREACH(&auplayl, le)
+	LIST_FOREACH(&amixl, le)
 	{
-		struct auplay_st *st = le->data;
-		if (st->muted)
+		struct amix *amix = le->data;
+		if (amix->muted || !amix->play)
 			continue;
 
-		level = re_atomic_rlx(&st->level);
+		level = re_atomic_rlx(&amix->play->level);
 
 		if (level >= max) {
 			max	   = level;
-			speaker_id = st->speaker_id;
+			speaker_id = amix->speaker_id;
 		}
 	}
 
@@ -316,8 +356,7 @@ static int module_init(void)
 	aumix_recordh(aumix, amix_record);
 	aumix_record_sumh(aumix, vmix_audio_record);
 
-	list_init(&auplayl);
-	list_init(&ausrcl);
+	list_init(&amixl);
 
 	slmix_set_audio_rec_h(slmix(), audio_rec_h);
 	slmix_set_time_rec_h(slmix(), amix_record_msecs);
@@ -330,11 +369,11 @@ out:
 
 static int module_close(void)
 {
+	list_flush(&amixl);
+
 	ausrc  = mem_deref(ausrc);
 	auplay = mem_deref(auplay);
 	aumix  = mem_deref(aumix);
-	list_flush(&auplayl);
-	list_flush(&ausrcl);
 
 	return 0;
 }
