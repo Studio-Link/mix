@@ -15,8 +15,7 @@
 
 static struct {
 	struct list tracks;
-	bool run;
-	mtx_t *lock;
+	RE_ATOMIC bool run;
 	thrd_t thread;
 	struct aubuf *ab;
 	char *folder;
@@ -121,7 +120,7 @@ static int record_thread(void *arg)
 	if (!record.msecs)
 		record.msecs = tmr_jiffies();
 
-	while (record.run) {
+	while (re_atomic_rlx(&record.run)) {
 		sys_msleep(4);
 		while (aubuf_cur_size(record.ab) > sampc) {
 			aubuf_read_auframe(record.ab, &af);
@@ -146,23 +145,18 @@ int amix_record_start(const char *folder)
 	if (!folder)
 		return EINVAL;
 
-	if (record.run)
+	if (re_atomic_rlx(&record.run))
 		return EALREADY;
 
 	record.msecs = 0;
 	str_dup(&record.folder, folder);
 
-	err = mutex_alloc(&record.lock);
-	if (err)
-		return err;
-
 	err = aubuf_alloc(&record.ab, 0, 0);
 	if (err) {
-		mem_deref(record.lock);
 		return err;
 	}
 
-	record.run = true;
+	re_atomic_rlx_set(&record.run, true);
 	info("aumix: record started\n");
 
 	thread_create_name(&record.thread, "aumix record", record_thread,
@@ -174,7 +168,7 @@ int amix_record_start(const char *folder)
 
 void amix_record(struct auframe *af)
 {
-	if (!record.run || !af->id)
+	if (!re_atomic_rlx(&record.run) || !af->id)
 		return;
 
 	af->timestamp = tmr_jiffies();
@@ -182,107 +176,17 @@ void amix_record(struct auframe *af)
 }
 
 
-struct ffmpeg_work {
-	char *folder;
-	struct mbuf *mb;
-	int cnt;
-};
-
-
-#if 0
-static int ffmpeg_final(void *arg)
-{
-	struct ffmpeg_work *work = arg;
-	char *cmd		 = NULL;
-	int err;
-
-	if (!work || !work->folder)
-		return EINVAL;
-
-	/* Audio FLAC conversion */
-	err = re_sdprintf(
-		&cmd, "ffmpeg %b -filter_complex amix=inputs=%d %s/audio.flac",
-		mbuf_buf(work->mb), mbuf_get_left(work->mb), work->cnt,
-		work->folder);
-	if (err)
-		goto out;
-
-	system(cmd);
-	mem_deref(cmd);
-
-	/* Audio/Video MP4 conversion */
-	err = re_sdprintf(&cmd,
-			  "cd %s && ffmpeg -i audio.flac -i video.h264 "
-			  "-c:v copy -c:a aac record.mp4",
-			  work->folder);
-	if (err)
-		goto out;
-
-	system(cmd);
-	mem_deref(cmd);
-
-out:
-	mem_deref(work);
-
-	return err;
-}
-#endif
-
-
-static void ffmpeg_destruct(void *arg)
-{
-	struct ffmpeg_work *work = arg;
-
-	mem_deref(work->folder);
-	mem_deref(work->mb);
-}
-
-
 int amix_record_close(void)
 {
-	struct le *le;
-	struct ffmpeg_work *work;
-
-	if (!record.run)
+	if (!re_atomic_rlx(&record.run))
 		return EINVAL;
 
-	record.run = false;
+	re_atomic_rlx_set(&record.run, false);
 	info("aumix: record close\n");
 	thrd_join(record.thread, NULL);
 
 	mem_deref(record.ab);
-	mem_deref(record.lock);
 
-	work = mem_zalloc(sizeof(struct ffmpeg_work), ffmpeg_destruct);
-	if (!work)
-		goto out;
-
-	work->mb = mbuf_alloc(512);
-	if (!work->mb) {
-		mem_deref(work);
-		goto out;
-	}
-
-	LIST_FOREACH(&record.tracks, le)
-	{
-		struct track *track = le->data;
-
-		mbuf_printf(work->mb, "-i %s ", track->file);
-		work->cnt++;
-	}
-
-	mbuf_set_pos(work->mb, 0);
-
-	str_dup(&work->folder, record.folder);
-
-/* Enabled/Disable ffmpeg worker */
-#if 0
-	re_thread_async(ffmpeg_final, NULL, work);
-#else
-	mem_deref(work);
-#endif
-
-out:
 	record.folder = mem_deref(record.folder);
 	list_flush(&record.tracks);
 
