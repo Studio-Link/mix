@@ -1,36 +1,38 @@
 # Jetzt loslegen
 
-The easiest way to use **Studio Link - Mix Rooms** is the hosted version 
-(monthly subscription required).
+Der einfachste Weg, **Studio Link - Mix Rooms** zu nutzen, ist die gehostete Version 
+(monatliches Abonnement benötigt).
 
-You need only three simple steps to begin!
+Zum Starten sind nur drei einfache Schritte erforderlich!
 
-## 1. Register a Studio Link Account
+## 1. Studio Link Konto
 
-If you wan't to use the hosted version you have to register a Account here:
+Um die gehostete Version zu nutzen, kann unter diesem Link ein Konto registriert werden:
 
 https://my.studio.link/login
 
-## 2. Create a Mix Room
+## 2. Mix-Room erstellen
 
-Go to https://my.studio.link/mixrooms and click **New room**
+Unter https://my.studio.link/mixrooms befindet sich eine Übersicht der aktuellen Räume 
+und auch die Möglichkeit über **Create Room** einen neuen Raum anzulegen:
 
-![screenshot of room creation](/create_room.png)
+![Bildschirmfoto der Raumerstellung](/create_room.png)
 
-Choose a custom Mix Room URL like. For private usage, use
-a more random URL like "myprivatesecretpodcast42". 
+Wähle hier eine benutzerdefinierte Mix Room URL. Für die private Nutzung, eignet
+sich eine eher zufällige URL wie "meingeheimerpodcast42.mix.studio.link". 
 
 
-## 3. Room Links
+## 3. Einladungslinks
 
-![screenshot of room links](/room_links.png)
+![Bildschirmfoto der Raum-Links](/room_links.png)
 
-Now you can share or login with the provides Links:
+Es stehen folgende Links zur Verfügung:
 
-- The **Hosts** Link gives you full access to the mix room. You can control
-  how can participate...
+- Der **Hosts** Link gibt dir vollen Zugriff auf den Mixraum. Du kannst kontrollieren
+  wie man teilnehmen kann...
  
+- Den **Guests** Link kannst du mit deinen Podcast-Gästen teilen
 
-- You can share the **Guests** Link with your podcast guests
+- Unter dem **Download** Link findest du alle Aufnahmen
 
-- Under the **Download** Link you find all recordings
+
