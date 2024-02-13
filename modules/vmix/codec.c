@@ -12,6 +12,20 @@ static viddec_update_h *decupdh;
 static struct hash *dec_list;
 static mtx_t *dec_mtx;
 
+struct enc_pkt {
+	struct le le;
+	bool marker;
+	uint64_t rtp_ts;
+	struct mbuf *hdr;
+	size_t hdr_len;
+	struct mbuf *pld;
+	size_t pld_len;
+};
+
+static struct list enc_pktl	     = LIST_INIT;
+static RE_ATOMIC bool last_keyframe  = false;
+static RE_ATOMIC bool force_keyframe = false;
+
 enum {
 	MAX_PKT_TIME = 50, /**< in [ms] */
 };
@@ -34,7 +48,7 @@ struct viddec_state {
 	const char *dev;
 };
 
-struct pkt {
+struct dec_pkt {
 	uint64_t id;
 	struct le le;
 	struct mbuf *mb;
@@ -69,6 +83,53 @@ static void viddec_deref(void *arg)
 }
 
 
+static void enc_pkt_deref(void *arg)
+{
+	struct enc_pkt *pkt = arg;
+
+	mem_deref(pkt->hdr);
+	mem_deref(pkt->pld);
+	list_unlink(&pkt->le);
+}
+
+
+/* Copy encoded and packetized codec */
+static int enc_packet_h(bool marker, uint64_t rtp_ts, const uint8_t *hdr,
+			size_t hdr_len, const uint8_t *pld, size_t pld_len,
+			const struct video *vid)
+{
+	(void)vid;
+	int err;
+
+	if (!hdr || !pld)
+		return EINVAL;
+
+	struct enc_pkt *pkt =
+		mem_zalloc(sizeof(struct enc_pkt), enc_pkt_deref);
+	if (!pkt)
+		return ENOMEM;
+
+	pkt->marker = marker;
+	pkt->rtp_ts = rtp_ts;
+
+	pkt->hdr = mbuf_alloc(hdr_len);
+	pkt->pld = mbuf_alloc(pld_len);
+
+	err = mbuf_write_mem(pkt->hdr, hdr, hdr_len);
+	err |= mbuf_write_mem(pkt->pld, pld, pld_len);
+
+	if (err)
+		return err;
+
+	mbuf_set_pos(pkt->hdr, 0);
+	mbuf_set_pos(pkt->pld, 0);
+
+	list_append(&enc_pktl, &pkt->le, pkt);
+
+	return 0;
+}
+
+
 static int enc_update(struct videnc_state **vesp, const struct vidcodec *vc,
 		      struct videnc_param *prm, const char *fmtp,
 		      videnc_packet_h *pkth, const struct video *vid)
@@ -86,8 +147,8 @@ static int enc_update(struct videnc_state **vesp, const struct vidcodec *vc,
 	ves->vid  = vid;
 	ves->pkth = pkth;
 
-	err = encupdh((struct videnc_state **)&ves->vesp, vc, prm, fmtp, pkth,
-		      vid);
+	err = encupdh((struct videnc_state **)&ves->vesp, vc, prm, fmtp,
+		      enc_packet_h, vid);
 	if (err) {
 		mem_deref(ves);
 		return err;
@@ -102,18 +163,41 @@ static int enc_update(struct videnc_state **vesp, const struct vidcodec *vc,
 static int encode(struct videnc_state *ves, bool update,
 		  const struct vidframe *frame, uint64_t timestamp)
 {
-	return ench(ves->vesp, update, frame, timestamp);
+	bool keyframe = update;
+
+	if (re_atomic_rlx(&force_keyframe)) {
+		keyframe = true;
+		re_atomic_rlx_set(&force_keyframe, false);
+	}
+
+	re_atomic_rlx_set(&last_keyframe, keyframe);
+
+	return ench(ves->vesp, keyframe, frame, timestamp);
 }
 
 
 static int packetize(struct videnc_state *ves, const struct vidpacket *vpkt)
 {
+
 	if (ves->is_pkt_src) {
 		uint64_t ts = video_calc_rtp_timestamp_fix(vpkt->timestamp);
 		return ves->pkth(vpkt->keyframe, ts, NULL, 0, vpkt->buf,
 				 vpkt->size, ves->vid);
 	}
-	return packetizeh(ves->vesp, vpkt);
+
+	struct le *le;
+	LIST_FOREACH(&enc_pktl, le)
+	{
+		struct enc_pkt *p = le->data;
+
+		int err = ves->pkth(p->marker, p->rtp_ts, mbuf_buf(p->hdr),
+				    mbuf_get_left(p->hdr), mbuf_buf(p->pld),
+				    mbuf_get_left(p->pld), ves->vid);
+		if (err)
+			return err;
+	}
+
+	return 0;
 }
 
 
@@ -152,9 +236,9 @@ static int dec_update(struct viddec_state **vdsp, const struct vidcodec *vc,
 }
 
 
-static void pkt_deref(void *arg)
+static void dec_pkt_deref(void *arg)
 {
-	struct pkt *pkt = arg;
+	struct dec_pkt *pkt = arg;
 
 	mem_deref(pkt->mb);
 	list_unlink(&pkt->le);
@@ -167,7 +251,8 @@ static int decode(struct viddec_state *vds, struct vidframe *frame,
 	if (!vds || !frame || !vpkt || !vpkt->mb)
 		return EINVAL;
 
-	struct pkt *pkt = mem_zalloc(sizeof(struct pkt), pkt_deref);
+	struct dec_pkt *pkt =
+		mem_zalloc(sizeof(struct dec_pkt), dec_pkt_deref);
 	if (!pkt)
 		return ENOMEM;
 
@@ -186,10 +271,6 @@ static int decode(struct viddec_state *vds, struct vidframe *frame,
 		pkt = le->data;
 
 		le = le->next;
-
-		/* FIXME: Keep SPS/PPS workaround */
-		if (pkt->id < 200)
-			continue;
 
 		if (pkt->ts > pkt->ts_eol)
 			mem_deref(pkt);
@@ -228,7 +309,7 @@ static bool list_apply_handler(struct le *le, void *arg)
 {
 	struct vidsrc_st *st	 = arg;
 	struct viddec_state *vds = le->data;
-	struct pkt *pkt		 = NULL;
+	struct dec_pkt *pkt	 = NULL;
 
 	if (0 != str_cmp(vds->dev, st->device + sizeof("pktsrc") - 1))
 		return false;
@@ -265,6 +346,25 @@ void vmix_codec_pkt(struct vidsrc_st *st)
 	mtx_lock(dec_mtx);
 	(void)hash_apply(dec_list, list_apply_handler, st);
 	mtx_unlock(dec_mtx);
+}
+
+
+bool vmix_last_keyframe(void)
+{
+	return re_atomic_rlx(&last_keyframe);
+}
+
+
+void vmix_request_keyframe(void)
+{
+	re_atomic_rlx_set(&force_keyframe, true);
+}
+
+
+void vmix_encode_flush(void)
+{
+
+	list_flush(&enc_pktl);
 }
 
 
@@ -316,6 +416,8 @@ void vmix_codec_close(void)
 {
 	vidcodec_unregister(&h264_0);
 	vidcodec_unregister(&h264_1);
+
+	list_flush(&enc_pktl);
 
 	dec_list = mem_deref(dec_list);
 	dec_mtx	 = mem_deref(dec_mtx);

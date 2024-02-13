@@ -286,7 +286,7 @@ static int record_thread(void *arg)
 				e->ts - re_atomic_rlx(
 						&record.video_start_time),
 				timebase_video, record.videoStream->time_base);
-#if 0
+#if 1
 			warning("ts: %llu, %lld %d/%d\n",
 				e->ts - re_atomic_rlx(
 						&record.video_start_time),
@@ -530,15 +530,6 @@ int vmix_record_start(const char *record_folder)
 }
 
 
-static void entry_destruct(void *arg)
-{
-	struct record_entry *e = arg;
-	mem_deref(e->mb);
-
-	list_unlink(&e->le);
-}
-
-
 void vmix_audio_record(struct auframe *af);
 void vmix_audio_record(struct auframe *af)
 {
@@ -553,55 +544,9 @@ void vmix_audio_record(struct auframe *af)
 }
 
 
-int vmix_record(struct vidpacket *vp, RE_ATOMIC bool *update)
+int vmix_record(const struct vidframe *frame, uint64_t ts)
 {
-	struct record_entry *e;
-	int err;
-	(void)update;
-
-	if (!re_atomic_rlx(&record.run))
-		return ESHUTDOWN;
-
-	if (!vp->buf || !vp->size)
-		return EINVAL;
-
-	if (!re_atomic_rlx(&record.video_start_time)) {
-		/* wait until keyframe */
-		if (!vp->keyframe) {
-			/* FIXME: update request disabled for hardware enc */
-			/* re_atomic_rlx_set(update, true); */
-			return 0;
-		}
-		re_atomic_rlx_set(&record.video_start_time, vp->timestamp);
-	}
-
-	e = mem_zalloc(sizeof(struct record_entry), entry_destruct);
-	if (!e)
-		return ENOMEM;
-
-	e->mb = mbuf_alloc(vp->size);
-	if (!e->mb) {
-		err = ENOMEM;
-		goto out;
-	}
-
-	err = mbuf_write_mem(e->mb, vp->buf, vp->size);
-	if (err)
-		goto out;
-
-	e->size	    = vp->size;
-	e->ts	    = vp->timestamp;
-	e->keyframe = vp->keyframe;
-
-	mtx_lock(record.lock);
-	list_append(&record.bufs, &e->le, e);
-	mtx_unlock(record.lock);
-
-out:
-	if (err)
-		mem_deref(e);
-
-	return err;
+	return 0;
 }
 
 
