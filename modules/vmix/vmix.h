@@ -56,12 +56,15 @@ void vmix_src_input(struct vidsrc_st *st, const struct vidframe *frame,
 
 
 int vmix_record_start(const char *record_folder);
-int vmix_record(struct vidpacket *vp, RE_ATOMIC bool *update);
+int vmix_record(const struct vidframe *frame, uint64_t ts);
 int vmix_record_close(void);
 
 void vmix_codec_pkt(struct vidsrc_st *st);
 int vmix_codec_init(void);
 void vmix_codec_close(void);
+bool vmix_last_keyframe(void);
+void vmix_request_keyframe(void);
+void vmix_encode_flush(void);
 
 int vmix_pktsrc_init(void);
 void vmix_pktsrc_close(void);

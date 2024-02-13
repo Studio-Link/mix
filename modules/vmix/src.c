@@ -10,10 +10,7 @@
 #include <re_atomic.h>
 #include "vmix.h"
 
-static struct vidpacket vp = {
-	.buf = NULL, .size = 0, .timestamp = 0, .keyframe = false};
-static struct mbuf *packet_dup = NULL;
-static RE_ATOMIC bool reset    = false;
+static struct vidpacket dummy_vp = {.timestamp = 0};
 static mtx_t *vmix_mutex;
 
 
@@ -88,72 +85,32 @@ static void frame_handler(uint64_t ts, const struct vidframe *frame, void *arg)
 	if (!re_atomic_rlx(&st->run))
 		return;
 
-	/* frameh can return without calling dup_handler if not all network
-	 * packets are send */
 	st->frameh((struct vidframe *)frame, ts, st->arg);
 
-	if (!vp.buf)
-		return;
-
-	if (!vmix_srcl.head)
-		return;
+	dummy_vp.keyframe = vmix_last_keyframe();
 
 	vmix_lock();
-	le = vmix_srcl.head->next;
+	le = vmix_srcl.head;
 	while (le) {
 		st = le->data;
 		if (!st)
 			break;
 
 		/* wait until keyframe arrive if src is not running */
-		if (!re_atomic_rlx(&st->run) && !vp.keyframe) {
+		if (!re_atomic_rlx(&st->run) && !dummy_vp.keyframe) {
 			le = le->next;
 			continue;
 		}
 
 		re_atomic_rlx_set(&st->run, true);
-		st->packeth(&vp, st->arg);
+		st->packeth(&dummy_vp, st->arg);
 		le = le->next;
 	}
 	vmix_unlock();
 
-	vmix_record(&vp, &reset);
+	vmix_encode_flush();
 
-	/* prevent sending packets multiple times */
-	vp.buf = NULL;
-}
-
-
-int packet_dup_handler(uint64_t ts, uint8_t *buf, size_t size, bool keyframe);
-int packet_dup_handler(uint64_t ts, uint8_t *buf, size_t size, bool keyframe)
-{
-	int err = 0;
-
-	if (!buf)
-		return 0;
-
-	if (re_atomic_rlx(&reset)) {
-		re_atomic_rlx_set(&reset, false);
-		err = ECONNRESET;
-		goto out;
-	}
-
-	packet_dup->pos = 0;
-	packet_dup->end = 0;
-
-	err = mbuf_write_mem(packet_dup, buf, size);
-	if (err) {
-		warning("packet_dup_handler %m", err);
-		return 0;
-	}
-
-	vp.timestamp = ts;
-	vp.size	     = size;
-	vp.buf	     = packet_dup->buf;
-	vp.keyframe  = keyframe;
-
-out:
-	return err;
+	vmix_record(frame, ts);
 }
 
 
@@ -204,7 +161,7 @@ int vmix_src_alloc(struct vidsrc_st **stp, const struct vidsrc *vs,
 
 	vidmix_source_toggle_selfview(st->vidmix_src);
 
-	re_atomic_rlx_set(&reset, true);
+	vmix_request_keyframe();
 
 	/* only start once */
 	if (vmix_srcl.head == &st->le) {
@@ -251,11 +208,6 @@ void vmix_src_input(struct vidsrc_st *st, const struct vidframe *frame,
 
 int vmix_src_init(void)
 {
-	packet_dup = mbuf_alloc(1024);
-	if (!packet_dup) {
-		return ENOMEM;
-	}
-
 	return mutex_alloc(&vmix_mutex);
 }
 
@@ -263,5 +215,4 @@ int vmix_src_init(void)
 void vmix_src_close(void)
 {
 	vmix_mutex = mem_deref(vmix_mutex);
-	packet_dup = mem_deref(packet_dup);
 }
