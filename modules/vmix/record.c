@@ -25,7 +25,7 @@
 static struct {
 	RE_ATOMIC bool run;
 	RE_ATOMIC bool run_stream;
-	struct list bufs;
+	struct list vframes;
 	mtx_t *lock;
 	thrd_t thread;
 	struct aubuf *ab;
@@ -38,17 +38,16 @@ static struct {
 	AVStream *videoStreamStream;
 	AVStream *audioStream;
 	AVStream *audioStreamStream;
+	AVFrame *videoFrame;
 	AVCodecContext *videoCodecContext;
 	AVCodecContext *audioCodecContext;
 	SwrContext *resample_context;
-} record = {0};
+} record = {.run = false};
 
 struct record_entry {
 	struct le le;
-	struct mbuf *mb;
-	size_t size;
 	uint64_t ts;
-	bool keyframe;
+	struct vidframe *frame;
 };
 
 #if STREAM
@@ -238,7 +237,7 @@ static int record_thread(void *arg)
 	struct le *le;
 	int64_t audio_pts = 0;
 #if STREAM
-	int err		  = 0;
+	int err = 0;
 #endif
 	(void)arg;
 
@@ -269,24 +268,45 @@ static int record_thread(void *arg)
 		     record.audioCodecContext->frame_size, 48000, 1);
 
 	while (re_atomic_rlx(&record.run)) {
-		sys_msleep(2);
+		sys_usleep(4000);
 
 		mtx_lock(record.lock);
-		le = list_head(&record.bufs);
+		le = list_head(&record.vframes);
 		mtx_unlock(record.lock);
 		while (le) {
 			struct record_entry *e = le->data;
 
-			videoPacket->data	  = e->mb->buf;
-			videoPacket->size	  = (int)e->size;
-			videoPacket->stream_index = record.videoStream->index;
-			videoPacket->pos	  = -1;
+			for (int i = 0; i < 4; i++) {
+				record.videoFrame->data[i] = e->frame->data[i];
+				record.videoFrame->linesize[i] =
+					e->frame->linesize[i];
+			}
 
-			videoPacket->dts = videoPacket->pts = av_rescale_q(
+			record.videoFrame->pts = av_rescale_q(
 				e->ts - re_atomic_rlx(
 						&record.video_start_time),
 				timebase_video, record.videoStream->time_base);
-#if 1
+
+			ret = avcodec_send_frame(record.videoCodecContext,
+						 record.videoFrame);
+			if (ret < 0) {
+				warning("rec: Error sending the video frame "
+					"to the encoder\n");
+				return ENOMEM;
+			}
+
+			ret = avcodec_receive_packet(record.videoCodecContext,
+						     videoPacket);
+			if (ret == AVERROR(EAGAIN))
+				goto next;
+
+			if (ret < 0) {
+				warning("rec: video encode error\n");
+				goto next;
+			}
+
+			videoPacket->stream_index = record.videoStream->index;
+#if 0
 			warning("ts: %llu, %lld %d/%d\n",
 				e->ts - re_atomic_rlx(
 						&record.video_start_time),
@@ -311,11 +331,11 @@ static int record_thread(void *arg)
 					av_err2str(ret));
 				return EINVAL;
 			}
-
+		next:
 			mtx_lock(record.lock);
 			le = le->next;
-			mem_deref(e);
 			mtx_unlock(record.lock);
+			mem_deref(e);
 		}
 
 		while (aubuf_cur_size(record.ab) >= auframe_size(&af)) {
@@ -358,7 +378,6 @@ static int record_thread(void *arg)
 			}
 
 			while (ret >= 0) {
-				int ret2;
 				ret = avcodec_receive_packet(
 					record.audioCodecContext, audioPacket);
 				if (ret == AVERROR(EAGAIN) ||
@@ -391,7 +410,7 @@ static int record_thread(void *arg)
 					return err;
 #endif
 
-				ret2 = av_interleaved_write_frame(
+				int ret2 = av_interleaved_write_frame(
 					record.outputFormatContext,
 					audioPacket);
 				if (ret2 < 0) {
@@ -454,11 +473,14 @@ int vmix_record_start(const char *record_folder)
 	if (!record.videoCodecContext)
 		return ENOMEM;
 
-	record.videoCodecContext->width		= 1920;
-	record.videoCodecContext->height	= 1080;
+	struct config *conf = conf_config();
+
+	record.videoCodecContext->width		= conf->video.width;
+	record.videoCodecContext->height	= conf->video.height;
 	record.videoCodecContext->time_base.num = 1;
-	record.videoCodecContext->time_base.den = 30;
+	record.videoCodecContext->time_base.den = conf->video.fps;
 	record.videoCodecContext->pix_fmt	= AV_PIX_FMT_YUV420P;
+	record.videoCodecContext->bit_rate	= conf->video.bitrate;
 
 	/* Some formats want stream headers to be separate. */
 	if (record.outputFormatContext->oformat->flags & AVFMT_GLOBALHEADER)
@@ -515,6 +537,11 @@ int vmix_record_start(const char *record_folder)
 		return EINVAL;
 	}
 
+	record.videoFrame	  = av_frame_alloc();
+	record.videoFrame->width  = conf->video.width;
+	record.videoFrame->height = conf->video.height;
+	record.videoFrame->format = AV_PIX_FMT_YUV420P;
+
 	init_resampler();
 
 #if STREAM
@@ -544,8 +571,46 @@ void vmix_audio_record(struct auframe *af)
 }
 
 
+static void record_destroy(void *arg)
+{
+	struct record_entry *e = arg;
+
+	mem_deref(e->frame);
+
+	mtx_lock(record.lock);
+	list_unlink(&e->le);
+	mtx_unlock(record.lock);
+}
+
+
 int vmix_record(const struct vidframe *frame, uint64_t ts)
 {
+	if (!re_atomic_rlx(&record.run))
+		return 0;
+
+	if (!re_atomic_rlx(&record.video_start_time))
+		re_atomic_rlx_set(&record.video_start_time, ts);
+
+	struct record_entry *e =
+		mem_zalloc(sizeof(struct record_entry), record_destroy);
+	if (!e)
+		return ENOMEM;
+
+	struct vidsz vsz = {.w = 1920, .h = 1080};
+
+	int err = vidframe_alloc(&e->frame, VID_FMT_YUV420P, &vsz);
+	if (unlikely(err)) {
+		mem_deref(e);
+		return ENOMEM;
+	}
+
+	vidframe_copy(e->frame, frame);
+	e->ts = ts;
+
+	mtx_lock(record.lock);
+	list_append(&record.vframes, &e->le, e);
+	mtx_unlock(record.lock);
+
 	return 0;
 }
 
@@ -574,11 +639,12 @@ int vmix_record_close(void)
 	avformat_free_context(record.outputFormatContext);
 	swr_free(&record.resample_context);
 
-	list_flush(&record.bufs);
+	list_flush(&record.vframes);
 
 	record.ab = mem_deref(record.ab);
 
 	mem_deref(record.lock);
+	av_frame_free(&record.videoFrame);
 
 	chmod(record.filename, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
