@@ -632,6 +632,7 @@ int vmix_record_close(void)
 
 	/* Write the trailer and close the output file */
 	av_write_trailer(record.outputFormatContext);
+	avio_close(record.outputFormatContext->pb);
 
 	/* Clean up */
 	avcodec_close(record.videoCodecContext);
