@@ -117,7 +117,7 @@ jobs:
           libavformat-dev libavcodec-dev libswscale-dev libflac-dev liblmdb-dev \
           libswresample-dev libavfilter-dev libavdevice-dev
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       with:
         path: third_party
         key: ${{ runner.os }}-gcc-${{ hashFiles('versions.mk') }}
