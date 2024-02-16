@@ -21,3 +21,5 @@
 .gdb_history
 
 node_modules
+
+re_trace.json
