@@ -115,8 +115,8 @@ int main(int argc, char *const argv[])
 	struct mix *mix = slmix();
 
 	const char *conf =
+/*		"sip_listen		0.0.0.0:5060\n" */
 		"call_max_calls		10\n" /* SIP incoming only */
-		"sip_listen		0.0.0.0:5060\n"
 		"sip_verify_server	yes\n"
 		"audio_buffer		40-100\n"
 		"audio_buffer_mode	fixed\n"
