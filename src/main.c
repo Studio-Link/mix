@@ -118,19 +118,20 @@ int main(int argc, char *const argv[])
 		"call_max_calls		10\n" /* SIP incoming only */
 		"sip_listen		0.0.0.0:5060\n"
 		"sip_verify_server	yes\n"
-		"audio_buffer		40-300\n"
-		"audio_buffer_mode	adaptive\n"
+		"audio_buffer		40-100\n"
+		"audio_buffer_mode	fixed\n"
 		"audio_silence		-35.0\n"
-		"audio_jitter_buffer_type	off\n"
+		"audio_jitter_buffer_type	adaptive\n"
+		"audio_jitter_buffer_ms	60-300\n"
 		"video_jitter_buffer_type	fixed\n"
-		"video_jitter_buffer_delay	1-500\n"
+		"video_jitter_buffer_ms	60-300\n"
 		"opus_bitrate		64000\n"
 		"ice_policy		all\n"
 		"video_size		1920x1080\n"
 		"video_bitrate		4000000\n"
 		"video_sendrate		10000000\n" /* max burst send */
 		"video_burst_bit	1000000\n"  /* max burst send */
-		"video_fps		30\n"
+		"video_fps		24\n"
 		"avcodec_keyint		10\n"
 		"avcodec_h265enc	nil\n"
 		"avcodec_h265dec	nil\n"
@@ -151,12 +152,18 @@ int main(int argc, char *const argv[])
 	if (err)
 		return err;
 
+#ifdef RE_TRACE_ENABLED
+	err = re_trace_init("re_trace.json");
+	if (err)
+		return err;
+#endif
+
 	err = slmix_getopt(argc, argv);
 	if (err)
 		return err;
 
 	fd_setsize(-1);
-	re_thread_async_init(4);
+	re_thread_async_init(8);
 
 	(void)sys_coredump_set(true);
 
@@ -231,6 +238,9 @@ int main(int argc, char *const argv[])
 	mod_close();
 
 	re_thread_async_close();
+#ifdef RE_TRACE_ENABLED
+	re_trace_close();
+#endif
 	tmr_debug();
 	libre_close();
 	mem_debug();

@@ -42,7 +42,7 @@ external:
 	mkdir -p external
 	git clone --depth 1 -b main \
 		https://github.com/baresip/re.git external/re
-	git clone --depth 1 -b main \
+	git clone --depth 1 -b playout_time \
 		https://github.com/baresip/baresip.git external/baresip
 	cd external/re && \
 		patch -p1 < ../../patches/re_aubuf_timestamp_order_fix.patch
