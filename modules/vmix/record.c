@@ -481,6 +481,7 @@ int vmix_record_start(const char *record_folder)
 	record.videoCodecContext->time_base.den = conf->video.fps;
 	record.videoCodecContext->pix_fmt	= AV_PIX_FMT_YUV420P;
 	record.videoCodecContext->bit_rate	= conf->video.bitrate;
+	record.videoCodecContext->thread_count  = 2;
 
 	/* Some formats want stream headers to be separate. */
 	if (record.outputFormatContext->oformat->flags & AVFMT_GLOBALHEADER)
