@@ -126,7 +126,7 @@ int slmix_update_room(void)
 int slmix_init(void)
 {
 	int err;
-#if 0
+#if 1
 	struct pl srv;
 	pl_set_str(&srv, "turn:195.201.63.86:3478");
 
