@@ -1,7 +1,7 @@
 /**
- * @file vidmix/rec.c vidmix recording
+ * @file vidmix/record.c vidmix recording
  *
- * Copyright (C) 2023 Sebastian Reimers
+ * Copyright (C) 2023-2024 Sebastian Reimers
  */
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -482,6 +482,7 @@ int vmix_record_start(const char *record_folder)
 	rec.videoCodecCtx->time_base.den = conf->video.fps;
 	rec.videoCodecCtx->pix_fmt	 = AV_PIX_FMT_YUV420P;
 	rec.videoCodecCtx->bit_rate	 = conf->video.bitrate;
+	rec.videoCodecCtx->thread_count	 = 1;
 
 	av_opt_set(rec.videoCodecCtx->priv_data, "profile", "baseline", 0);
 	av_opt_set(rec.videoCodecCtx->priv_data, "preset", "ultrafast", 0);
