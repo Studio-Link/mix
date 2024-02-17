@@ -1,5 +1,5 @@
 /**
- * @file vidmix/record.c vidmix recording
+ * @file vidmix/rec.c vidmix recording
  *
  * Copyright (C) 2023 Sebastian Reimers
  */
@@ -39,10 +39,10 @@ static struct {
 	AVStream *audioStream;
 	AVStream *audioStreamStream;
 	AVFrame *videoFrame;
-	AVCodecContext *videoCodecContext;
-	AVCodecContext *audioCodecContext;
+	AVCodecContext *videoCodecCtx;
+	AVCodecContext *audioCodecCtx;
 	SwrContext *resample_context;
-} record = {.run = false};
+} rec = {.run = false};
 
 struct record_entry {
 	struct le le;
@@ -61,21 +61,20 @@ static int init_resampler(void)
 {
 	int ret;
 
-	ret = swr_alloc_set_opts2(&record.resample_context,
-				  &record.audioCodecContext->ch_layout,
-				  record.audioCodecContext->sample_fmt,
-				  record.audioCodecContext->sample_rate,
-				  &(AVChannelLayout)AV_CHANNEL_LAYOUT_MONO,
-				  AV_SAMPLE_FMT_S16, 48000, 0, NULL);
+	ret = swr_alloc_set_opts2(
+		&rec.resample_context, &rec.audioCodecCtx->ch_layout,
+		rec.audioCodecCtx->sample_fmt, rec.audioCodecCtx->sample_rate,
+		&(AVChannelLayout)AV_CHANNEL_LAYOUT_MONO, AV_SAMPLE_FMT_S16,
+		48000, 0, NULL);
 	if (ret < 0) {
 		warning("Could not allocate resample context\n");
 		return EINVAL;
 	}
 
-	ret = swr_init(record.resample_context);
+	ret = swr_init(rec.resample_context);
 	if (ret < 0) {
 		warning("Could not init resample context\n");
-		swr_free(&record.resample_context);
+		swr_free(&rec.resample_context);
 		return EINVAL;
 	}
 
@@ -89,7 +88,7 @@ static int init_stream(void)
 
 	/* av_log_set_level(AV_LOG_DEBUG); */
 
-	ret = avformat_alloc_output_context2(&record.streamFormatContext, NULL,
+	ret = avformat_alloc_output_context2(&rec.streamFormatContext, NULL,
 					     "flv", stream_url);
 	if (ret < 0)
 		return EINVAL;
@@ -97,92 +96,89 @@ static int init_stream(void)
 	const AVCodec *videoCodec = avcodec_find_encoder(AV_CODEC_ID_H264);
 
 	AVStream *videoStream =
-		avformat_new_stream(record.streamFormatContext, videoCodec);
+		avformat_new_stream(rec.streamFormatContext, videoCodec);
 	if (!videoStream) {
 		warning("video stream error\n");
 		return ENOMEM;
 	}
 
-	AVCodecContext *videoCodecContext = avcodec_alloc_context3(videoCodec);
-	if (!videoCodecContext) {
+	AVCodecContext *videoCodecCtx = avcodec_alloc_context3(videoCodec);
+	if (!videoCodecCtx) {
 		warning("videocontext error\n");
 		return ENOMEM;
 	}
 
-	videoCodecContext->width	 = 1920;
-	videoCodecContext->height	 = 1080;
-	videoCodecContext->time_base.num = 1;
-	videoCodecContext->time_base.den = 30;
-	videoCodecContext->pix_fmt	 = AV_PIX_FMT_YUV420P;
-	videoCodecContext->bit_rate	 = 4000000;
+	videoCodecCtx->width	     = 1920;
+	videoCodecCtx->height	     = 1080;
+	videoCodecCtx->time_base.num = 1;
+	videoCodecCtx->time_base.den = 30;
+	videoCodecCtx->pix_fmt	     = AV_PIX_FMT_YUV420P;
+	videoCodecCtx->bit_rate	     = 4000000;
 
-	if (record.streamFormatContext->oformat->flags & AVFMT_GLOBALHEADER)
-		videoCodecContext->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+	if (rec.streamFormatContext->oformat->flags & AVFMT_GLOBALHEADER)
+		videoCodecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
-	ret = avcodec_open2(videoCodecContext, videoCodec, NULL);
+	ret = avcodec_open2(videoCodecCtx, videoCodec, NULL);
 	if (ret < 0) {
 		warning("avcodec_open2 video error\n");
 		return EINVAL;
 	}
 
 
-	avcodec_parameters_from_context(videoStream->codecpar,
-					videoCodecContext);
+	avcodec_parameters_from_context(videoStream->codecpar, videoCodecCtx);
 
 	const AVCodec *audioCodec = avcodec_find_encoder(AV_CODEC_ID_AAC);
 
 	AVStream *audioStream =
-		avformat_new_stream(record.streamFormatContext, audioCodec);
+		avformat_new_stream(rec.streamFormatContext, audioCodec);
 	if (!audioStream) {
 		warning("audiostream error\n");
 		return ENOMEM;
 	}
 
-	AVCodecContext *audioCodecContext = avcodec_alloc_context3(audioCodec);
-	if (!audioCodecContext)
+	AVCodecContext *audioCodecCtx = avcodec_alloc_context3(audioCodec);
+	if (!audioCodecCtx)
 		return ENOMEM;
 
-	audioCodecContext->codec_id    = AV_CODEC_ID_AAC;
-	audioCodecContext->codec_type  = AVMEDIA_TYPE_AUDIO;
-	audioCodecContext->sample_rate = 48000;
-	audioCodecContext->sample_fmt  = AV_SAMPLE_FMT_FLTP;
-	audioCodecContext->ch_layout =
-		(AVChannelLayout)AV_CHANNEL_LAYOUT_STEREO;
-	audioCodecContext->bit_rate = 96000;
-	if (record.streamFormatContext->oformat->flags & AVFMT_GLOBALHEADER)
-		audioCodecContext->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+	audioCodecCtx->codec_id	   = AV_CODEC_ID_AAC;
+	audioCodecCtx->codec_type  = AVMEDIA_TYPE_AUDIO;
+	audioCodecCtx->sample_rate = 48000;
+	audioCodecCtx->sample_fmt  = AV_SAMPLE_FMT_FLTP;
+	audioCodecCtx->ch_layout   = (AVChannelLayout)AV_CHANNEL_LAYOUT_STEREO;
+	audioCodecCtx->bit_rate	   = 96000;
+	if (rec.streamFormatContext->oformat->flags & AVFMT_GLOBALHEADER)
+		audioCodecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
-	avcodec_open2(audioCodecContext, audioCodec, NULL);
+	avcodec_open2(audioCodecCtx, audioCodec, NULL);
 	if (ret < 0) {
 		warning("avcodec_open2 audio error\n");
 		return EINVAL;
 	}
 
-	avcodec_parameters_from_context(audioStream->codecpar,
-					audioCodecContext);
+	avcodec_parameters_from_context(audioStream->codecpar, audioCodecCtx);
 
-	ret = avio_open(&record.streamFormatContext->pb, stream_url,
+	ret = avio_open(&rec.streamFormatContext->pb, stream_url,
 			AVIO_FLAG_WRITE);
 	if (ret < 0) {
 		warning("avio_open stream error\n");
 		return EINVAL;
 	}
 
-	av_dump_format(record.streamFormatContext, 0, stream_url, 1);
+	av_dump_format(rec.streamFormatContext, 0, stream_url, 1);
 
 	AVDictionary *opts = NULL;
 	av_dict_set(&opts, "flvflags", "no_duration_filesize", 0);
 
-	ret = avformat_write_header(record.streamFormatContext, &opts);
+	ret = avformat_write_header(rec.streamFormatContext, &opts);
 	if (ret < 0) {
 		warning("avformat_write_header stream error\n");
 		return EINVAL;
 	}
 
-	re_atomic_rlx_set(&record.run_stream, true);
+	re_atomic_rlx_set(&rec.run_stream, true);
 
-	record.videoStreamStream = videoStream;
-	record.audioStreamStream = audioStream;
+	rec.videoStreamStream = videoStream;
+	rec.audioStreamStream = audioStream;
 
 	return 0;
 }
@@ -190,22 +186,22 @@ static int init_stream(void)
 
 static void close_stream(void)
 {
-	if (re_atomic_rlx(&record.run_stream))
-		av_write_trailer(record.streamFormatContext);
+	if (re_atomic_rlx(&rec.run_stream))
+		av_write_trailer(rec.streamFormatContext);
 
-	if (record.streamFormatContext) {
-		avio_close(record.streamFormatContext->pb);
-		avformat_free_context(record.streamFormatContext);
+	if (rec.streamFormatContext) {
+		avio_close(rec.streamFormatContext->pb);
+		avformat_free_context(rec.streamFormatContext);
 	}
 
-	re_atomic_rlx_set(&record.run_stream, false);
+	re_atomic_rlx_set(&rec.run_stream, false);
 }
 
 
 static int write_stream(AVPacket *pkt, AVRational *time_base_src,
 			AVRational *time_base_dst)
 {
-	if (!re_atomic_rlx(&record.run_stream))
+	if (!re_atomic_rlx(&rec.run_stream))
 		return 0;
 
 	AVPacket *packet = av_packet_clone(pkt);
@@ -216,8 +212,7 @@ static int write_stream(AVPacket *pkt, AVRational *time_base_src,
 	packet->dts =
 		av_rescale_q(packet->dts, *time_base_src, *time_base_dst);
 
-	int ret =
-		av_interleaved_write_frame(record.streamFormatContext, packet);
+	int ret = av_interleaved_write_frame(rec.streamFormatContext, packet);
 	if (ret < 0) {
 		warning("av write stream error (%s)\n", av_err2str(ret));
 		return EPIPE;
@@ -248,9 +243,9 @@ static int record_thread(void *arg)
 	if (!videoPacket || !audioPacket || !audioFrame)
 		return ENOMEM;
 
-	audioFrame->nb_samples = record.audioCodecContext->frame_size;
-	audioFrame->format     = record.audioCodecContext->sample_fmt;
-	audioFrame->ch_layout  = record.audioCodecContext->ch_layout;
+	audioFrame->nb_samples = rec.audioCodecCtx->frame_size;
+	audioFrame->format     = rec.audioCodecCtx->sample_fmt;
+	audioFrame->ch_layout  = rec.audioCodecCtx->ch_layout;
 
 	ret = av_frame_get_buffer(audioFrame, 0);
 	if (ret < 0) {
@@ -259,88 +254,96 @@ static int record_thread(void *arg)
 	}
 
 	int16_t *sampv;
-	sampv = mem_zalloc(
-		record.audioCodecContext->frame_size * sizeof(int16_t), NULL);
+	sampv = mem_zalloc(rec.audioCodecCtx->frame_size * sizeof(int16_t),
+			   NULL);
 	if (!sampv)
 		return ENOMEM;
 
-	auframe_init(&af, AUFMT_S16LE, sampv,
-		     record.audioCodecContext->frame_size, 48000, 1);
+	auframe_init(&af, AUFMT_S16LE, sampv, rec.audioCodecCtx->frame_size,
+		     48000, 1);
 
-	while (re_atomic_rlx(&record.run)) {
-		sys_usleep(4000);
+	while (re_atomic_rlx(&rec.run)) {
+		sys_usleep(2000);
 
-		mtx_lock(record.lock);
-		le = list_head(&record.vframes);
-		mtx_unlock(record.lock);
+		mtx_lock(rec.lock);
+		uint32_t count = list_count(&rec.vframes);
+		if (count > 10)
+			warning("list count %u\n", count);
+		le = list_head(&rec.vframes);
+		mtx_unlock(rec.lock);
+
 		while (le) {
 			struct record_entry *e = le->data;
 
 			for (int i = 0; i < 4; i++) {
-				record.videoFrame->data[i] = e->frame->data[i];
-				record.videoFrame->linesize[i] =
+				rec.videoFrame->data[i] = e->frame->data[i];
+				rec.videoFrame->linesize[i] =
 					e->frame->linesize[i];
 			}
 
-			record.videoFrame->pts = av_rescale_q(
-				e->ts - re_atomic_rlx(
-						&record.video_start_time),
-				timebase_video, record.videoStream->time_base);
+			rec.videoFrame->pts = av_rescale_q(
+				e->ts - re_atomic_rlx(&rec.video_start_time),
+				timebase_video, rec.videoStream->time_base);
 
-			ret = avcodec_send_frame(record.videoCodecContext,
-						 record.videoFrame);
+			ret = avcodec_send_frame(rec.videoCodecCtx,
+						 rec.videoFrame);
 			if (ret < 0) {
 				warning("rec: Error sending the video frame "
 					"to the encoder\n");
 				return ENOMEM;
 			}
 
-			ret = avcodec_receive_packet(record.videoCodecContext,
-						     videoPacket);
-			if (ret == AVERROR(EAGAIN))
-				goto next;
+			while (ret >= 0) {
+				ret = avcodec_receive_packet(rec.videoCodecCtx,
+							     videoPacket);
+				if (ret == AVERROR(EAGAIN) ||
+				    ret == AVERROR_EOF)
+					break;
+				else if (ret < 0) {
+					warning("Error encoding video "
+						"frame\n");
+					return ENOMEM;
+				}
 
-			if (ret < 0) {
-				warning("rec: video encode error\n");
-				goto next;
-			}
-
-			videoPacket->stream_index = record.videoStream->index;
+				videoPacket->stream_index =
+					rec.videoStream->index;
 #if 0
-			warning("ts: %llu, %lld %d/%d\n",
-				e->ts - re_atomic_rlx(
-						&record.video_start_time),
-				videoPacket->pts,
-				record.videoStream->time_base.num,
-				record.videoStream->time_base.den);
+				warning("ts: %llu, %lld %d/%d\n",
+					e->ts - re_atomic_rlx(
+							&rec.video_start_time),
+					videoPacket->pts,
+					rec.videoStream->time_base.num,
+					rec.videoStream->time_base.den);
 #endif
 
 #if STREAM
-			err = write_stream(
-				videoPacket, &record.videoStream->time_base,
-				&record.videoStreamStream->time_base);
-			if (err)
-				return err;
+				err = write_stream(
+					videoPacket,
+					&rec.videoStream->time_base,
+					&rec.videoStreamStream->time_base);
+				if (err)
+					return err;
 #endif
 
-			ret = av_interleaved_write_frame(
-				record.outputFormatContext, videoPacket);
-			if (ret < 0) {
-				warning("av_frame_write video stream error "
-					"%s\n",
-					av_err2str(ret));
-				return EINVAL;
+				int ret2 = av_interleaved_write_frame(
+					rec.outputFormatContext, videoPacket);
+				if (ret2 < 0) {
+					warning("av_frame_write video stream "
+						"error "
+						"%s\n",
+						av_err2str(ret));
+					return EINVAL;
+				}
 			}
-		next:
-			mtx_lock(record.lock);
+
+			mtx_lock(rec.lock);
 			le = le->next;
-			mtx_unlock(record.lock);
+			mtx_unlock(rec.lock);
 			mem_deref(e);
 		}
 
-		while (aubuf_cur_size(record.ab) >= auframe_size(&af)) {
-			audioFrame->nb_samples =
-				record.audioCodecContext->frame_size;
+		while (aubuf_cur_size(rec.ab) >= auframe_size(&af)) {
+			audioFrame->nb_samples = rec.audioCodecCtx->frame_size;
 
 			ret = av_frame_make_writable(audioFrame);
 			if (ret < 0) {
@@ -348,28 +351,27 @@ static int record_thread(void *arg)
 				return ENOMEM;
 			}
 
-			aubuf_read_auframe(record.ab, &af);
+			aubuf_read_auframe(rec.ab, &af);
 
-			swr_convert(record.resample_context,
+			swr_convert(rec.resample_context,
 				    audioFrame->extended_data,
 				    audioFrame->nb_samples,
 				    (const uint8_t **)&af.sampv,
 				    (int)af.sampc);
-
 #if 0
 			audioFrame->pts = av_rescale_q(
 				af.timestamp -
 					(re_atomic_rlx(
-						 &record.video_start_time) /
+						 &rec.video_start_time) /
 					 1000),
 				timebase_audio,
-				record.audioStreamStream->time_base);
+				rec.audioStreamStream->time_base);
 #else
 			audioFrame->pts = audio_pts;
 			audio_pts += audioFrame->nb_samples;
 #endif
 
-			ret = avcodec_send_frame(record.audioCodecContext,
+			ret = avcodec_send_frame(rec.audioCodecCtx,
 						 audioFrame);
 			if (ret < 0) {
 				warning("Error sending the frame to the "
@@ -378,8 +380,8 @@ static int record_thread(void *arg)
 			}
 
 			while (ret >= 0) {
-				ret = avcodec_receive_packet(
-					record.audioCodecContext, audioPacket);
+				ret = avcodec_receive_packet(rec.audioCodecCtx,
+							     audioPacket);
 				if (ret == AVERROR(EAGAIN) ||
 				    ret == AVERROR_EOF)
 					break;
@@ -392,27 +394,26 @@ static int record_thread(void *arg)
 				warning("audio ts: %llu, %lld %lld %d/%d\n",
 					af.timestamp -
 						(re_atomic_rlx(
-						&record.video_start_time) /
+						&rec.video_start_time) /
 						 1000),
 					audioFrame->pts, audioPacket->pts,
-					record.audioStreamStream->time_base
+					rec.audioStreamStream->time_base
 						.num,
-					record.audioStreamStream->time_base
+					rec.audioStreamStream->time_base
 						.den);
 #endif
 				audioPacket->stream_index =
-					record.audioStream->index;
+					rec.audioStream->index;
 #if STREAM
 				err = write_stream(
 					audioPacket, &timebase_audio,
-					&record.audioStreamStream->time_base);
+					&rec.audioStreamStream->time_base);
 				if (err)
 					return err;
 #endif
 
 				int ret2 = av_interleaved_write_frame(
-					record.outputFormatContext,
-					audioPacket);
+					rec.outputFormatContext, audioPacket);
 				if (ret2 < 0) {
 					warning("av_frame_write audio "
 						"error\n");
@@ -436,27 +437,27 @@ int vmix_record_start(const char *record_folder)
 	int err;
 	int ret;
 
-	if (re_atomic_rlx(&record.run))
+	if (re_atomic_rlx(&rec.run))
 		return EALREADY;
 
-	re_snprintf(record.filename, sizeof(record.filename), "%s/video.mp4",
+	re_snprintf(rec.filename, sizeof(rec.filename), "%s/video.mp4",
 		    record_folder);
 
-	err = mutex_alloc(&record.lock);
+	err = mutex_alloc(&rec.lock);
 	if (err) {
 		return err;
 	}
 
-	err = aubuf_alloc(&record.ab, 0, 0);
+	err = aubuf_alloc(&rec.ab, 0, 0);
 	if (err) {
-		mem_deref(record.lock);
+		mem_deref(rec.lock);
 		return err;
 	}
 
-	aubuf_set_live(record.ab, false);
+	aubuf_set_live(rec.ab, false);
 
-	ret = avformat_alloc_output_context2(&record.outputFormatContext, NULL,
-					     NULL, record.filename);
+	ret = avformat_alloc_output_context2(&rec.outputFormatContext, NULL,
+					     NULL, rec.filename);
 	if (ret < 0) {
 		warning("avformat_alloc error\n");
 		return EINVAL;
@@ -464,84 +465,87 @@ int vmix_record_start(const char *record_folder)
 
 	/* VIDEO */
 	const AVCodec *videoCodec = avcodec_find_encoder(AV_CODEC_ID_H264);
-	record.videoStream =
-		avformat_new_stream(record.outputFormatContext, videoCodec);
-	if (!record.videoStream)
+	rec.videoStream =
+		avformat_new_stream(rec.outputFormatContext, videoCodec);
+	if (!rec.videoStream)
 		return ENOMEM;
 
-	record.videoCodecContext = avcodec_alloc_context3(videoCodec);
-	if (!record.videoCodecContext)
+	rec.videoCodecCtx = avcodec_alloc_context3(videoCodec);
+	if (!rec.videoCodecCtx)
 		return ENOMEM;
 
 	struct config *conf = conf_config();
 
-	record.videoCodecContext->width		= conf->video.width;
-	record.videoCodecContext->height	= conf->video.height;
-	record.videoCodecContext->time_base.num = 1;
-	record.videoCodecContext->time_base.den = conf->video.fps;
-	record.videoCodecContext->pix_fmt	= AV_PIX_FMT_YUV420P;
-	record.videoCodecContext->bit_rate	= conf->video.bitrate;
-	record.videoCodecContext->thread_count  = 2;
+	rec.videoCodecCtx->width	 = conf->video.width;
+	rec.videoCodecCtx->height	 = conf->video.height;
+	rec.videoCodecCtx->time_base.num = 1;
+	rec.videoCodecCtx->time_base.den = conf->video.fps;
+	rec.videoCodecCtx->pix_fmt	 = AV_PIX_FMT_YUV420P;
+	rec.videoCodecCtx->bit_rate	 = conf->video.bitrate;
+
+	av_opt_set(rec.videoCodecCtx->priv_data, "profile", "baseline", 0);
+	av_opt_set(rec.videoCodecCtx->priv_data, "preset", "ultrafast", 0);
+	av_opt_set(rec.videoCodecCtx->priv_data, "tune", "zerolatency", 0);
 
 	/* Some formats want stream headers to be separate. */
-	if (record.outputFormatContext->oformat->flags & AVFMT_GLOBALHEADER)
-		record.videoCodecContext->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+	if (rec.outputFormatContext->oformat->flags & AVFMT_GLOBALHEADER)
+		rec.videoCodecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
-	ret = avcodec_open2(record.videoCodecContext, videoCodec, NULL);
+	ret = avcodec_open2(rec.videoCodecCtx, videoCodec, NULL);
 	if (ret < 0) {
 		warning("avcodec_open2 video error\n");
 		return EINVAL;
 	}
-	avcodec_parameters_from_context(record.videoStream->codecpar,
-					record.videoCodecContext);
+	avcodec_parameters_from_context(rec.videoStream->codecpar,
+					rec.videoCodecCtx);
 
 	/* AUDIO */
 	const AVCodec *audioCodec = avcodec_find_encoder(AV_CODEC_ID_AAC);
-	record.audioStream =
-		avformat_new_stream(record.outputFormatContext, audioCodec);
-	if (!record.audioStream)
+	rec.audioStream =
+		avformat_new_stream(rec.outputFormatContext, audioCodec);
+	if (!rec.audioStream)
 		return ENOMEM;
 
-	record.audioCodecContext = avcodec_alloc_context3(audioCodec);
-	if (!record.audioCodecContext)
+	rec.audioCodecCtx = avcodec_alloc_context3(audioCodec);
+	if (!rec.audioCodecCtx)
 		return ENOMEM;
 
-	record.audioCodecContext->codec_id    = AV_CODEC_ID_AAC;
-	record.audioCodecContext->codec_type  = AVMEDIA_TYPE_AUDIO;
-	record.audioCodecContext->sample_rate = 48000;
-	record.audioCodecContext->sample_fmt  = AV_SAMPLE_FMT_FLTP;
-	record.audioCodecContext->ch_layout =
+	rec.audioCodecCtx->codec_id    = AV_CODEC_ID_AAC;
+	rec.audioCodecCtx->codec_type  = AVMEDIA_TYPE_AUDIO;
+	rec.audioCodecCtx->sample_rate = 48000;
+	rec.audioCodecCtx->sample_fmt  = AV_SAMPLE_FMT_FLTP;
+	rec.audioCodecCtx->ch_layout =
 		(AVChannelLayout)AV_CHANNEL_LAYOUT_STEREO;
-	record.audioCodecContext->bit_rate = 96000;
+	rec.audioCodecCtx->bit_rate = 96000;
 	/* Some formats want stream headers to be separate. */
-	if (record.outputFormatContext->oformat->flags & AVFMT_GLOBALHEADER)
-		record.audioCodecContext->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+	if (rec.outputFormatContext->oformat->flags & AVFMT_GLOBALHEADER)
+		rec.audioCodecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
-	avcodec_open2(record.audioCodecContext, audioCodec, NULL);
+	avcodec_open2(rec.audioCodecCtx, audioCodec, NULL);
 	if (ret < 0) {
 		warning("avcodec_open2 audio error\n");
 		return EINVAL;
 	}
-	avcodec_parameters_from_context(record.audioStream->codecpar,
-					record.audioCodecContext);
+	avcodec_parameters_from_context(rec.audioStream->codecpar,
+					rec.audioCodecCtx);
 
-	ret = avio_open(&record.outputFormatContext->pb, record.filename,
+	ret = avio_open(&rec.outputFormatContext->pb, rec.filename,
 			AVIO_FLAG_WRITE);
 	if (ret < 0) {
 		warning("avio_open error\n");
 		return EINVAL;
 	}
 
-	ret = avformat_write_header(record.outputFormatContext, NULL);
+	ret = avformat_write_header(rec.outputFormatContext, NULL);
 	if (ret < 0) {
 		warning("avformat_write_header error\n");
 		return EINVAL;
 	}
 
-	record.videoFrame	  = av_frame_alloc();
-	record.videoFrame->width  = conf->video.width;
-	record.videoFrame->height = conf->video.height;
-	record.videoFrame->format = AV_PIX_FMT_YUV420P;
+	rec.videoFrame	       = av_frame_alloc();
+	rec.videoFrame->width  = conf->video.width;
+	rec.videoFrame->height = conf->video.height;
+	rec.videoFrame->format = AV_PIX_FMT_YUV420P;
 
 	init_resampler();
 
@@ -549,10 +553,10 @@ int vmix_record_start(const char *record_folder)
 	init_stream();
 #endif
 
-	re_atomic_rlx_set(&record.run, true);
+	re_atomic_rlx_set(&rec.run, true);
 	info("vidmix: record started\n");
 
-	thread_create_name(&record.thread, "vidrec", record_thread, NULL);
+	thread_create_name(&rec.thread, "vidrec", record_thread, NULL);
 
 	return 0;
 }
@@ -561,14 +565,13 @@ int vmix_record_start(const char *record_folder)
 void vmix_audio_record(struct auframe *af);
 void vmix_audio_record(struct auframe *af)
 {
-	if (!re_atomic_rlx(&record.run) ||
-	    !re_atomic_rlx(&record.video_start_time))
+	if (!re_atomic_rlx(&rec.run) || !re_atomic_rlx(&rec.video_start_time))
 		return;
 
-	if (!re_atomic_rlx(&record.audio_start_time))
-		re_atomic_rlx_set(&record.audio_start_time, af->timestamp);
+	if (!re_atomic_rlx(&rec.audio_start_time))
+		re_atomic_rlx_set(&rec.audio_start_time, af->timestamp);
 
-	aubuf_write_auframe(record.ab, af);
+	aubuf_write_auframe(rec.ab, af);
 }
 
 
@@ -578,19 +581,19 @@ static void record_destroy(void *arg)
 
 	mem_deref(e->frame);
 
-	mtx_lock(record.lock);
+	mtx_lock(rec.lock);
 	list_unlink(&e->le);
-	mtx_unlock(record.lock);
+	mtx_unlock(rec.lock);
 }
 
 
 int vmix_record(const struct vidframe *frame, uint64_t ts)
 {
-	if (!re_atomic_rlx(&record.run))
+	if (!re_atomic_rlx(&rec.run))
 		return 0;
 
-	if (!re_atomic_rlx(&record.video_start_time))
-		re_atomic_rlx_set(&record.video_start_time, ts);
+	if (!re_atomic_rlx(&rec.video_start_time))
+		re_atomic_rlx_set(&rec.video_start_time, ts);
 
 	struct record_entry *e =
 		mem_zalloc(sizeof(struct record_entry), record_destroy);
@@ -608,9 +611,9 @@ int vmix_record(const struct vidframe *frame, uint64_t ts)
 	vidframe_copy(e->frame, frame);
 	e->ts = ts;
 
-	mtx_lock(record.lock);
-	list_append(&record.vframes, &e->le, e);
-	mtx_unlock(record.lock);
+	mtx_lock(rec.lock);
+	list_append(&rec.vframes, &e->le, e);
+	mtx_unlock(rec.lock);
 
 	return 0;
 }
@@ -618,37 +621,41 @@ int vmix_record(const struct vidframe *frame, uint64_t ts)
 
 int vmix_record_close(void)
 {
-	if (!re_atomic_rlx(&record.run))
+	if (!re_atomic_rlx(&rec.run))
 		return EINVAL;
 
-	re_atomic_rlx_set(&record.run, false);
-	thrd_join(record.thread, NULL);
+	re_atomic_rlx_set(&rec.run, false);
+	thrd_join(rec.thread, NULL);
 
-	re_atomic_rlx_set(&record.audio_start_time, 0);
-	re_atomic_rlx_set(&record.video_start_time, 0);
+	re_atomic_rlx_set(&rec.audio_start_time, 0);
+	re_atomic_rlx_set(&rec.video_start_time, 0);
 
 #if STREAM
 	close_stream();
 #endif
 
 	/* Write the trailer and close the output file */
-	av_write_trailer(record.outputFormatContext);
-	avio_close(record.outputFormatContext->pb);
+	av_write_trailer(rec.outputFormatContext);
+	avio_close(rec.outputFormatContext->pb);
 
 	/* Clean up */
-	avcodec_close(record.videoCodecContext);
-	avcodec_close(record.audioCodecContext);
-	avformat_free_context(record.outputFormatContext);
-	swr_free(&record.resample_context);
+	avcodec_close(rec.videoCodecCtx);
+	avcodec_close(rec.audioCodecCtx);
+	avformat_free_context(rec.outputFormatContext);
+	swr_free(&rec.resample_context);
 
-	list_flush(&record.vframes);
+	uint32_t count = list_count(&rec.vframes);
+	if (count)
+		warning("rec/close: drop %u frames\n", count);
 
-	record.ab = mem_deref(record.ab);
+	list_flush(&rec.vframes);
 
-	mem_deref(record.lock);
-	av_frame_free(&record.videoFrame);
+	rec.ab = mem_deref(rec.ab);
 
-	chmod(record.filename, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	mem_deref(rec.lock);
+	av_frame_free(&rec.videoFrame);
+
+	chmod(rec.filename, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
 	return 0;
 }
