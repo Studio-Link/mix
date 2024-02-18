@@ -1,6 +1,6 @@
 <template>
   <div class="flex">
-      <!--<StudioNav />-->
+      <StudioNav />
     <div class="container mx-auto mb-32 sm:mb-24">
       <div class="flex items-center fixed right-0 top-0 m-3 space-x-2 text-xs z-40">
         <RecButton />
