@@ -21,7 +21,7 @@
 
             <ul class="chat flex-1 divide-y divide-gray-200 overflow-y-auto">
               <li v-for="(item, index) in messages" :key="index">
-                <div class="relative group py-4 px-5 flex items-center">
+                <div class="relative group py-4 px-2 flex items-center">
                   <div class="absolute inset-0 group-hover:bg-gray-50" aria-hidden="true"></div>
                   <div class="flex-1 flex items-top min-w-0 relative">
                     <span class="flex-shrink-0 inline-block relative">
@@ -34,20 +34,20 @@
                         />
                       </picture>
                     </span>
-                    <div class="ml-4">
+                    <div class="ml-2">
                       <div class="text-sm space-x-2">
                         <span class="text-gray-900">{{ item.user_name }}</span>
                         <span class="text-gray-500">
                           {{ formatTimeAgo(new Date(parseInt(item.time) * 1000)) }}
                         </span>
                       </div>
-                      <p>{{ item.msg }}</p>
+                      <p v-html="message(item.msg)"></p>
                     </div>
                   </div>
                 </div>
               </li>
               <li v-for="(item, index) in Users.chat_messages?.value" :key="index">
-                <div class="relative group py-4 px-5 flex items-center">
+                <div class="relative group py-4 px-2 flex items-center">
                   <div class="absolute inset-0 group-hover:bg-gray-50" aria-hidden="true"></div>
                   <div class="flex-1 flex items-top min-w-0 relative">
                     <span class="flex-shrink-0 inline-block relative">
@@ -60,20 +60,20 @@
                         />
                       </picture>
                     </span>
-                    <div class="ml-4">
+                    <div class="ml-2">
                       <div class="text-sm space-x-2">
                         <span class="text-gray-900">{{ item.user_name }}</span>
                         <span class="text-gray-500">
                           {{ formatTimeAgo(new Date(parseInt(item.time) * 1000)) }}
                         </span>
                       </div>
-                      <p>{{ item.msg }}</p>
+                      <p v-html="message(item.msg)"></p>
                     </div>
                   </div>
                 </div>
               </li>
             </ul>
-            <div class="bg-gray-50 px-4 py-6 sm:px-6">
+            <div class="bg-gray-50 py-6 px-2">
               <div class="flex space-x-3">
                 <div class="flex-shrink-0">
                   <picture>
@@ -117,6 +117,8 @@ import api from '../api'
 import { onMounted, onUpdated, ref } from 'vue'
 import { Users } from '../ws/users'
 import { formatTimeAgo } from '@vueuse/core'
+import * as linkify from 'linkifyjs'
+import linkifyString from 'linkify-string'
 
 const messages = ref<any>([])
 const msg = ref('')
@@ -144,4 +146,10 @@ onMounted(async () => {
   const json = await chat?.json()
   messages.value = json?.chats
 })
+
+function message(msg: string) {
+  const options = { defaultProtocol: 'https', target: '_blank', truncate: 29, className: 'linkify' }
+
+  return linkifyString(msg, options)
+}
 </script>
