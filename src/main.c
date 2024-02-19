@@ -125,7 +125,7 @@ int main(int argc, char *const argv[])
 		"audio_jitter_buffer_ms	60-300\n"
 		"video_jitter_buffer_type	fixed\n"
 		"video_jitter_buffer_ms	100-300\n"
-		"video_jitter_buffer_size 500\n"
+		"video_jitter_buffer_size 1000\n"
 		"opus_bitrate		64000\n"
 		"ice_policy		all\n"
 		"video_size		1920x1080\n"
