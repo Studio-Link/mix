@@ -11,6 +11,13 @@ function resetTimer(): void {
     startTimer();
 }
 
+function resetTimerChat(): void {
+    const elements = document.querySelectorAll("#chat_button") as NodeListOf<HTMLElement>;
+    elements.forEach(element => {
+        element.style.opacity = "1";
+    });
+}
+
 function fadeIn(): void {
     const elements = document.querySelectorAll(".fadeout") as NodeListOf<HTMLElement>;
     elements.forEach(element => {
@@ -28,10 +35,12 @@ function fadeOut(): void {
 
 export const Fadeout = {
     init() {
+
         document.addEventListener("mousemove", resetTimer);
         document.addEventListener("mousedown", resetTimer);
         document.addEventListener("touchstart", resetTimer);
         document.addEventListener("touchmove", resetTimer);
         document.addEventListener("keydown", resetTimer);
+        document.addEventListener("chat", resetTimerChat)
     }
 }

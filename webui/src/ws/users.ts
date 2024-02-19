@@ -62,6 +62,7 @@ interface Users {
     listeners: Ref<User[]>
     chat_messages: Ref<Chat[]>
     chat_active: Ref<boolean>
+    chat_unread: Ref<number>
     settings_active: Ref<boolean>
     record_timer: Ref<string>
     record: Ref<boolean>
@@ -85,6 +86,7 @@ export const Users: Users = {
     listeners: ref([]),
     chat_messages: ref([]),
     chat_active: ref(false),
+    chat_unread: ref(0),
     settings_active: ref(false),
     record_timer: ref('0:00:00'),
     record: ref(false),
@@ -207,6 +209,11 @@ export const Users: Users = {
                     msg: data.msg,
                 }
                 this.chat_messages.value?.push(chat)
+
+                if (!this.chat_active.value) {
+                    document.dispatchEvent(new Event("chat"))
+                    this.chat_unread.value++
+                }
 
                 return
             }

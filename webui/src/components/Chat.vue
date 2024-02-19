@@ -133,6 +133,10 @@ onUpdated(() => {
   window.onresize = function () {
     if (chat) chat.scrollTop = chat.scrollHeight
   }
+
+  if (Users.chat_active.value && Users.chat_unread.value) {
+    Users.chat_unread.value = 0
+  }
 })
 
 onMounted(async () => {

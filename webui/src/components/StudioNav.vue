@@ -1,7 +1,7 @@
 <template>
   <div class="z-10 md:hidden flex items-center fixed left-0">
     <button
-      :class="{'ml-16': menuOpen}"
+      :class="{ 'ml-16': menuOpen }"
       type="button"
       class="inline-flex items-center justify-center rounded-md p-2.5 text-gray-400"
       @click="menuOpen = !menuOpen"
