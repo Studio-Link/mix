@@ -481,7 +481,7 @@ int vmix_record_start(const char *record_folder)
 	rec.videoCodecCtx->time_base.num = 1;
 	rec.videoCodecCtx->time_base.den = conf->video.fps;
 	rec.videoCodecCtx->pix_fmt	 = AV_PIX_FMT_YUV420P;
-	rec.videoCodecCtx->bit_rate	 = conf->video.bitrate;
+	rec.videoCodecCtx->bit_rate	 = 8000000;
 	rec.videoCodecCtx->thread_count	 = 1;
 
 	av_opt_set(rec.videoCodecCtx->priv_data, "profile", "baseline", 0);
@@ -517,7 +517,7 @@ int vmix_record_start(const char *record_folder)
 	rec.audioCodecCtx->sample_fmt  = AV_SAMPLE_FMT_FLTP;
 	rec.audioCodecCtx->ch_layout =
 		(AVChannelLayout)AV_CHANNEL_LAYOUT_STEREO;
-	rec.audioCodecCtx->bit_rate = 96000;
+	rec.audioCodecCtx->bit_rate = 128000;
 	/* Some formats want stream headers to be separate. */
 	if (rec.outputFormatContext->oformat->flags & AVFMT_GLOBALHEADER)
 		rec.audioCodecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
