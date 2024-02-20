@@ -81,8 +81,8 @@ void slmix_refresh_rooms(void *arg)
 
 		mbuf_printf(&mjson, "\"%s\": %s,", mbkey.buf, val.buf);
 
-		mbuf_set_posend(&mbkey, 0, 0);
-		mbuf_set_posend(&val, 0, 0);
+		mbuf_rewind(&mbkey);
+		mbuf_rewind(&val);
 	}
 
 	re_sdprintf(&json, "{\"type\": \"rooms\", \"rooms\": {%b}}", mjson.buf,
