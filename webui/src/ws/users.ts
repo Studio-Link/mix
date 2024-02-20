@@ -136,7 +136,7 @@ export const Users: Users = {
                         continue
 
                     if (data.users[key].speaker) {
-                        if (data.users[key].video && data.users[key].pidx) {
+                        if (data.users[key].pidx) {
                             this.vspeakers.value.push(data.users[key])
                             this.vspeakers.value.sort((a, b) => a.pidx - b.pidx)
                             continue
@@ -188,7 +188,7 @@ export const Users: Users = {
                 }
 
                 if (data.speaker) {
-                    if (user.video && user.pidx) {
+                    if (user.pidx) {
                         this.vspeakers.value.push(user)
                         this.vspeakers.value.sort((a, b) => a.pidx - b.pidx)
                         return

@@ -432,13 +432,6 @@ void slmix_session_video(struct session *sess, bool enable)
 
 	sess->user->video = enable;
 
-	sess->user->pidx =
-		slmix_disp_enable(sess->mix, sess->user->id, enable);
-#if 0
-	if (enable)
-		stream_flush(media_get_stream(sess->mvideo));
-#endif
-
 	slmix_session_user_updated(sess);
 }
 
@@ -453,16 +446,15 @@ int slmix_session_speaker(struct session *sess, bool enable)
 
 	sess->user->speaker = enable;
 	amix_mute(sess->user->id, !enable, sess->user->speaker_id);
+	sess->user->pidx =
+		slmix_disp_enable(sess->mix, sess->user->id, enable);
 	stream_enable(media_get_stream(sess->mvideo), enable);
 	stream_enable_tx(media_get_stream(sess->mvideo), true);
 	sess->user->hand = false;
 
 	/* only allow disable for privacy reasons */
-	if (!enable) {
+	if (!enable)
 		sess->user->video = false;
-		sess->user->pidx =
-			slmix_disp_enable(sess->mix, sess->user->id, false);
-	}
 
 	return slmix_session_user_updated(sess);
 }
