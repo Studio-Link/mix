@@ -8,6 +8,7 @@ interface Session {
     id: string
     auth: boolean
     user_id: string | null
+    user_name: string
 }
 
 let sess: Session = JSON.parse(window.localStorage.getItem('sess')!)
@@ -77,7 +78,7 @@ export default {
         }
 
         /* Readonly! Use ws/users for updated states */
-        sess = { id: session_id, auth: false, user_id: null }
+        sess = { id: session_id, auth: false, user_id: null, user_name: '' }
 
         window.localStorage.setItem('sess', JSON.stringify(sess))
     },
@@ -94,6 +95,7 @@ export default {
         const user = JSON.parse(await resp?.text())
 
         sess.user_id = user.id
+        sess.user_name = name
         window.localStorage.setItem('sess', JSON.stringify(sess))
 
         router.push({ name: 'Home' })
@@ -111,8 +113,9 @@ export default {
         await api_fetch('POST', '/client/speaker', user_id)
     },
 
-    async listener(user_id: string) {
-        await api_fetch('POST', '/client/listener', user_id)
+    async listener(user_id: string | null) {
+        if (user_id)
+            await api_fetch('POST', '/client/listener', user_id)
     },
 
     async websocket() {

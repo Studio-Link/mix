@@ -166,6 +166,13 @@
                 >
                   Join the conversation
                 </button>
+                <button
+                  type="button"
+                  class="inline-flex w-full justify-center rounded-md border border-transparent bg-gray-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
+                  @click="join_listen()"
+                >
+                  Listen Only
+                </button>
               </div>
             </DialogPanel>
           </TransitionChild>
@@ -182,6 +189,7 @@ import { Cog6ToothIcon } from '@heroicons/vue/24/outline'
 import { Users } from '../ws/users'
 import { Webrtc, WebrtcState } from '../webrtc'
 import { ref, watch } from 'vue'
+import api from '../api'
 
 const open = Users.settings_active
 const videoOptions = ['Disabled', 'Camera', 'Screen']
@@ -193,8 +201,13 @@ const video_input_id = Webrtc.video_input_id
 const echo = Webrtc.echo
 const video_echo = ref<HTMLVideoElement>()
 
-watch(video_select, async () => {
-  if (video_echo.value) video_echo.value.srcObject = await Webrtc.change_video()
+watch(video_select, async (newValue, oldValue) => {
+    const interval = setInterval(async () => {
+        if (video_echo.value) {
+            clearInterval(interval)
+            video_echo.value.srcObject = await Webrtc.change_video()
+        }
+    }, 50)
 })
 
 watch(audio_input_id, async (newValue, oldValue) => {
@@ -232,11 +245,16 @@ watch(open, async () => {
 })
 
 watch(video_echo, async () => {
-  if (video_echo.value) video_echo.value.srcObject = await Webrtc.change_video()
+  if (video_echo.value) video_echo.value.srcObject = Webrtc.videostream()
 })
 
 function join() {
   open.value = false
   Webrtc.join()
+}
+
+function join_listen() {
+  open.value = false
+  api.listener(api.session().user_id)
 }
 </script>
