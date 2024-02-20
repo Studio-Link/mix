@@ -63,14 +63,6 @@ Audio RTT: {{ item.stats.artt }} ms
         </pre
           >
         </div>
-        <picture v-if="!item.video" class="grid place-content-center h-full">
-          <source type="image/webp" :srcset="'/avatars/' + item.id + '.webp'" />
-          <img
-            class="h-28 w-28 rounded-full lg:w-48 lg:h-48"
-            :src="'/avatars/' + item.id + '.png'"
-            alt="Avatar Image"
-          />
-        </picture>
         <div
           class="flex items-center absolute bottom-0 md:bg-gray-600 text-gray-100 rounded-md ml-1 mb-1 py-0.5 px-2 text-sm"
         >
@@ -263,25 +255,33 @@ function calc_rows() {
 }
 
 function calc_width() {
+  if (!video.value)
+    return '0 px'
   const rows = calc_rows()
-  return Math.floor(video.value!.clientWidth / rows) + 'px'
+  return Math.floor(video.value.clientWidth / rows) + 'px'
 }
 
 function calc_height() {
+  if (!video.value)
+    return '0 px'
   const rows = calc_rows()
-  return Math.floor(video.value!.clientHeight / rows) + 'px'
+  return Math.floor(video.value.clientHeight / rows) + 'px'
 }
 
 function calc_top(idx: number) {
+  if (!video.value)
+    return '0 px'
   const rows = calc_rows()
-  const h = Math.floor(video.value!.clientHeight / rows)
+  const h = Math.floor(video.value.clientHeight / rows)
 
   return h * Math.floor(idx / rows) + 'px'
 }
 
 function calc_left(idx: number) {
+  if (!video.value)
+    return '0 px'
   const rows = calc_rows()
-  const w = Math.floor(video.value!.clientWidth / rows)
+  const w = Math.floor(video.value.clientWidth / rows)
   let offset
 
   if (isFullscreen.value) {

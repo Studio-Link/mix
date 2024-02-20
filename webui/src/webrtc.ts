@@ -60,15 +60,40 @@ const silence = () => {
     return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false })
 }
 
-const black = ({ width = 640, height = 360 } = {}) => {
-    const canvas = Object.assign(document.createElement('canvas'), { width, height })
-    //Chrome workaround: needs canvas frame change to start webrtc rtp
-    canvas.getContext('2d')?.fillRect(0, 0, width, height)
+function drawLoop(ctx: CanvasRenderingContext2D, image: HTMLImageElement, width: number, height: number, cnt: number) {
+    if (cnt > 20) 
+        return
+
+    cnt = cnt + 1
     setTimeout(() => {
-        canvas.getContext('2d')?.fillRect(0, 0, width, height)
-    }, 2000)
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, width, height)
+        ctx.font = "48px serif";
+        ctx.textAlign = "center"
+        ctx.fillStyle = "gray";
+        ctx.fillText(api.session().user_name, width / 2, height / 2 + image.height / 2);
+        ctx.drawImage(image, width / 2 - (image.width / 2), (height / 2 - image.height / 2) - 48)
+        drawLoop(ctx, image, width, height, cnt)
+    }, 100)
+}
+
+const black = ({ width = 1280, height = 720 } = {}) => {
+    const canvas = Object.assign(document.createElement('canvas'), { width, height })
+    const ctx = canvas.getContext('2d')
+    if (!ctx)
+        return
+
+    ctx.fillRect(0, 0, width, height)
+
+    const image = new Image()
+    image.src = '/avatars/' + api.session().user_id + '.png'
+    image.onload = () => {
+        //Chrome workaround: needs canvas frame change to start webrtc rtp
+        drawLoop(ctx, image, width, height, 0)
+    }
+
     const stream = canvas.captureStream()
-    return Object.assign(stream.getVideoTracks()[0], { enabled: false })
+    return Object.assign(stream.getVideoTracks()[0], { enabled: true })
 }
 
 const AVSilence = (...args: any) => new MediaStream([black(...args), silence()])
@@ -350,7 +375,7 @@ export const Webrtc = {
 
         if (available)
             this.change_audio()
-        else 
+        else
             this.audio_input_id.value = audiostream?.getAudioTracks()[0].getSettings().deviceId
 
         useEventListener(navigator!.mediaDevices, 'devicechange', Webrtc.update_avdevices)
@@ -381,12 +406,6 @@ export const Webrtc = {
         if (this.video_select.value === 'Screen') {
             videostream?.getVideoTracks()[0].stop()
             await pc_screen()
-            if (screenstream !== null) {
-                if (this.state.value >= WebrtcState.ReadySpeaking)
-                    await pc_replace_tracks(null, screenstream.getVideoTracks()[0])
-                videostream?.getVideoTracks()[0].stop()
-            }
-            this.video_mute(false)
             return screenstream
         }
 
@@ -419,10 +438,6 @@ export const Webrtc = {
         if (videostream === null)
             return null
 
-        if (this.state.value >= WebrtcState.ReadySpeaking)
-            await pc_replace_tracks(null, videostream.getVideoTracks()[0])
-
-        this.video_mute(false, true)
         console.log('video changed', constraintsVideo)
         return videostream
     },
@@ -442,6 +457,8 @@ export const Webrtc = {
     async join() {
         if (this.video_select.value === 'Disabled') {
             this.video_mute(true)
+        } else {
+            this.video_mute(false)
         }
 
         if (this.state.value < WebrtcState.ReadySpeaking) {
@@ -474,30 +491,27 @@ export const Webrtc = {
     },
 
     video_mute(mute: boolean, local?: boolean) {
+        var stream = videostream
+
         if (this.video_select.value === 'Disabled')
             mute = true
 
         if (!Users.speaker_status.value) mute = true
 
-        if (this.video_select.value === 'Screen') {
-            screenstream?.getVideoTracks().forEach((track) => {
-                track.enabled = !mute
-                if (!local) {
-                    this.video_muted.value = mute
-                    api.video(!mute)
-                }
-            })
+        if (this.video_select.value === 'Screen')
+            stream = screenstream
 
-            return
+        if (!mute && stream)
+            pc_replace_tracks(null, stream.getVideoTracks()[0])
+        else {
+            avdummy = AVSilence()
+            pc_replace_tracks(null, avdummy.getVideoTracks()[0])
         }
 
-        videostream?.getVideoTracks().forEach((track) => {
-            track.enabled = !mute
-            if (!local) {
-                this.video_muted.value = mute
-                api.video(!mute)
-            }
-        })
+        if (!local) {
+            this.video_muted.value = mute
+            api.video(!mute)
+        }
     },
 
     hangup() {

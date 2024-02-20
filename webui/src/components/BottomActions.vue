@@ -104,13 +104,7 @@
               </button>
             </div>
             <!-- Video Mute -->
-            <div
-              v-if="
-                Webrtc.state.value >= WebrtcState.Listening &&
-                Users.speaker_status.value &&
-                Webrtc.video_select.value != 'Disabled'
-              "
-            >
+            <div v-if="Webrtc.state.value >= WebrtcState.Listening && Users.speaker_status.value">
               <button
                 v-if="Webrtc.video_muted.value"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
@@ -217,9 +211,14 @@ function mic_clicked(mute: boolean) {
 }
 
 function video_clicked(mute: boolean) {
-  if (Webrtc.state.value < WebrtcState.ReadySpeaking || Webrtc.video_input_id.value === 'disabled') {
+  if (Webrtc.state.value < WebrtcState.ReadySpeaking) {
     Users.settings_active.value = true
-  } else Webrtc.video_mute(mute)
+  } else if (Webrtc.video_select.value === 'Disabled') {
+    Users.settings_active.value = true
+    Webrtc.video_select.value = 'Camera'
+  } else {
+    Webrtc.video_mute(mute)
+  }
 }
 
 async function settings_clicked() {
