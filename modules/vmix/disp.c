@@ -52,7 +52,6 @@ int vmix_disp_alloc(struct vidisp_st **stp, const struct vidisp *vd,
 	}
 
 	st->vidsrc->vidisp = st;
-	/* vidmix_source_enable(st->vidsrc->vidmix_src, false); */
 	hash_append(vmix_disp, hash_joaat_str(dev), &st->le, st);
 
 out:
