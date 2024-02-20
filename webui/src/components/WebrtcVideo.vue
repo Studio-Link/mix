@@ -78,6 +78,14 @@ Audio RTT: {{ item.stats.artt }} ms
         </pre
           >
         </div>
+        <picture v-if="!item.video" class="grid place-content-center h-full">
+          <source type="image/webp" :srcset="'/avatars/' + item.id + '.webp'" />
+          <img
+            class="h-28 w-28 rounded-full lg:w-48 lg:h-48"
+            :src="'/avatars/' + item.id + '.png'"
+            alt="Avatar Image"
+          />
+        </picture>
         <div
           class="flex items-center absolute bottom-0 md:bg-gray-600 text-gray-100 rounded-md ml-1 mb-1 py-0.5 px-2 text-sm"
         >
