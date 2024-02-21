@@ -127,7 +127,7 @@ int main(int argc, char *const argv[])
 		"video_jitter_buffer_ms	100-300\n"
 		"video_jitter_buffer_size 1000\n"
 		"opus_bitrate		64000\n"
-		"ice_policy		all\n"
+		"ice_policy		relay\n"
 		"video_size		1920x1080\n"
 		"video_bitrate		4000000\n"
 		"video_sendrate		10000000\n" /* max burst send */
