@@ -232,7 +232,8 @@ watch(echo, async () => {
   await Webrtc.change_echo()
 })
 
-watch(audio_output_id, async () => {
+watch(audio_output_id, async (newValue, oldValue) => {
+  if (oldValue === undefined) return //prevent first auto change
   await Webrtc.change_audio_out()
 })
 

@@ -362,8 +362,11 @@ export const Webrtc = {
 
         this.deviceInfosAudio.value.forEach((device) => {
             console.log(`${device.kind}: ${device.label} id = ${device.deviceId}`)
-            if (device.kind === 'audiooutput')
-                this.audio_output_id.value = 'default'
+            if (device.kind === 'audiooutput' && !this.audio_output_id.value) {
+                this.audio_output_id.value = device.deviceId
+                this.change_audio_out()
+                return
+            }
 
             if (this.audio_input_id.value) {
                 if (this.audio_input_id.value == device.deviceId) {
