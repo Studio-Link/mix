@@ -228,7 +228,7 @@ function pc_setup() {
     }
 
     avdummy = AVSilence()
-    avdummy.getTracks().forEach((track) => pc?.addTrack(track))
+    avdummy.getTracks().forEach((track) => pc?.addTrack(track, avdummy))
 
     pc_offer()
 }
