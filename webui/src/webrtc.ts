@@ -80,8 +80,9 @@ function drawLoop(ctx: CanvasRenderingContext2D, image: HTMLImageElement, width:
 const black = ({ width = 1280, height = 720 } = {}) => {
     const canvas = Object.assign(document.createElement('canvas'), { width, height })
     const ctx = canvas.getContext('2d')
+    const stream = canvas.captureStream()
     if (!ctx)
-        return
+        return stream.getVideoTracks()[0]
 
     ctx.fillRect(0, 0, width, height)
 
@@ -91,9 +92,7 @@ const black = ({ width = 1280, height = 720 } = {}) => {
         //Chrome workaround: needs canvas frame change to start webrtc rtp
         drawLoop(ctx, image, width, height, 0)
     }
-
-    const stream = canvas.captureStream()
-    return Object.assign(stream.getVideoTracks()[0], { enabled: true })
+    return stream.getVideoTracks()[0]
 }
 
 const AVSilence = (...args: any) => new MediaStream([black(...args), silence()])
@@ -229,7 +228,7 @@ function pc_setup() {
     }
 
     avdummy = AVSilence()
-    avdummy.getTracks().forEach((track) => pc?.addTrack(track, avdummy))
+    avdummy.getTracks().forEach((track) => pc?.addTrack(track))
 
     pc_offer()
 }
