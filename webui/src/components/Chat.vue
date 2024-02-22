@@ -41,7 +41,7 @@
                           {{ formatTimeAgo(new Date(parseInt(item.time) * 1000)) }}
                         </span>
                       </div>
-                      <p v-html="message(item.msg)"></p>
+                      <article class="prose" target="_blank" v-html="message(item.msg)"></article>
                     </div>
                   </div>
                 </div>
@@ -67,7 +67,7 @@
                           {{ formatTimeAgo(new Date(parseInt(item.time) * 1000)) }}
                         </span>
                       </div>
-                      <p v-html="message(item.msg)"></p>
+                      <article class="prose" v-html="message(item.msg)"></article>
                     </div>
                   </div>
                 </div>
@@ -84,12 +84,12 @@
                 <div class="min-w-0 flex-1">
                   <div>
                     <label for="comment" class="sr-only">Chat message</label>
-                    <input
+                    <textarea
                       v-model="msg"
-                      v-on:keyup.enter="chat()"
-                      class="shadow-sm block w-full h-8 p-5 focus:ring-lime-600 focus:border-lime-600 sm:text-sm border border-gray-300 rounded-md"
+                      v-on:keydown.enter.exact.prevent="chat()"
+                      class="shadow-sm block w-full h-12 p-2 focus:ring-lime-600 focus:border-lime-600 sm:text-sm border border-gray-300 rounded-md"
                       placeholder="Add a comment"
-                    />
+                    ></textarea>
                   </div>
                   <div class="mt-3 flex items-center justify-between">
                     <span class="group inline-flex items-start text-sm space-x-2 text-gray-500 hover:text-gray-900">
@@ -117,12 +117,17 @@ import api from '../api'
 import { onMounted, onUpdated, ref } from 'vue'
 import { Users } from '../ws/users'
 import { formatTimeAgo } from '@vueuse/core'
-import * as linkify from 'linkifyjs'
-import linkifyString from 'linkify-string'
+import markdownit from 'markdown-it'
 
 const messages = ref<any>([])
 const msg = ref('')
 const user_id = api.session().user_id
+const md = markdownit({
+  html: false,
+  linkify: true,
+  typographer: true,
+  breaks: true,
+})
 
 function chat() {
   api.chat(msg.value)
@@ -148,8 +153,10 @@ onMounted(async () => {
 })
 
 function message(msg: string) {
-  const options = { defaultProtocol: 'https', target: '_blank', truncate: 29, className: 'linkify' }
-
-  return linkifyString(msg, options)
+  let txt = ''
+  msg.split('\\n').forEach((item) => {
+    txt += item + '\n'
+  })
+  return md.render(txt)
 }
 </script>
