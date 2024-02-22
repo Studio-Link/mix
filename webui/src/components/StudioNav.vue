@@ -34,7 +34,7 @@
                   <span
                     class="absolute top-0 right-0 block translate-y-1/2 translate-x-1/2 transform rounded-full -mt-5 mr-1"
                   >
-                    <span class="bg-gray-200 text-gray-600 ml-auto inline-block rounded-full px-1.5 text-xs">{{
+                    <span class="bg-gray-500 text-gray-50 ml-auto inline-block rounded-full px-1.5 text-xs">{{
                       room.listeners
                     }}</span>
                   </span>
