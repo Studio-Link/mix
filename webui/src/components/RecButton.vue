@@ -39,12 +39,11 @@
         >
           <div class="py-1">
             <MenuItem v-slot="{ active }">
-              <a
+              <button
                 @click="api.record_switch(RecordType.AudioOnly)"
                 href="#"
-                :class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'block px-4 py-2 text-sm']"
-                >Record Audio only</a
-              >
+                :class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'block px-4 py-2 text-sm w-full text-left']"
+                >Record Audio only</button>
             </MenuItem>
           </div>
         </MenuItems>
