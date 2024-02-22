@@ -35,6 +35,7 @@ interface User {
     audio: boolean
     webrtc: boolean
     talk: boolean
+    solo: boolean
     stats: Stats
 }
 
@@ -168,6 +169,7 @@ export const Users: Users = {
                     audio: data.audio,
                     hand: data.hand,
                     webrtc: data.webrtc,
+                    solo: data.solo,
                     talk: false,
                     stats: { artt: 0, vrtt: 0 }
                 }

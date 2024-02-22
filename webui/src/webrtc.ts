@@ -426,7 +426,7 @@ export const Webrtc = {
         if (this.video_resolution.value === '360pl') {
             constraintsVideo.video.width = 640
             constraintsVideo.video.height = 360
-            updateBandwidthRestriction(500)
+            updateBandwidthRestriction(400)
         }
 
         if (this.video_input_id.value !== 'undefined')

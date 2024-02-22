@@ -436,6 +436,51 @@ void slmix_session_video(struct session *sess, bool enable)
 }
 
 
+void slmix_session_video_solo(struct user *user, bool enable)
+{
+	struct mix *mix = slmix();
+	struct le *le;
+
+	if (!enable) {
+		LIST_FOREACH(&mix->sessl, le)
+		{
+			struct session *sess = le->data;
+
+			if (!sess->user->speaker)
+				continue;
+
+			sess->user->solo = false;
+			sess->user->pidx =
+				slmix_disp_enable(mix, sess->user->id, true);
+			slmix_session_user_updated(sess);
+		}
+		return;
+	}
+
+	if (!user)
+		return;
+
+
+	LIST_FOREACH(&mix->sessl, le)
+	{
+		struct session *sess = le->data;
+
+		if (!sess->user->speaker)
+			continue;
+
+		if (sess->user == user) {
+			sess->user->solo = true;
+			slmix_session_user_updated(sess);
+		}
+		else {
+			sess->user->pidx = 0;
+			slmix_disp_enable(mix, sess->user->id, false);
+			slmix_session_user_updated(sess);
+		}
+	}
+}
+
+
 int slmix_session_speaker(struct session *sess, bool enable)
 {
 	if (!sess || !sess->mix || !sess->user)

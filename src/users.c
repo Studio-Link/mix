@@ -2,7 +2,7 @@
 #include <baresip.h>
 #include "mix.h"
 
-enum { MAX_LISTENERS = 30 };
+enum { MAX_LISTENERS = 40 };
 
 
 int users_json(char **json, struct mix *mix)
@@ -56,6 +56,7 @@ int users_json(char **json, struct mix *mix)
 		odict_entry_add(o_user, "audio", ODICT_BOOL,
 				sess->user->audio);
 		odict_entry_add(o_user, "hand", ODICT_BOOL, sess->user->hand);
+		odict_entry_add(o_user, "solo", ODICT_BOOL, sess->user->solo);
 		odict_entry_add(o_user, "webrtc", ODICT_BOOL,
 				sess->pc ? true : false);
 
@@ -110,6 +111,7 @@ int user_event_json(char **json, enum user_event event, struct session *sess)
 	odict_entry_add(o, "video", ODICT_BOOL, sess->user->video);
 	odict_entry_add(o, "audio", ODICT_BOOL, sess->user->audio);
 	odict_entry_add(o, "hand", ODICT_BOOL, sess->user->hand);
+	odict_entry_add(o, "solo", ODICT_BOOL, sess->user->solo);
 	odict_entry_add(o, "webrtc", ODICT_BOOL, sess->pc ? true : false);
 
 	err = re_sdprintf(json, "%H", json_encode_odict, o);
