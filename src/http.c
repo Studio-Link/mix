@@ -525,7 +525,7 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/solo") &&
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/solo/enable") &&
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
 		char user[512]	  = {0};
 		struct pl user_id = PL_INIT;
@@ -542,7 +542,24 @@ static void http_req_handler(struct http_conn *conn,
 
 		pl_strcpy(&user_id, user, sizeof(user));
 
-		vmix_disp_solo(user);
+		struct session *sess_speaker =
+			slmix_session_lookup_user_id(&mix->sessl, &user_id);
+		if (!sess_speaker)
+			goto err;
+
+		slmix_session_video_solo(sess_speaker->user, true);
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/solo/disable") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+		/* check permission */
+		if (!sess->user->host)
+			goto err;
+
+		slmix_session_video_solo(NULL, false);
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;

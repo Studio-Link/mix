@@ -61,6 +61,7 @@ struct user {
 	bool video;
 	bool audio;
 	bool hand;
+	bool solo;
 };
 
 struct chat {
@@ -158,6 +159,7 @@ int slmix_http_listen(struct http_sock **sock, struct mix *mix);
 void pc_close(struct session *sess);
 int slmix_session_user_updated(struct session *sess);
 void slmix_session_video(struct session *sess, bool enable);
+void slmix_session_video_solo(struct user *user, bool enable);
 int slmix_session_speaker(struct session *sess, bool enable);
 int slmix_session_new(struct mix *mix, struct session **sessp,
 		      const struct http_msg *msg);

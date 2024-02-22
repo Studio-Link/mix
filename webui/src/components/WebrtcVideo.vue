@@ -6,7 +6,7 @@
         <div>
           {{ item.dev }}
           <button
-            @click="solo(item.dev)"
+            @click="solo_source(item.dev)"
             :class="{ 'bg-red-600 hover:bg-red-500': item.solo }"
             class="rounded bg-indigo-600 px-2 py-1 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
@@ -136,6 +136,24 @@ Audio RTT: {{ item.stats.artt }} ms
             <SpeakerWaveIcon class="-ml-0.5 mr-1 h-4 w-4" aria-hidden="true" />
             Leave Stage
           </button>
+          <button
+            v-if="Users.host_status.value && !item.solo"
+            @click="api.video_solo(item.id, true)"
+            type="button"
+            class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          >
+            <PresentationChartBarIcon class="-ml-0.5 mr-1 h-4 w-4" aria-hidden="true" />
+            Solo
+          </button>
+          <button
+            v-if="Users.host_status.value && item.solo"
+            @click="api.video_solo(item.id, false)"
+            type="button"
+            class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          >
+            <PresentationChartBarIcon class="-ml-0.5 mr-1 h-4 w-4" aria-hidden="true" />
+            Disable Solo 
+          </button>
         </div>
       </div>
 
@@ -159,7 +177,7 @@ import { onMounted, ref } from 'vue'
 import { Webrtc, WebrtcState } from '../webrtc'
 import { Users } from '../ws/users'
 import api from '../api'
-import { SpeakerWaveIcon, WifiIcon } from '@heroicons/vue/24/outline'
+import { SpeakerWaveIcon, WifiIcon, PresentationChartBarIcon } from '@heroicons/vue/24/outline'
 import { useResizeObserver } from '@vueuse/core'
 
 const video = ref<HTMLVideoElement | null>(null)
@@ -293,7 +311,7 @@ function calc_left(idx: number) {
   return w * (idx % rows) + offset + 'px'
 }
 
-function solo(dev: string) {
+function solo_source(dev: string) {
   api.source_solo(dev)
   sources.value.forEach((item) => {
     if (dev === item.dev) item.solo = true

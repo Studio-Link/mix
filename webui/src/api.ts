@@ -168,6 +168,13 @@ export default {
         await api_fetch('PUT', '/webrtc/solo', dev)
     },
 
+    async video_solo(dev: string, enable: boolean) {
+        if (enable)
+            await api_fetch('PUT', '/webrtc/solo/enable', dev)
+        else
+            await api_fetch('PUT', '/webrtc/solo/disable', dev)
+    },
+
     async record_switch(type: RecordType) {
         if (!Users.host_status.value) return
 
