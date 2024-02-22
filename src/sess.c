@@ -233,15 +233,10 @@ int slmix_session_alloc(struct session **sessp, struct mix *mix,
 		pl_strcpy(name, user->name, sizeof(user->name));
 	}
 
-	user->host = host;
-
-	if (mix->show)
-		user->speaker = speaker;
-	else
-		user->speaker = true;
-
-	sess->user = user;
-	sess->mix  = mix;
+	user->host    = host;
+	user->speaker = speaker;
+	sess->user    = user;
+	sess->mix     = mix;
 
 	list_append(&mix->sessl, &sess->le, sess);
 

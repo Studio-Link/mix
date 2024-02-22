@@ -342,7 +342,7 @@ static void http_req_handler(struct http_conn *conn,
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
 		/* check permission */
 		if (!sess->user || !sess->user->host)
-			goto err;
+			goto auth;
 
 		slmix_record(mix, REC_AUDIO_VIDEO);
 
@@ -354,7 +354,7 @@ static void http_req_handler(struct http_conn *conn,
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
 		/* check permission */
 		if (!sess->user || !sess->user->host)
-			goto err;
+			goto auth;
 
 		slmix_record(mix, REC_AUDIO);
 
@@ -366,7 +366,7 @@ static void http_req_handler(struct http_conn *conn,
 	    0 == pl_strcasecmp(&msg->met, "PUT")) {
 		/* check permission */
 		if (!sess->user || !sess->user->host)
-			goto err;
+			goto auth;
 
 		slmix_record(mix, REC_DISABLED);
 
@@ -379,9 +379,9 @@ static void http_req_handler(struct http_conn *conn,
 		struct pl user_id = PL_INIT;
 		struct session *sess_speaker;
 
-		/* check permission */
-		if (!sess->user || !sess->user->host)
-			goto err;
+		/* check host permission if show */
+		if (!sess->user || (!sess->user->host && sess->mix->show))
+			goto auth;
 
 		err = re_regex((char *)mbuf_buf(msg->mb),
 			       mbuf_get_left(msg->mb), "[a-zA-Z0-9]+",
@@ -393,6 +393,10 @@ static void http_req_handler(struct http_conn *conn,
 			slmix_session_lookup_user_id(&mix->sessl, &user_id);
 		if (!sess_speaker)
 			goto err;
+
+		/* if not a show, allow only user itself */
+		if (!sess->mix->show && sess != sess_speaker)
+			goto auth;
 
 		err = slmix_session_speaker(sess_speaker, true);
 		if (err)
@@ -712,8 +716,13 @@ static void http_req_handler(struct http_conn *conn,
 	http_sreply(conn, 404, "Not found", "text/html", "", 0, sess);
 	return;
 
+auth:
+	http_sreply(conn, 401, "Unauthorized", "text/html", "", 0, sess);
+	return;
+
 err:
 	http_sreply(conn, 500, "Error", "text/html", "", 0, sess);
+	return;
 }
 
 

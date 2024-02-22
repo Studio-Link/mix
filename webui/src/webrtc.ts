@@ -61,7 +61,7 @@ const silence = () => {
 }
 
 function drawLoop(ctx: CanvasRenderingContext2D, image: HTMLImageElement, width: number, height: number, cnt: number) {
-    if (cnt > 20) 
+    if (cnt > 20)
         return
 
     cnt = cnt + 1
