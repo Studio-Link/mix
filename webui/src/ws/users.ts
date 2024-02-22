@@ -187,6 +187,10 @@ export const Users: Users = {
                         if (!Webrtc.video_muted.value)
                             Webrtc.video_mute(true)
                     }
+
+                    /* Trigger Video Mute state - Avatar Workaround */
+                    if (data.speaker && !user.video)
+                        Webrtc.video_mute(true, true)
                 }
 
                 if (data.speaker) {

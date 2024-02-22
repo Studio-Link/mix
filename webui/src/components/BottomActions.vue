@@ -58,7 +58,7 @@
               </button>
             </div>
             <!-- Audio Mute -->
-            <div v-if="Webrtc.state.value >= WebrtcState.Listening && Users.speaker_status.value">
+            <div v-if="Webrtc.state.value >= WebrtcState.Listening && (Users.speaker_status.value || !Users.room.value?.show)">
               <button
                 v-if="Webrtc.audio_muted.value"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
@@ -208,6 +208,8 @@ function hand_clicked() {
 function mic_clicked(mute: boolean) {
   if (Webrtc.state.value < WebrtcState.ReadySpeaking) {
     Users.settings_active.value = true
+    if (!Users.room.value?.show)
+        api.speaker(api.session().user_id)
   } else Webrtc.audio_mute(mute)
 }
 
