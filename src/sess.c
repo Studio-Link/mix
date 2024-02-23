@@ -445,6 +445,9 @@ void slmix_session_video_solo(struct user *user, bool enable)
 			if (!sess->user->speaker)
 				continue;
 
+			if (!sess->connected)
+				continue;
+
 			sess->user->solo = false;
 			sess->user->pidx =
 				slmix_disp_enable(mix, sess->user->id, true);
@@ -462,6 +465,9 @@ void slmix_session_video_solo(struct user *user, bool enable)
 		struct session *sess = le->data;
 
 		if (!sess->user->speaker)
+			continue;
+
+		if (!sess->connected)
 			continue;
 
 		if (sess->user == user) {
