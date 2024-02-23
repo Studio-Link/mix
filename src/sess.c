@@ -336,25 +336,26 @@ struct session *slmix_session_lookup(const struct list *sessl,
 	mbuf_init(&mb);
 	err = slmix_db_get(slmix_db_sess(), sessid, &mb);
 	if (err)
-		goto out;
+		goto err;
 
 	err = re_regex((const char *)mb.buf, mb.end - 1,
 		       "[^;]+;[^;]+;[^;]+;[^;]+;[^;]+", NULL, &pl_user_id,
 		       &pl_name, &pl_host, &pl_speaker);
 	if (err)
-		goto out;
+		goto err;
 
 	pl_bool(&host, &pl_host);
 	pl_bool(&speaker, &pl_speaker);
 
 	err = slmix_session_alloc(&sess, slmix(), sessid, &pl_user_id,
 				  &pl_name, host, speaker);
-	if (!err) {
-		mbuf_reset(&mb);
-		return sess;
-	}
+	if (err)
+		goto err;
 
-out:
+	mbuf_reset(&mb);
+	return sess;
+
+err:
 	mbuf_reset(&mb);
 	warning("mix: session not found (%r)\n", sessid);
 
