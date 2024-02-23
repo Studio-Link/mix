@@ -193,6 +193,9 @@ static void http_req_handler(struct http_conn *conn,
 		if (err)
 			goto err;
 
+		/* generate new session - ensures rooms load new session */
+		rand_str(sess->id, sizeof(sess->id));
+
 		slmix_session_user_updated(sess);
 		slmix_session_save(sess);
 
