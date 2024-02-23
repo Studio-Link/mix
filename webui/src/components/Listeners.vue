@@ -1,7 +1,6 @@
 <template>
-  <div class="mt-8">
+  <div class="mt-2">
     <div class="max-w-7xl mx-auto px-4 text-center sm:px-6 lg:px-8 border-t pt-2">
-      <div class="space-y-8">
         <div class="space-y-5 sm:mx-auto sm:max-w-xl sm:space-y-4 lg:max-w-5xl">
           <h2 v-if="Users.listeners.value?.length" class="text-xl font-medium tracking-tight">Audience</h2>
         </div>
@@ -68,7 +67,6 @@
             </div>
           </li>
         </ul>
-      </div>
     </div>
   </div>
 </template>
