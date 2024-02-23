@@ -59,7 +59,17 @@ export default {
         if (!token)
             return
 
-        await api_fetch('POST', '/client/reauth', token)
+        const resp = await api_fetch('POST', '/client/reauth', token)
+        const session_id = resp?.headers.get('Session-ID')
+        if (!session_id) {
+            window.localStorage.removeItem('sess')
+            window.localStorage.removeItem('token')
+            router.push({ name: 'Login' })
+            return
+        }
+
+        sess.id = session_id
+        window.localStorage.setItem('sess', JSON.stringify(sess))
     },
 
     async connect(token?: string | null) {
@@ -124,8 +134,8 @@ export default {
     },
 
     async hangup() {
-       Webrtc.hangup()
-       await api_fetch('POST', '/client/hangup', null) 
+        Webrtc.hangup()
+        await api_fetch('POST', '/client/hangup', null)
     },
 
     async logout(force: boolean) {
@@ -146,8 +156,7 @@ export default {
         return await api_fetch('PUT', '/webrtc/sdp/answer?id=' + id, desc)
     },
 
-    async sdp_candidate(cand: RTCIceCandidate | null, id: number)
-    {
+    async sdp_candidate(cand: RTCIceCandidate | null, id: number) {
         return await api_fetch('PUT', '/webrtc/sdp/candidate?id=' + id, cand)
     },
 
