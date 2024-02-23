@@ -235,7 +235,7 @@ static int dec_update(struct viddec_state **vdsp, const struct vidcodec *vc,
 	return 0;
 }
 
-
+#if 0
 static void dec_pkt_deref(void *arg)
 {
 	struct dec_pkt *pkt = arg;
@@ -243,6 +243,7 @@ static void dec_pkt_deref(void *arg)
 	mem_deref(pkt->mb);
 	list_unlink(&pkt->le);
 }
+#endif
 
 
 static int decode(struct viddec_state *vds, struct vidframe *frame,
@@ -250,7 +251,7 @@ static int decode(struct viddec_state *vds, struct vidframe *frame,
 {
 	if (!vds || !frame || !vpkt || !vpkt->mb)
 		return EINVAL;
-
+#if 0
 	struct dec_pkt *pkt =
 		mem_zalloc(sizeof(struct dec_pkt), dec_pkt_deref);
 	if (!pkt)
@@ -278,7 +279,7 @@ static int decode(struct viddec_state *vds, struct vidframe *frame,
 			break;
 	}
 	mtx_unlock(vds->mtx);
-
+#endif
 	return dech(vds->vdsp, frame, vpkt);
 }
 
