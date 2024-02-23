@@ -19,7 +19,7 @@
               </div>
             </div>
 
-            <ul class="chat flex-1 divide-y divide-gray-200 overflow-y-auto">
+            <ul v-scroll="onScroll" ref="chat" class="chat flex-1 divide-y divide-gray-200 overflow-y-auto">
               <li v-for="(item, index) in messages" :key="index">
                 <div class="relative group py-4 px-2 flex items-center">
                   <div class="absolute inset-0 group-hover:bg-gray-50" aria-hidden="true"></div>
@@ -73,6 +73,16 @@
                 </div>
               </li>
             </ul>
+            <div v-if="scroll_stop" class="flex justify-end">
+              <button
+                @click="scroll_stop = false"
+                type="button"
+                class="rounded-full bg-indigo-600 p-2 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                <ArrowDownIcon class="h-5 w-5" aria-hidden="true" />
+                <span class="sr-only">Scroll down</span>
+              </button>
+            </div>
             <div class="bg-gray-50 py-6 px-2">
               <div class="flex space-x-3">
                 <div class="flex-shrink-0">
@@ -86,7 +96,7 @@
                     <label for="comment" class="sr-only">Chat message</label>
                     <textarea
                       v-model="msg"
-                      v-on:keydown.enter.exact.prevent="chat()"
+                      v-on:keydown.enter.exact.prevent="chat_button()"
                       class="shadow-sm block w-full h-12 p-2 focus:ring-lime-600 focus:border-lime-600 sm:text-sm border border-gray-300 rounded-md"
                       placeholder="Add a comment"
                     ></textarea>
@@ -95,7 +105,7 @@
                     <span class="group inline-flex items-start text-sm space-x-2 text-gray-500 hover:text-gray-900">
                     </span>
                     <button
-                      @click="chat()"
+                      @click="chat_button()"
                       type="submit"
                       class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
@@ -117,10 +127,16 @@ import api from '../api'
 import { onMounted, onUpdated, ref } from 'vue'
 import { Users } from '../ws/users'
 import { formatTimeAgo } from '@vueuse/core'
+import type { UseScrollReturn } from '@vueuse/core'
+import { vScroll } from '@vueuse/components'
 import markdownit from 'markdown-it'
+import { ArrowDownIcon } from '@heroicons/vue/24/outline'
 
 const messages = ref<any>([])
 const msg = ref('')
+const scroll_stop = ref(false)
+const chat = ref<HTMLElement | null>(null)
+
 const user_id = api.session().user_id
 const md = markdownit({
   html: false,
@@ -129,16 +145,22 @@ const md = markdownit({
   breaks: true,
 })
 
-function chat() {
+function chat_button() {
   api.chat(msg.value)
   msg.value = ''
+  scroll_stop.value = false
+}
+
+function onScroll(state: UseScrollReturn) {
+  if (state.directions.top) scroll_stop.value = true
+  if (state.arrivedState.bottom) scroll_stop.value = false
 }
 
 onUpdated(() => {
-  const chat = document.querySelector('.chat')
-  if (chat) chat.scrollTop = chat.scrollHeight
+  if (chat.value && !scroll_stop.value) chat.value.scrollTop = chat.value.scrollHeight
+
   window.onresize = function () {
-    if (chat) chat.scrollTop = chat.scrollHeight
+    if (chat.value) chat.value.scrollTop = chat.value.scrollHeight
   }
 
   if (Users.chat_active.value && Users.chat_unread.value) {
@@ -147,8 +169,8 @@ onUpdated(() => {
 })
 
 onMounted(async () => {
-  const chat: Response | void = await api.get_chat()
-  const json = await chat?.json()
+  const chat_json: Response | void = await api.get_chat()
+  const json = await chat_json?.json()
   messages.value = json?.chats
 })
 
