@@ -30,6 +30,7 @@
           </div>
           <div class="space-y-2">
             <button
+              type="button"
               v-if="!random && !webcam.picture.value"
               class="flex w-full justify-center rounded-md border border-transparent bg-red-700 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               @click="randomize()"
@@ -37,6 +38,7 @@
               Cancel
             </button>
             <button
+              type="button"
               v-if="random"
               class="flex w-full justify-center rounded-md border border-transparent bg-gray-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               @click="randomize()"
@@ -44,6 +46,7 @@
               Random Avatar
             </button>
             <button
+              type="button"
               v-if="random || webcam.picture.value"
               class="flex w-full justify-center rounded-md border border-transparent bg-green-700 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               @click="activateCam()"
