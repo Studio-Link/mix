@@ -147,6 +147,8 @@ static void pc_estab_handler(struct media_track *media, void *arg)
 		return;
 	}
 
+	sess->connected = true;
+
 	slmix_session_speaker(sess, sess->user->speaker);
 }
 
