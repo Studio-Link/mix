@@ -173,6 +173,7 @@ function pc_setup() {
     pc.ontrack = function (event) {
         const track = event.track
         console.log('got remote track: kind=%s', track.kind)
+        const stream = event.streams[0]
 
         if (track.kind == 'audio') {
             const audio: HTMLAudioElement | null = document.querySelector('audio#live')
@@ -181,10 +182,18 @@ function pc_setup() {
                 return
             }
 
-            if (audio.srcObject !== event.streams[0]) {
-                audio.srcObject = event.streams[0]
-                console.log('received remote audio stream')
+            console.log('received remote audio stream')
+
+            try {
+                audio.srcObject = stream
+            } catch (e) {
+                console.log("Error attaching audio stream to element", e)
+            }
+
+            try {
                 audio.play()
+            } catch (e) {
+                console.log("Error audio play", e)
             }
         }
 
@@ -195,10 +204,18 @@ function pc_setup() {
                 return
             }
 
-            if (video.srcObject !== event.streams[0]) {
-                video.srcObject = event.streams[0]
-                console.log('received remote video stream')
+            console.log('received remote video stream')
+
+            try {
+                video.srcObject = stream
+            } catch (e) {
+                console.log("Error attaching video stream to element", e)
+            }
+
+            try {
                 video.play()
+            } catch (e) {
+                console.log("Error video play", e)
             }
         }
     }
