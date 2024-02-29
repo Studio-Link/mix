@@ -178,7 +178,7 @@ static int enc_update(struct videnc_state **vesp, const struct vidcodec *vc,
 	ves->pkth = pkth;
 
 	ves->p = vmix_proxy_find(vc->name, vc->variant);
-	if (ves->p) {
+	if (!ves->p) {
 		mem_deref(ves);
 		return EINVAL;
 	}
@@ -261,7 +261,7 @@ static int dec_update(struct viddec_state **vdsp, const struct vidcodec *vc,
 	vds->vid = vid;
 
 	vds->p = vmix_proxy_find(vc->name, vc->variant);
-	if (vds->p) {
+	if (!vds->p) {
 		mem_deref(vds);
 		return EINVAL;
 	}
