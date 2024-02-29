@@ -2,15 +2,20 @@
 #include "baresip.h"
 #include "vmix.h"
 
-/* H264 only */
-static videnc_encode_h *ench;
-static videnc_update_h *encupdh;
-static videnc_packetize_h *packetizeh;
-static viddec_decode_h *dech;
-static viddec_update_h *decupdh;
+
+struct vmix_proxy {
+	struct le le;
+	struct vidcodec codec;
+	videnc_encode_h *ench;
+	videnc_update_h *encupdh;
+	videnc_packetize_h *packetizeh;
+	viddec_decode_h *dech;
+	viddec_update_h *decupdh;
+};
 
 static struct hash *dec_list;
 static mtx_t *dec_mtx;
+static struct list proxyl = LIST_INIT;
 
 struct enc_pkt {
 	struct le le;
@@ -20,6 +25,7 @@ struct enc_pkt {
 	size_t hdr_len;
 	struct mbuf *pld;
 	size_t pld_len;
+	const struct vmix_proxy *p;
 };
 
 static struct list enc_pktl	     = LIST_INIT;
@@ -36,6 +42,7 @@ struct videnc_state {
 	uint64_t last_ts;
 	void *vesp; /* Sub-Codec state */
 	bool is_pkt_src;
+	const struct vmix_proxy *p;
 };
 
 struct viddec_state {
@@ -46,6 +53,7 @@ struct viddec_state {
 	uint64_t last_id;
 	mtx_t *mtx;
 	const char *dev;
+	const struct vmix_proxy *p;
 };
 
 struct dec_pkt {
@@ -56,6 +64,28 @@ struct dec_pkt {
 	uint64_t ts;
 	uint64_t ts_eol;
 };
+
+
+static const struct vmix_proxy *vmix_proxy_find(const char *name,
+						const char *variant)
+{
+	struct le *le;
+
+	LIST_FOREACH(&proxyl, le)
+	{
+		struct vmix_proxy *p = le->data;
+
+		if (name && 0 != str_casecmp(name, p->codec.name))
+			continue;
+
+		if (variant && 0 != str_casecmp(variant, p->codec.variant))
+			continue;
+
+		return p;
+	}
+
+	return NULL;
+}
 
 
 static void videnc_deref(void *arg)
@@ -98,7 +128,6 @@ static int enc_packet_h(bool marker, uint64_t rtp_ts, const uint8_t *hdr,
 			size_t hdr_len, const uint8_t *pld, size_t pld_len,
 			const struct video *vid)
 {
-	(void)vid;
 	int err;
 
 	if (!hdr || !pld)
@@ -111,6 +140,7 @@ static int enc_packet_h(bool marker, uint64_t rtp_ts, const uint8_t *hdr,
 
 	pkt->marker = marker;
 	pkt->rtp_ts = rtp_ts;
+	pkt->p	    = (void *)vid;
 
 	pkt->hdr = mbuf_alloc(hdr_len);
 	pkt->pld = mbuf_alloc(pld_len);
@@ -147,8 +177,14 @@ static int enc_update(struct videnc_state **vesp, const struct vidcodec *vc,
 	ves->vid  = vid;
 	ves->pkth = pkth;
 
-	err = encupdh((struct videnc_state **)&ves->vesp, vc, prm, fmtp,
-		      enc_packet_h, vid);
+	ves->p = vmix_proxy_find(vc->name, vc->variant);
+	if (!ves->p) {
+		mem_deref(ves);
+		return EINVAL;
+	}
+
+	err = ves->p->encupdh((struct videnc_state **)&ves->vesp, vc, prm,
+			      fmtp, enc_packet_h, (void *)ves->p);
 	if (err) {
 		mem_deref(ves);
 		return err;
@@ -172,7 +208,7 @@ static int encode(struct videnc_state *ves, bool update,
 
 	re_atomic_rlx_set(&last_keyframe, keyframe);
 
-	return ench(ves->vesp, keyframe, frame, timestamp);
+	return ves->p->ench(ves->vesp, keyframe, frame, timestamp);
 }
 
 
@@ -189,6 +225,8 @@ static int packetize(struct videnc_state *ves, const struct vidpacket *vpkt)
 	LIST_FOREACH(&enc_pktl, le)
 	{
 		struct enc_pkt *p = le->data;
+		if (ves->p != p->p)
+			continue;
 
 		int err = ves->pkth(p->marker, p->rtp_ts, mbuf_buf(p->hdr),
 				    mbuf_get_left(p->hdr), mbuf_buf(p->pld),
@@ -207,12 +245,9 @@ static int dec_update(struct viddec_state **vdsp, const struct vidcodec *vc,
 	struct viddec_state *vds;
 	int err;
 
-	vds = mem_zalloc(sizeof(struct viddec_state), viddec_deref);
+	vds = mem_zalloc(sizeof(struct viddec_state), NULL);
 	if (!vds)
 		return ENOMEM;
-
-	vds->dev = video_get_disp_dev(vid);
-	vds->vid = vid;
 
 	err = mutex_alloc(&vds->mtx);
 	if (err) {
@@ -220,7 +255,19 @@ static int dec_update(struct viddec_state **vdsp, const struct vidcodec *vc,
 		return err;
 	}
 
-	err = decupdh((struct viddec_state **)&vds->vdsp, vc, fmtp, vid);
+	mem_destructor(vds, viddec_deref);
+
+	vds->dev = video_get_disp_dev(vid);
+	vds->vid = vid;
+
+	vds->p = vmix_proxy_find(vc->name, vc->variant);
+	if (!vds->p) {
+		mem_deref(vds);
+		return EINVAL;
+	}
+
+	err = vds->p->decupdh((struct viddec_state **)&vds->vdsp, vc, fmtp,
+			      vid);
 	if (err) {
 		mem_deref(vds);
 		return err;
@@ -280,30 +327,8 @@ static int decode(struct viddec_state *vds, struct vidframe *frame,
 	}
 	mtx_unlock(vds->mtx);
 #endif
-	return dech(vds->vdsp, frame, vpkt);
+	return vds->p->dech(vds->vdsp, frame, vpkt);
 }
-
-
-static struct vidcodec h264_0 = {
-	.name	    = "H264",
-	.variant    = "packetization-mode=0",
-	.encupdh    = enc_update,
-	.ench	    = encode,
-	.decupdh    = dec_update,
-	.dech	    = decode,
-	.packetizeh = packetize,
-};
-
-
-static struct vidcodec h264_1 = {
-	.name	    = "H264",
-	.variant    = "packetization-mode=1",
-	.encupdh    = enc_update,
-	.ench	    = encode,
-	.decupdh    = dec_update,
-	.dech	    = decode,
-	.packetizeh = packetize,
-};
 
 
 static bool list_apply_handler(struct le *le, void *arg)
@@ -369,55 +394,86 @@ void vmix_encode_flush(void)
 }
 
 
+static void proxy_codec_alloc(const char *name, const char *variant)
+{
+	struct vmix_proxy *p;
+	const struct vidcodec *v;
+
+	p = mem_zalloc(sizeof(struct vmix_proxy), NULL);
+	if (!p)
+		return;
+
+	/* Proxy functions */
+	p->codec.encupdh    = enc_update;
+	p->codec.ench	    = encode;
+	p->codec.decupdh    = dec_update;
+	p->codec.dech	    = decode;
+	p->codec.packetizeh = packetize;
+
+	v = vidcodec_find(baresip_vidcodecl(), name, variant);
+	if (!v) {
+		warning("vmix: proxy_codec_alloc find %s failed\n", name);
+		return;
+	}
+
+	/* Orignal functions */
+	p->codec.name	   = name;
+	p->codec.variant   = variant;
+	p->codec.fmtp_ench = v->fmtp_ench;
+	p->codec.fmtp_cmph = v->fmtp_cmph;
+
+	p->encupdh    = v->encupdh;
+	p->ench	      = v->ench;
+	p->decupdh    = v->decupdh;
+	p->dech	      = v->dech;
+	p->packetizeh = v->packetizeh;
+
+	list_append(&proxyl, &p->le, p);
+}
+
+
 int vmix_codec_init(void)
 {
-	const struct vidcodec *v;
+	struct le *le;
 	int err;
 
 	err = mutex_alloc(&dec_mtx);
 	if (err)
 		return err;
 
-	v = vidcodec_find(baresip_vidcodecl(), "H264", "packetization-mode=0");
-	if (!v) {
-		warning("vmix_codec_init h264_0 failed\n");
-		return EINVAL;
-	}
+	err = hash_alloc(&dec_list, 32);
+	if (err)
+		return err;
 
-	encupdh = v->encupdh;
-	ench	= v->ench;
-
-	decupdh = v->decupdh;
-	dech	= v->dech;
-
-	packetizeh = v->packetizeh;
-
-	h264_0.fmtp_ench = v->fmtp_ench;
-	h264_0.fmtp_cmph = v->fmtp_cmph;
-
-	v = vidcodec_find(baresip_vidcodecl(), "H264", "packetization-mode=1");
-	if (!v) {
-		warning("vmix_codec_init h264_1 failed\n");
-		return EINVAL;
-	}
-
-	h264_1.fmtp_ench = v->fmtp_ench;
-	h264_1.fmtp_cmph = v->fmtp_cmph;
+#if 0
+	proxy_codec_alloc("H264", "packetization-mode=0");
+	proxy_codec_alloc("H264", "packetization-mode=1");
+#endif
+	proxy_codec_alloc("VP8", NULL);
 
 	list_clear(baresip_vidcodecl());
 
-	vidcodec_register(baresip_vidcodecl(), &h264_0);
-	vidcodec_register(baresip_vidcodecl(), &h264_1);
+	LIST_FOREACH(&proxyl, le)
+	{
+		struct vmix_proxy *p = le->data;
+		vidcodec_register(baresip_vidcodecl(), &p->codec);
+	}
 
-	return hash_alloc(&dec_list, 32);
+	return 0;
 }
 
 
 void vmix_codec_close(void)
 {
-	vidcodec_unregister(&h264_0);
-	vidcodec_unregister(&h264_1);
+	struct le *le;
 
+	LIST_FOREACH(&proxyl, le)
+	{
+		struct vmix_proxy *p = le->data;
+		vidcodec_unregister(&p->codec);
+	}
+
+	list_flush(&proxyl);
 	list_flush(&enc_pktl);
 
 	dec_list = mem_deref(dec_list);
