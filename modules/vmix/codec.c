@@ -394,14 +394,14 @@ void vmix_encode_flush(void)
 }
 
 
-static int proxy_codec_alloc(const char *name, const char *variant)
+static void proxy_codec_alloc(const char *name, const char *variant)
 {
 	struct vmix_proxy *p;
 	const struct vidcodec *v;
 
 	p = mem_zalloc(sizeof(struct vmix_proxy), NULL);
 	if (!p)
-		return ENOMEM;
+		return;
 
 	/* Proxy functions */
 	p->codec.encupdh    = enc_update;
@@ -412,11 +412,13 @@ static int proxy_codec_alloc(const char *name, const char *variant)
 
 	v = vidcodec_find(baresip_vidcodecl(), name, variant);
 	if (!v) {
-		warning("vmix_codec_init %s failed\n", name);
-		return EINVAL;
+		warning("vmix: proxy_codec_alloc find %s failed\n", name);
+		return;
 	}
 
 	/* Orignal functions */
+	p->codec.name	   = name;
+	p->codec.variant   = variant;
 	p->codec.fmtp_ench = v->fmtp_ench;
 	p->codec.fmtp_cmph = v->fmtp_cmph;
 
@@ -427,8 +429,6 @@ static int proxy_codec_alloc(const char *name, const char *variant)
 	p->packetizeh = v->packetizeh;
 
 	list_append(&proxyl, &p->le, p);
-
-	return 0;
 }
 
 
@@ -445,18 +445,9 @@ int vmix_codec_init(void)
 	if (err)
 		return err;
 
-
-	err = proxy_codec_alloc("H264", "packetization-mode=0");
-	if (err)
-		return err;
-
-	err = proxy_codec_alloc("H264", "packetization-mode=1");
-	if (err)
-		return err;
-
-	err = proxy_codec_alloc("VP8", NULL);
-	if (err)
-		return err;
+	proxy_codec_alloc("H264", "packetization-mode=0");
+	proxy_codec_alloc("H264", "packetization-mode=1");
+	proxy_codec_alloc("VP8", NULL);
 
 	list_clear(baresip_vidcodecl());
 
