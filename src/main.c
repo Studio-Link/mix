@@ -123,13 +123,13 @@ int main(int argc, char *const argv[])
 		"audio_silence		-35.0\n"
 		"audio_jitter_buffer_type	adaptive\n"
 		"audio_jitter_buffer_ms	60-300\n"
-		"video_jitter_buffer_type	fixed\n"
+		"video_jitter_buffer_type	adaptive\n"
 		"video_jitter_buffer_ms	100-300\n"
 		"video_jitter_buffer_size 1000\n"
 		"opus_bitrate		64000\n"
 		"ice_policy		relay\n"
 		"video_size		1920x1080\n"
-		"video_bitrate		4000000\n"
+		"video_bitrate		2000000\n"
 		"video_sendrate		10000000\n" /* max burst send */
 		"video_burst_bit	1000000\n"  /* max burst send */
 		"video_fps		24\n"
