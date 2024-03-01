@@ -1,0 +1,65 @@
+From 6db7205d7ab88af52cbb92cfce1d90e09228e069 Mon Sep 17 00:00:00 2001
+From: Sebastian Reimers <hallo@studio-link.de>
+Date: Fri, 1 Mar 2024 12:04:41 +0100
+Subject: [PATCH 1/2] vp8/encode: fix target_bitrate (kbps) and use constant
+ bitrate
+
+---
+ modules/vp8/encode.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/modules/vp8/encode.c b/modules/vp8/encode.c
+index e26fb90e0..cfd4fd95a 100644
+--- a/modules/vp8/encode.c
++++ b/modules/vp8/encode.c
+@@ -105,11 +105,14 @@ static int open_encoder(struct videnc_state *ves, const struct vidsz *size)
+ #ifdef VPX_ERROR_RESILIENT_DEFAULT
+ 	cfg.g_error_resilient = VPX_ERROR_RESILIENT_DEFAULT;
+ #endif
+-	cfg.g_pass            = VPX_RC_ONE_PASS;
+-	cfg.g_lag_in_frames   = 0;
+-	cfg.rc_end_usage      = VPX_VBR;
+-	cfg.rc_target_bitrate = ves->bitrate;
+-	cfg.kf_mode           = VPX_KF_AUTO;
++	cfg.g_pass		= VPX_RC_ONE_PASS;
++	cfg.g_lag_in_frames	= 0;
++	cfg.rc_end_usage	= VPX_CBR;
++	cfg.rc_target_bitrate	= ves->bitrate / 1000; /* kbps */
++	cfg.rc_overshoot_pct	= 15;
++	cfg.rc_undershoot_pct	= 100;
++	cfg.rc_dropframe_thresh = 0;
++	cfg.kf_mode		= VPX_KF_AUTO;
+ 
+ 	if (ves->ctxup) {
+ 		debug("vp8: re-opening encoder\n");
+
+From eb9b9799db5d1ab7feb8f16edfbb4be026d54dd1 Mon Sep 17 00:00:00 2001
+From: Sebastian Reimers <hallo@studio-link.de>
+Date: Fri, 1 Mar 2024 12:31:45 +0100
+Subject: [PATCH 2/2] vp8/encode: set keyframe intervall
+
+---
+ modules/vp8/encode.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/modules/vp8/encode.c b/modules/vp8/encode.c
+index cfd4fd95a..8cd5b557e 100644
+--- a/modules/vp8/encode.c
++++ b/modules/vp8/encode.c
+@@ -15,6 +15,7 @@
+ 
+ enum {
+ 	HDR_SIZE = 4,
++	KEYFRAME_INTERVAL = 10  /* Keyframes per second */
+ };
+ 
+ 
+@@ -113,6 +114,8 @@ static int open_encoder(struct videnc_state *ves, const struct vidsz *size)
+ 	cfg.rc_undershoot_pct	= 100;
+ 	cfg.rc_dropframe_thresh = 0;
+ 	cfg.kf_mode		= VPX_KF_AUTO;
++	cfg.kf_min_dist		= ves->fps * KEYFRAME_INTERVAL;
++	cfg.kf_max_dist		= ves->fps * KEYFRAME_INTERVAL;
+ 
+ 	if (ves->ctxup) {
+ 		debug("vp8: re-opening encoder\n");

@@ -46,7 +46,8 @@ external:
 		https://github.com/baresip/baresip.git external/baresip
 	cd external/re && \
 		patch -p1 < ../../patches/re_aubuf_timestamp_order_fix.patch
-	cd external/baresip
+	cd external/baresip && \
+		patch -p1 < ../../patches/baresip_2936.patch
 
 
 ##############################################################################
