@@ -1,18 +1,49 @@
-From 6db7205d7ab88af52cbb92cfce1d90e09228e069 Mon Sep 17 00:00:00 2001
-From: Sebastian Reimers <hallo@studio-link.de>
-Date: Fri, 1 Mar 2024 12:04:41 +0100
-Subject: [PATCH 1/2] vp8/encode: fix target_bitrate (kbps) and use constant
- bitrate
-
----
- modules/vp8/encode.c | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
-
+diff --git a/docs/examples/config b/docs/examples/config
+index 2b3549fc..5cfa3697 100644
+--- a/docs/examples/config
++++ b/docs/examples/config
+@@ -265,6 +265,10 @@ video_selfview		window # {window,pip}
+ #avcodec_profile_level_id 42002a
+ #avcodec_keyint		10      # keyframe interval in [sec]
+ 
++# vp8
++#vp8_enc_threads 1
++#vp8_enc_cpuused 16 # Range -16..16, greater 0 increases speed over quality
++
+ # ctrl_dbus
+ #ctrl_dbus_use	system		# system, session
+ 
 diff --git a/modules/vp8/encode.c b/modules/vp8/encode.c
-index e26fb90e0..cfd4fd95a 100644
+index e26fb90e..00cd2d6f 100644
 --- a/modules/vp8/encode.c
 +++ b/modules/vp8/encode.c
-@@ -105,11 +105,14 @@ static int open_encoder(struct videnc_state *ves, const struct vidsz *size)
+@@ -15,6 +15,7 @@
+ 
+ enum {
+ 	HDR_SIZE = 4,
++	KEYFRAME_INTERVAL = 10  /* Keyframes per second */
+ };
+ 
+ 
+@@ -92,11 +93,17 @@ static int open_encoder(struct videnc_state *ves, const struct vidsz *size)
+ 	vpx_codec_enc_cfg_t cfg;
+ 	vpx_codec_err_t res;
+ 	vpx_codec_flags_t flags = 0;
++	uint32_t threads = 1;
++	int32_t cpuused = 16;
+ 
+ 	res = vpx_codec_enc_config_default(&vpx_codec_vp8_cx_algo, &cfg, 0);
+ 	if (res)
+ 		return EPROTO;
+ 
++	conf_get_u32(conf_cur(), "vp8_enc_threads", &threads);
++	conf_get_i32(conf_cur(), "vp8_enc_cpuused", &cpuused);
++
++	cfg.g_threads = threads;
+ 	cfg.g_profile = 2;
+ 	cfg.g_w = size->w;
+ 	cfg.g_h = size->h;
+@@ -105,11 +112,16 @@ static int open_encoder(struct videnc_state *ves, const struct vidsz *size)
  #ifdef VPX_ERROR_RESILIENT_DEFAULT
  	cfg.g_error_resilient = VPX_ERROR_RESILIENT_DEFAULT;
  #endif
@@ -29,37 +60,36 @@ index e26fb90e0..cfd4fd95a 100644
 +	cfg.rc_undershoot_pct	= 100;
 +	cfg.rc_dropframe_thresh = 0;
 +	cfg.kf_mode		= VPX_KF_AUTO;
- 
- 	if (ves->ctxup) {
- 		debug("vp8: re-opening encoder\n");
-
-From eb9b9799db5d1ab7feb8f16edfbb4be026d54dd1 Mon Sep 17 00:00:00 2001
-From: Sebastian Reimers <hallo@studio-link.de>
-Date: Fri, 1 Mar 2024 12:31:45 +0100
-Subject: [PATCH 2/2] vp8/encode: set keyframe intervall
-
----
- modules/vp8/encode.c | 3 +++
- 1 file changed, 3 insertions(+)
-
-diff --git a/modules/vp8/encode.c b/modules/vp8/encode.c
-index cfd4fd95a..8cd5b557e 100644
---- a/modules/vp8/encode.c
-+++ b/modules/vp8/encode.c
-@@ -15,6 +15,7 @@
- 
- enum {
- 	HDR_SIZE = 4,
-+	KEYFRAME_INTERVAL = 10  /* Keyframes per second */
- };
- 
- 
-@@ -113,6 +114,8 @@ static int open_encoder(struct videnc_state *ves, const struct vidsz *size)
- 	cfg.rc_undershoot_pct	= 100;
- 	cfg.rc_dropframe_thresh = 0;
- 	cfg.kf_mode		= VPX_KF_AUTO;
 +	cfg.kf_min_dist		= ves->fps * KEYFRAME_INTERVAL;
 +	cfg.kf_max_dist		= ves->fps * KEYFRAME_INTERVAL;
  
  	if (ves->ctxup) {
  		debug("vp8: re-opening encoder\n");
+@@ -130,7 +142,7 @@ static int open_encoder(struct videnc_state *ves, const struct vidsz *size)
+ 
+ 	ves->ctxup = true;
+ 
+-	res = vpx_codec_control(&ves->ctx, VP8E_SET_CPUUSED, 16);
++	res = vpx_codec_control(&ves->ctx, VP8E_SET_CPUUSED, cpuused);
+ 	if (res) {
+ 		warning("vp8: codec ctrl: %s\n", vpx_codec_err_to_string(res));
+ 	}
+diff --git a/src/config.c b/src/config.c
+index 9b8698e7..31e43a14 100644
+--- a/src/config.c
++++ b/src/config.c
+@@ -1299,6 +1299,14 @@ int config_write_template(const char *file, const struct config *cfg)
+ 			default_avcodec_hwaccel()
+ 			);
+ 
++	(void)re_fprintf(f,
++			"# vp8\n"
++			"#vp8_enc_threads 1\n"
++			"#vp8_enc_cpuused 16"
++			" # range -16..16,"
++			" greater 0 increases speed over quality\n"
++			);
++
+ 	(void)re_fprintf(f,
+ 			"\n# ctrl_dbus\n"
+ 			"#ctrl_dbus_use\tsystem\t\t# system, session\n");
