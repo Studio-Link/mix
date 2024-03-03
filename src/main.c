@@ -130,13 +130,15 @@ int main(int argc, char *const argv[])
 		"opus_bitrate		64000\n"
 		"ice_policy		relay\n"
 		"video_size		1920x1080\n"
-		"video_bitrate		2000000\n"
+		"video_bitrate		2500000\n"
 		"video_sendrate		10000000\n" /* max burst send */
 		"video_burst_bit	1000000\n"  /* max burst send */
 		"video_fps		24\n"
 		"avcodec_keyint		10\n"
 		"avcodec_h265enc	nil\n"
 		"avcodec_h265dec	nil\n"
+		"vp8_enc_threads	4\n"
+		"vp8_enc_cpuused	-8\n"
 #if 0
 		"videnc_format		nv12\n"
 		"avcodec_h264enc	h264_nvenc\n"
