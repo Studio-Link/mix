@@ -3,14 +3,10 @@
 #include "vmix.h"
 
 
-struct vmix_proxy {
-	struct le le;
-	struct vidcodec codec;
-	videnc_encode_h *ench;
-	videnc_update_h *encupdh;
-	videnc_packetize_h *packetizeh;
-	viddec_decode_h *dech;
-	viddec_update_h *decupdh;
+struct vmix_vcproxy {
+	struct vidcodec vc; /* Keep first, to keep vidcodec order */
+	struct vidcodec *ovc;
+	struct le ple;
 };
 
 static struct hash *dec_list;
@@ -25,7 +21,7 @@ struct enc_pkt {
 	size_t hdr_len;
 	struct mbuf *pld;
 	size_t pld_len;
-	const struct vmix_proxy *p;
+	const struct vmix_vcproxy *p;
 };
 
 static struct list enc_pktl	     = LIST_INIT;
@@ -42,7 +38,7 @@ struct videnc_state {
 	uint64_t last_ts;
 	void *vesp; /* Sub-Codec state */
 	bool is_pkt_src;
-	const struct vmix_proxy *p;
+	const struct vmix_vcproxy *p;
 };
 
 struct viddec_state {
@@ -53,7 +49,7 @@ struct viddec_state {
 	uint64_t last_id;
 	mtx_t *mtx;
 	const char *dev;
-	const struct vmix_proxy *p;
+	const struct vmix_vcproxy *p;
 };
 
 struct dec_pkt {
@@ -66,19 +62,19 @@ struct dec_pkt {
 };
 
 
-static const struct vmix_proxy *vmix_proxy_find(const char *name,
-						const char *variant)
+static const struct vmix_vcproxy *vmix_proxy_find(const char *name,
+						  const char *variant)
 {
 	struct le *le;
 
 	LIST_FOREACH(&proxyl, le)
 	{
-		struct vmix_proxy *p = le->data;
+		struct vmix_vcproxy *p = le->data;
 
-		if (name && 0 != str_casecmp(name, p->codec.name))
+		if (name && 0 != str_casecmp(name, p->vc.name))
 			continue;
 
-		if (variant && 0 != str_casecmp(variant, p->codec.variant))
+		if (variant && 0 != str_casecmp(variant, p->vc.variant))
 			continue;
 
 		return p;
@@ -120,6 +116,24 @@ static void enc_pkt_deref(void *arg)
 	mem_deref(pkt->hdr);
 	mem_deref(pkt->pld);
 	list_unlink(&pkt->le);
+}
+
+
+static int fmtp_ench(struct mbuf *mb, const struct sdp_format *fmt, bool offer,
+		     void *data)
+{
+	const struct vmix_vcproxy *p = data;
+
+	return p->ovc->fmtp_ench(mb, fmt, offer, p->ovc);
+}
+
+
+static bool fmtp_cmph(const char *params1, const char *params2, void *data)
+{
+
+	const struct vmix_vcproxy *p = data;
+
+	return p->ovc->fmtp_cmph(params1, params2, p->ovc);
 }
 
 
@@ -165,6 +179,7 @@ static int enc_update(struct videnc_state **vesp, const struct vidcodec *vc,
 		      videnc_packet_h *pkth, const struct video *vid)
 {
 	struct videnc_state *ves;
+	const struct vmix_vcproxy *p = (struct vmix_vcproxy *)vc;
 	int err;
 
 	ves = mem_zalloc(sizeof(struct videnc_state), videnc_deref);
@@ -183,8 +198,8 @@ static int enc_update(struct videnc_state **vesp, const struct vidcodec *vc,
 		return EINVAL;
 	}
 
-	err = ves->p->encupdh((struct videnc_state **)&ves->vesp, vc, prm,
-			      fmtp, enc_packet_h, (void *)ves->p);
+	err = ves->p->ovc->encupdh((struct videnc_state **)&ves->vesp, p->ovc,
+				   prm, fmtp, enc_packet_h, (void *)ves->p);
 	if (err) {
 		mem_deref(ves);
 		return err;
@@ -208,7 +223,7 @@ static int encode(struct videnc_state *ves, bool update,
 
 	re_atomic_rlx_set(&last_keyframe, keyframe);
 
-	return ves->p->ench(ves->vesp, keyframe, frame, timestamp);
+	return ves->p->ovc->ench(ves->vesp, keyframe, frame, timestamp);
 }
 
 
@@ -243,6 +258,7 @@ static int dec_update(struct viddec_state **vdsp, const struct vidcodec *vc,
 		      const char *fmtp, const struct video *vid)
 {
 	struct viddec_state *vds;
+	const struct vmix_vcproxy *p = (struct vmix_vcproxy *)vc;
 	int err;
 
 	vds = mem_zalloc(sizeof(struct viddec_state), NULL);
@@ -266,8 +282,8 @@ static int dec_update(struct viddec_state **vdsp, const struct vidcodec *vc,
 		return EINVAL;
 	}
 
-	err = vds->p->decupdh((struct viddec_state **)&vds->vdsp, vc, fmtp,
-			      vid);
+	err = vds->p->ovc->decupdh((struct viddec_state **)&vds->vdsp, p->ovc,
+				   fmtp, vid);
 	if (err) {
 		mem_deref(vds);
 		return err;
@@ -327,7 +343,7 @@ static int decode(struct viddec_state *vds, struct vidframe *frame,
 	}
 	mtx_unlock(vds->mtx);
 #endif
-	return vds->p->dech(vds->vdsp, frame, vpkt);
+	return vds->p->ovc->dech(vds->vdsp, frame, vpkt);
 }
 
 
@@ -396,19 +412,8 @@ void vmix_encode_flush(void)
 
 static void proxy_codec_alloc(const char *name, const char *variant)
 {
-	struct vmix_proxy *p;
+	struct vmix_vcproxy *p;
 	const struct vidcodec *v;
-
-	p = mem_zalloc(sizeof(struct vmix_proxy), NULL);
-	if (!p)
-		return;
-
-	/* Proxy functions */
-	p->codec.encupdh    = enc_update;
-	p->codec.ench	    = encode;
-	p->codec.decupdh    = dec_update;
-	p->codec.dech	    = decode;
-	p->codec.packetizeh = packetize;
 
 	v = vidcodec_find(baresip_vidcodecl(), name, variant);
 	if (!v) {
@@ -416,19 +421,28 @@ static void proxy_codec_alloc(const char *name, const char *variant)
 		return;
 	}
 
+	p = mem_zalloc(sizeof(struct vmix_vcproxy), NULL);
+	if (!p)
+		return;
+
+
+	/* Proxy functions */
+	p->vc.name    = name;
+	p->vc.variant = variant;
+	p->vc.encupdh = enc_update;
+	p->vc.ench    = encode;
+	p->vc.decupdh = dec_update;
+	p->vc.dech    = decode;
+	if (v->fmtp_ench)
+		p->vc.fmtp_ench = fmtp_ench;
+	if (v->fmtp_cmph)
+		p->vc.fmtp_cmph = fmtp_cmph;
+	p->vc.packetizeh = packetize;
+
 	/* Orignal functions */
-	p->codec.name	   = name;
-	p->codec.variant   = variant;
-	p->codec.fmtp_ench = v->fmtp_ench;
-	p->codec.fmtp_cmph = v->fmtp_cmph;
+	p->ovc = (void *)v;
 
-	p->encupdh    = v->encupdh;
-	p->ench	      = v->ench;
-	p->decupdh    = v->decupdh;
-	p->dech	      = v->dech;
-	p->packetizeh = v->packetizeh;
-
-	list_append(&proxyl, &p->le, p);
+	list_append(&proxyl, &p->ple, p);
 }
 
 
@@ -448,15 +462,16 @@ int vmix_codec_init(void)
 #if 0
 	proxy_codec_alloc("H264", "packetization-mode=0");
 	proxy_codec_alloc("H264", "packetization-mode=1");
-#endif
+#else
 	proxy_codec_alloc("VP8", NULL);
+#endif
 
 	list_clear(baresip_vidcodecl());
 
 	LIST_FOREACH(&proxyl, le)
 	{
-		struct vmix_proxy *p = le->data;
-		vidcodec_register(baresip_vidcodecl(), &p->codec);
+		struct vmix_vcproxy *p = le->data;
+		vidcodec_register(baresip_vidcodecl(), (struct vidcodec *)p);
 	}
 
 	return 0;
@@ -469,8 +484,8 @@ void vmix_codec_close(void)
 
 	LIST_FOREACH(&proxyl, le)
 	{
-		struct vmix_proxy *p = le->data;
-		vidcodec_unregister(&p->codec);
+		struct vmix_vcproxy *p = le->data;
+		vidcodec_unregister((struct vidcodec *)p);
 	}
 
 	list_flush(&proxyl);
