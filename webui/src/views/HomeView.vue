@@ -1,7 +1,7 @@
 <template>
   <div class="flex">
-    <StudioNav />
-    <div class="container mx-auto mb-32 sm:mb-24">
+      <!--<StudioNav />-->
+    <div class="mx-auto mb-32 sm:mb-24">
       <div class="flex items-center fixed right-0 top-0 m-3 space-x-2 text-xs z-40">
         <RecButton />
         <div>
@@ -52,7 +52,7 @@ import Chat from '../components/Chat.vue'
 import RecButton from '../components/RecButton.vue'
 import api from '../api'
 import { onMounted } from 'vue'
-import StudioNav from '../components/StudioNav.vue'
+//import StudioNav from '../components/StudioNav.vue'
 import { Users } from '../ws/users'
 import { ChatBubbleOvalLeftEllipsisIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 
