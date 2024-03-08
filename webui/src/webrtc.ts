@@ -60,6 +60,8 @@ const silence = () => {
     return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false })
 }
 
+const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay))
+
 function drawLoop(ctx: CanvasRenderingContext2D, image: HTMLImageElement, width: number, height: number, cnt: number) {
     if (cnt > 20)
         return
@@ -262,16 +264,28 @@ async function pc_media_audio() {
     }
 }
 
+
 async function pc_media_video() {
     videostream?.getVideoTracks()[0].stop()
 
-    try {
-        videostream = await navigator.mediaDevices.getUserMedia(constraintsVideo)
-    } catch (e) {
-        videostream = null
-        console.error('pc_media_video: permission denied...', e)
-        Error.error('Camera permission denied!')
-        return
+    for (let i = 0; i < 5; i++) {
+        try {
+            Error.errorVideo('')
+            videostream = await navigator.mediaDevices.getUserMedia(constraintsVideo)
+            return
+        } catch (e) {
+            console.error('pc_media_video/error: ', e)
+            Error.errorVideo('Camera: ' + e)
+            if (e instanceof DOMException) {
+                /* Sometimes camera is not ready yet, since stream is not stopped
+                 * synchronously, so retry after timeout */
+                if (e.name === 'NotReadableError') {
+                    await sleep(200)
+                    continue
+                }
+            }
+            return
+        }
     }
 }
 
@@ -283,9 +297,9 @@ async function pc_screen() {
     }
     try {
         screenstream = await navigator.mediaDevices.getDisplayMedia(gdmOptions)
-    } catch (err) {
-        console.error('webrtc_video/setup_screen: ' + err)
-        Error.error('Screen permission denied!')
+    } catch (e) {
+        console.error('pc_screen: ', e)
+        Error.error('Screen: ' + e)
     }
 }
 
@@ -302,7 +316,6 @@ async function pc_replace_tracks(audio_track: MediaStreamTrack | null, video_tra
     if (audio_track && video_track) {
         await Promise.all([audio.replaceTrack(audio_track), video.replaceTrack(video_track)])
         console.log('pc_replace_tracks: audio and video')
-
         return
     }
 

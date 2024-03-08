@@ -49,6 +49,10 @@
                       width="360"
                     ></video>
 
+                    <div class="text-red-800" v-show="video_select !== 'Disabled' && video_error">
+                      {{ video_error }}
+                    </div>
+
                     <div>
                       <div class="flex items-center justify-between">
                         <h2 class="text-sm font-medium text-gray-900">Choose a video option</h2>
@@ -190,6 +194,7 @@ import { Users } from '../ws/users'
 import { Webrtc, WebrtcState } from '../webrtc'
 import { ref, watch } from 'vue'
 import api from '../api'
+import { Error } from '../error'
 
 const open = Users.settings_active
 const videoOptions = ['Disabled', 'Camera', 'Screen']
@@ -200,6 +205,7 @@ const audio_output_id = Webrtc.audio_output_id
 const video_input_id = Webrtc.video_input_id
 const echo = Webrtc.echo
 const video_echo = ref<HTMLVideoElement>()
+const video_error = Error.video
 
 watch(video_select, async (newValue, oldValue) => {
   const interval = setInterval(async () => {
