@@ -672,15 +672,18 @@ static void http_req_handler(struct http_conn *conn,
 			    "/user/%s",
 			    mix->room, sess->user->id);
 
+		struct mbuf *body = mbuf_alloc(mbuf_get_left(msg->mb));
+		mbuf_write_mem(body, mbuf_buf(msg->mb),
+			       mbuf_get_left(msg->mb));
+
 		err = sl_httpc_req(http_conn, SL_HTTP_POST,
 				   metric_url,
-				   msg->mb);
-		if (err) {
-			mem_deref(http_conn);
-			goto err;
-		}
-
+				   body);
 		mem_deref(http_conn);
+		mem_deref(body);
+
+		if (err)
+			goto err;
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;
