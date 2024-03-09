@@ -676,6 +676,10 @@ static void http_req_handler(struct http_conn *conn,
 		mbuf_write_mem(body, mbuf_buf(msg->mb),
 			       mbuf_get_left(msg->mb));
 
+		struct pl header_gzip;
+		pl_set_str(&header_gzip, "Content-Encoding: gzip");
+		http_reqconn_add_header(http_conn->conn, &header_gzip);
+
 		err = sl_httpc_req(http_conn, SL_HTTP_POST,
 				   metric_url,
 				   body);
