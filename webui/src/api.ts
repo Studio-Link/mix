@@ -13,18 +13,19 @@ interface Session {
 
 let sess: Session = JSON.parse(window.localStorage.getItem('sess')!)
 
-async function api_fetch(met: string, url: string, data: any, json = true) {
+async function api_fetch(met: string, url: string, data: any, json = true, gzip = false) {
     const body = json ? JSON.stringify(data) : data
+    const headers = {
+            'Content-Type': 'application/json',
+            'Session-ID': sess?.id,
+    }
 
     // Default options are marked with *
     const resp = await fetch(config.host() + config.base() + 'api/v1' + url, {
         method: met,
         cache: 'no-cache',
         credentials: 'same-origin',
-        headers: {
-            'Content-Type': 'application/json',
-            'Session-ID': sess?.id,
-        },
+        headers: gzip ? {...headers, 'Content-Encoding': 'gzip'} : headers,
         redirect: 'follow',
         referrerPolicy: 'no-referrer',
         body: data ? body : null,
@@ -188,8 +189,17 @@ export default {
     },
 
     async rtc_stats(data: string) {
-        /* @TODO: gzip compression */
-        await api_fetch('POST', '/webrtc/stats', data, false)
+        const stream = new Blob([data]).stream();
+        const compressedReadableStream = stream.pipeThrough(
+            new CompressionStream("gzip")
+        );
+
+        const compressedResponse =
+            new Response(compressedReadableStream);
+
+        const blob = await compressedResponse.blob();
+
+        await api_fetch('POST', '/webrtc/stats', blob, false, true)
     },
 
     async record_switch(type: RecordType) {
