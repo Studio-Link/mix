@@ -198,7 +198,7 @@ async function pc_stats(pc: RTCPeerConnection | null) {
 
         if (value.type === "peer-connection") {
             labels.push(`state="${state}"`);
-            metrics.push(["browser_version", "${adapter.browserDetails.version}"]);
+            metrics.push(["browser_version", adapter.browserDetails.version]);
         }
 
         labels.push(`browser="${adapter.browserDetails.browser}"`);
