@@ -185,6 +185,11 @@ export default {
             await api_fetch('PUT', '/webrtc/solo/disable', dev)
     },
 
+    async rtc_stats(data: string) {
+        /* @TODO: gzip compression */
+        await api_fetch('POST', '/webrtc/stats', data)
+    },
+
     async record_switch(type: RecordType) {
         if (!Users.host_status.value) return
 
