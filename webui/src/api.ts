@@ -13,7 +13,9 @@ interface Session {
 
 let sess: Session = JSON.parse(window.localStorage.getItem('sess')!)
 
-async function api_fetch(met: string, url: string, data: any) {
+async function api_fetch(met: string, url: string, data: any, json = true) {
+    const body = json ? JSON.stringify(data) : data
+
     // Default options are marked with *
     const resp = await fetch(config.host() + config.base() + 'api/v1' + url, {
         method: met,
@@ -25,7 +27,7 @@ async function api_fetch(met: string, url: string, data: any) {
         },
         redirect: 'follow',
         referrerPolicy: 'no-referrer',
-        body: data ? JSON.stringify(data) : null,
+        body: data ? body : null,
     }).catch((error) => {
         Error.error('API Network error: ' + error.toString())
     })
@@ -187,7 +189,7 @@ export default {
 
     async rtc_stats(data: string) {
         /* @TODO: gzip compression */
-        await api_fetch('POST', '/webrtc/stats', data)
+        await api_fetch('POST', '/webrtc/stats', data, false)
     },
 
     async record_switch(type: RecordType) {
