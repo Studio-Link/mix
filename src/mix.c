@@ -59,6 +59,8 @@ static void slmix_metrics(void *arg)
 	if (!mb)
 		goto out;
 
+	mbuf_printf(mb, "# TYPE mix_rtt gauge\n");
+
 	LIST_FOREACH(&mix.sessl, le)
 	{
 		struct session *sess = le->data;
@@ -69,7 +71,6 @@ static void slmix_metrics(void *arg)
 		audio_stat = stream_rtcp_stats(media_get_stream(sess->maudio));
 		video_stat = stream_rtcp_stats(media_get_stream(sess->mvideo));
 
-		mbuf_printf(mb, "# TYPE mix_rtt gauge\n");
 		if (audio_stat) {
 			mbuf_printf(mb,
 				    "mix_rtt{instance=\"%s\",user=\"%s\","
