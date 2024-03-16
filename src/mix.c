@@ -15,6 +15,12 @@ static struct mix mix = {.room		  = "main",
 			 .token_listeners = "",
 			 .token_download  = ""};
 
+static struct tmr tmr_room_update;
+static struct tmr tmr_metrics;
+static uint64_t last_room_update = 0;
+static struct mbuf update_data;
+
+
 const char *slmix_git_version(void)
 {
 	return GIT_TAG;
@@ -39,9 +45,60 @@ struct mix *slmix(void)
 }
 
 
-static struct tmr tmr_room_update;
-static uint64_t last_room_update = 0;
-struct mbuf update_data;
+static void slmix_metrics(void *arg)
+{
+	struct le *le;
+	int err;
+	char metric_url[] = "http://127.0.0.1:9091/metrics/job/rtc";
+	struct sl_httpconn *http_conn;
+	const struct rtcp_stats *audio_stat;
+	const struct rtcp_stats *video_stat;
+	(void)arg;
+
+	struct mbuf *mb	= mbuf_alloc(512);
+	if (!mb)
+		goto out;
+
+	LIST_FOREACH(&mix.sessl, le)
+	{
+		struct session *sess = le->data;
+
+		if (!sess->user || !sess->connected)
+			continue;
+
+		audio_stat = stream_rtcp_stats(media_get_stream(sess->maudio));
+		video_stat = stream_rtcp_stats(media_get_stream(sess->mvideo));
+
+		mbuf_printf(mb, "# TYPE mix_rtt gauge\n");
+		if (audio_stat) {
+			mbuf_printf(mb,
+				    "mix_rtt{instance=\"%s\",user=\"%s\","
+				    "kind=\"audio\"} %u\n",
+				    mix.room, sess->user->id,
+				    audio_stat->rtt / 1000);
+		}
+		if (video_stat) {
+			mbuf_printf(mb,
+				    "mix_rtt{instance=\"%s\",user=\"%s\","
+				    "kind=\"video\"} %u\n",
+				    mix.room, sess->user->id,
+				    video_stat->rtt / 1000);
+		}
+	}
+	if (mbuf_pos(mb) == 0)
+		goto out;
+
+	err = sl_httpc_alloc(&http_conn, NULL, NULL, NULL);
+	if (err)
+		goto out;
+
+	sl_httpc_req(http_conn, SL_HTTP_POST, metric_url, mb);
+	mem_deref(http_conn);
+
+out:
+	mem_deref(mb);
+	tmr_start(&tmr_metrics, 2000, slmix_metrics, NULL);
+}
 
 
 void slmix_refresh_rooms(void *arg)
@@ -165,6 +222,9 @@ int slmix_init(void)
 	tmr_init(&tmr_room_update);
 	tmr_start(&tmr_room_update, 100, slmix_refresh_rooms, NULL);
 
+	tmr_init(&tmr_metrics);
+	tmr_start(&tmr_metrics, 2000, slmix_metrics, NULL);
+
 	err = slmix_update_room();
 	if (err)
 		return err;
@@ -241,6 +301,7 @@ void slmix_close(void)
 #endif
 
 	tmr_cancel(&tmr_room_update);
+	tmr_cancel(&tmr_metrics);
 	mbuf_reset(&update_data);
 
 	list_flush(&mix.sessl);
@@ -253,7 +314,6 @@ void slmix_close(void)
 	sl_httpc_close();
 
 	slmix_sip_close();
-
 }
 
 
