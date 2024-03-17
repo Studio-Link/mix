@@ -53,13 +53,12 @@ static void slmix_metrics(void *arg)
 	struct sl_httpconn *http_conn;
 	const struct rtcp_stats *audio_stat;
 	const struct rtcp_stats *video_stat;
+	bool types = true;
 	(void)arg;
 
 	struct mbuf *mb	= mbuf_alloc(512);
 	if (!mb)
 		goto out;
-
-	mbuf_printf(mb, "# TYPE mix_rtt gauge\n");
 
 	LIST_FOREACH(&mix.sessl, le)
 	{
@@ -70,6 +69,11 @@ static void slmix_metrics(void *arg)
 
 		audio_stat = stream_rtcp_stats(media_get_stream(sess->maudio));
 		video_stat = stream_rtcp_stats(media_get_stream(sess->mvideo));
+
+		if (types) {
+			mbuf_printf(mb, "# TYPE mix_rtt gauge\n");
+			types = false;
+		}
 
 		if (audio_stat) {
 			mbuf_printf(mb,
@@ -86,6 +90,7 @@ static void slmix_metrics(void *arg)
 				    video_stat->rtt / 1000);
 		}
 	}
+
 	if (mbuf_pos(mb) == 0)
 		goto out;
 
