@@ -21,21 +21,22 @@ webui:
 .PHONY: release
 release: external
 	make clean
-	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-g"
+	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_C_FLAGS="-g -DJBUF_STAT"
 	make build
 
 .PHONY: systemd
 systemd: external
 	make clean
-	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-g" \
-		-DUSE_SD_SOCK=ON
+	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_C_FLAGS="-g -DJBUF_STAT" -DUSE_SD_SOCK=ON
 	make build
 
 .PHONY: unix
 unix: external
 	make clean
-	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-g" \
-		-DUSE_UNIX_SOCK=ON
+	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_C_FLAGS="-g -DJBUF_STAT" -DUSE_UNIX_SOCK=ON
 	make build
 
 external:
