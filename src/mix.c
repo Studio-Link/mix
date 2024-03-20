@@ -53,6 +53,8 @@ static void slmix_metrics(void *arg)
 	struct sl_httpconn *http_conn;
 	const struct rtcp_stats *audio_stat;
 	const struct rtcp_stats *video_stat;
+	struct jbuf_stat audio_jstat;
+	struct jbuf_stat video_jstat;
 	bool types = true;
 	(void)arg;
 
@@ -63,32 +65,75 @@ static void slmix_metrics(void *arg)
 	LIST_FOREACH(&mix.sessl, le)
 	{
 		struct session *sess = le->data;
+		char labels[128];
 
 		if (!sess->user || !sess->connected)
 			continue;
 
-		audio_stat = stream_rtcp_stats(media_get_stream(sess->maudio));
-		video_stat = stream_rtcp_stats(media_get_stream(sess->mvideo));
-
 		if (types) {
 			mbuf_printf(mb, "# TYPE mix_rtt gauge\n");
+			mbuf_printf(mb, "# TYPE mix_tx_lost counter\n");
+			mbuf_printf(mb, "# TYPE mix_tx_jit gauge\n");
+			mbuf_printf(mb, "# TYPE mix_rx_lost counter\n");
+			mbuf_printf(mb, "# TYPE mix_rx_jit gauge\n");
+			mbuf_printf(mb, "# TYPE mix_jbuf_delay gauge\n");
+			mbuf_printf(mb, "# TYPE mix_jbuf_late counter\n");
+			mbuf_printf(mb, "# TYPE mix_jbuf_late_lost counter\n");
 			types = false;
 		}
 
+		re_snprintf(labels, sizeof(labels),
+			    "instance=\"%s\",user=\"%s\"", mix.room,
+			    sess->user->id);
+
+		audio_stat = stream_rtcp_stats(media_get_stream(sess->maudio));
+		video_stat = stream_rtcp_stats(media_get_stream(sess->mvideo));
+
 		if (audio_stat) {
-			mbuf_printf(mb,
-				    "mix_rtt{instance=\"%s\",user=\"%s\","
-				    "kind=\"audio\"} %u\n",
-				    mix.room, sess->user->id,
-				    audio_stat->rtt / 1000);
+			mbuf_printf(mb, "mix_rtt{%s,kind=\"audio\"} %u\n",
+				    labels, audio_stat->rtt / 1000);
+			mbuf_printf(mb, "mix_tx_lost{%s,kind=\"audio\"} %d\n",
+				    labels, audio_stat->tx.lost);
+			mbuf_printf(mb, "mix_tx_jit{%s,kind=\"audio\"} %u\n",
+				    labels, audio_stat->tx.jit);
+			mbuf_printf(mb, "mix_rx_lost{%s,kind =\"audio\"} %d\n",
+				    labels, audio_stat->rx.lost);
+			mbuf_printf(mb, "mix_rx_jit{%s,kind=\"audio\"} %u\n",
+				    labels, audio_stat->rx.jit);
 		}
 		if (video_stat) {
-			mbuf_printf(mb,
-				    "mix_rtt{instance=\"%s\",user=\"%s\","
-				    "kind=\"video\"} %u\n",
-				    mix.room, sess->user->id,
-				    video_stat->rtt / 1000);
+			mbuf_printf(mb, "mix_rtt{%s,kind=\"video\"} %u\n",
+				    labels, video_stat->rtt / 1000);
+			mbuf_printf(mb, "mix_tx_lost{%s,kind=\"video\"} %d\n",
+				    labels, video_stat->tx.lost);
+			mbuf_printf(mb, "mix_tx_jit{%s,kind=\"video\"} %u\n",
+				    labels, video_stat->tx.jit);
+			mbuf_printf(mb, "mix_rx_lost{%s,kind=\"video\"} %d\n",
+				    labels, video_stat->rx.lost);
+			mbuf_printf(mb, "mix_rx_jit{%s,kind=\"video\"} %u\n",
+				    labels, video_stat->rx.jit);
 		}
+
+		err = stream_jbuf_stats(media_get_stream(sess->maudio),
+					&audio_jstat);
+		err |= stream_jbuf_stats(media_get_stream(sess->mvideo),
+					 &video_jstat);
+		if (err)
+			continue;
+
+		mbuf_printf(mb, "mix_jbuf_delay{%s,kind=\"audio\"} %u\n",
+			    labels, audio_jstat.c_delay);
+		mbuf_printf(mb, "mix_jbuf_late{%s,kind=\"audio\"} %u\n",
+			    labels, audio_jstat.n_late);
+		mbuf_printf(mb, "mix_jbuf_late_lost{%s,kind=\"audio\"} %u\n",
+			    labels, audio_jstat.n_late_lost);
+
+		mbuf_printf(mb, "mix_jbuf_delay{%s,kind=\"video\"} %u\n",
+			    labels, video_jstat.c_delay);
+		mbuf_printf(mb, "mix_jbuf_late{%s,kind=\"video\"} %u\n",
+			    labels, video_jstat.n_late);
+		mbuf_printf(mb, "mix_jbuf_late_lost{%s,kind=\"video\"} %u\n",
+			    labels, video_jstat.n_late_lost);
 	}
 
 	if (mbuf_pos(mb) == 0)
