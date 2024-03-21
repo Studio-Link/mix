@@ -39,7 +39,7 @@ const configuration: RTCConfiguration = {
     iceTransportPolicy: 'relay',
     iceServers: [
         {
-            urls: 'turn:195.201.63.86:3478',
+            urls: 'turn:167.235.37.175:3478',
             username: 'turn200301',
             credential: 'choh4zeem3foh1',
         },

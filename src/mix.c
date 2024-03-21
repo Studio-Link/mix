@@ -236,7 +236,7 @@ int slmix_init(void)
 	int err;
 #if 1
 	struct pl srv;
-	pl_set_str(&srv, "turn:195.201.63.86:3478");
+	pl_set_str(&srv, "turn:167.235.37.175:3478");
 
 	err = stunuri_decode(&mix.pc_config.ice_server, &srv);
 	if (err) {
