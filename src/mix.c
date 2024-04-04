@@ -77,8 +77,10 @@ static void slmix_metrics(void *arg)
 			mbuf_printf(mb, "# TYPE mix_rx_lost counter\n");
 			mbuf_printf(mb, "# TYPE mix_rx_jit gauge\n");
 			mbuf_printf(mb, "# TYPE mix_jbuf_delay gauge\n");
+			mbuf_printf(mb, "# TYPE mix_jbuf_skew gauge\n");
 			mbuf_printf(mb, "# TYPE mix_jbuf_late counter\n");
 			mbuf_printf(mb, "# TYPE mix_jbuf_late_lost counter\n");
+			mbuf_printf(mb, "# TYPE mix_jbuf_lost counter\n");
 			types = false;
 		}
 
@@ -123,17 +125,25 @@ static void slmix_metrics(void *arg)
 
 		mbuf_printf(mb, "mix_jbuf_delay{%s,kind=\"audio\"} %u\n",
 			    labels, audio_jstat.c_delay);
+		mbuf_printf(mb, "mix_jbuf_skew{%s,kind=\"audio\"} %d\n",
+			    labels, audio_jstat.c_skew);
 		mbuf_printf(mb, "mix_jbuf_late{%s,kind=\"audio\"} %u\n",
 			    labels, audio_jstat.n_late);
 		mbuf_printf(mb, "mix_jbuf_late_lost{%s,kind=\"audio\"} %u\n",
 			    labels, audio_jstat.n_late_lost);
+		mbuf_printf(mb, "mix_jbuf_lost{%s,kind=\"audio\"} %u\n",
+			    labels, audio_jstat.n_lost);
 
 		mbuf_printf(mb, "mix_jbuf_delay{%s,kind=\"video\"} %u\n",
 			    labels, video_jstat.c_delay);
+		mbuf_printf(mb, "mix_jbuf_skew{%s,kind=\"video\"} %d\n",
+			    labels, video_jstat.c_skew);
 		mbuf_printf(mb, "mix_jbuf_late{%s,kind=\"video\"} %u\n",
 			    labels, video_jstat.n_late);
 		mbuf_printf(mb, "mix_jbuf_late_lost{%s,kind=\"video\"} %u\n",
 			    labels, video_jstat.n_late_lost);
+		mbuf_printf(mb, "mix_jbuf_lost{%s,kind=\"video\"} %u\n",
+			    labels, video_jstat.n_lost);
 	}
 
 	if (mbuf_pos(mb) == 0)
