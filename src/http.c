@@ -656,6 +656,43 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/stats") &&
+	    0 == pl_strcasecmp(&msg->met, "POST")) {
+		struct sl_httpconn *http_conn;
+		char metric_url[128] = {0};
+
+		err = sl_httpc_alloc(&http_conn, NULL, NULL, NULL);
+		if (err)
+			goto err;
+
+		re_snprintf(metric_url, sizeof(metric_url),
+			    "http://127.0.0.1:9091/metrics"
+			    "/job/rtc"
+			    "/instance/%s"
+			    "/user/%s",
+			    mix->room, sess->user->id);
+
+		struct mbuf *body = mbuf_alloc(mbuf_get_left(msg->mb));
+		mbuf_write_mem(body, mbuf_buf(msg->mb),
+			       mbuf_get_left(msg->mb));
+
+		struct pl header_gzip;
+		pl_set_str(&header_gzip, "Content-Encoding: gzip");
+		http_reqconn_add_header(http_conn->conn, &header_gzip);
+
+		err = sl_httpc_req(http_conn, SL_HTTP_POST,
+				   metric_url,
+				   body);
+		mem_deref(http_conn);
+		mem_deref(body);
+
+		if (err)
+			goto err;
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/hangup") &&
 	    0 == pl_strcasecmp(&msg->met, "POST")) {
 

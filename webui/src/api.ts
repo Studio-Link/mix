@@ -13,19 +13,22 @@ interface Session {
 
 let sess: Session = JSON.parse(window.localStorage.getItem('sess')!)
 
-async function api_fetch(met: string, url: string, data: any) {
+async function api_fetch(met: string, url: string, data: any, json = true, gzip = false) {
+    const body = json ? JSON.stringify(data) : data
+    const headers = {
+            'Content-Type': 'application/json',
+            'Session-ID': sess?.id,
+    }
+
     // Default options are marked with *
     const resp = await fetch(config.host() + config.base() + 'api/v1' + url, {
         method: met,
         cache: 'no-cache',
         credentials: 'same-origin',
-        headers: {
-            'Content-Type': 'application/json',
-            'Session-ID': sess?.id,
-        },
+        headers: gzip ? {...headers, 'Content-Encoding': 'gzip'} : headers,
         redirect: 'follow',
         referrerPolicy: 'no-referrer',
-        body: data ? JSON.stringify(data) : null,
+        body: data ? body : null,
     }).catch((error) => {
         Error.error('API Network error: ' + error.toString())
     })
@@ -183,6 +186,20 @@ export default {
             await api_fetch('PUT', '/webrtc/solo/enable', dev)
         else
             await api_fetch('PUT', '/webrtc/solo/disable', dev)
+    },
+
+    async rtc_stats(data: string) {
+        const stream = new Blob([data]).stream();
+        const compressedReadableStream = stream.pipeThrough(
+            new CompressionStream("gzip")
+        );
+
+        const compressedResponse =
+            new Response(compressedReadableStream);
+
+        const blob = await compressedResponse.blob();
+
+        await api_fetch('POST', '/webrtc/stats', blob, false, true)
     },
 
     async record_switch(type: RecordType) {

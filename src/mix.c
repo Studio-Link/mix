@@ -15,6 +15,12 @@ static struct mix mix = {.room		  = "main",
 			 .token_listeners = "",
 			 .token_download  = ""};
 
+static struct tmr tmr_room_update;
+static struct tmr tmr_metrics;
+static uint64_t last_room_update = 0;
+static struct mbuf update_data;
+
+
 const char *slmix_git_version(void)
 {
 	return GIT_TAG;
@@ -39,9 +45,121 @@ struct mix *slmix(void)
 }
 
 
-static struct tmr tmr_room_update;
-static uint64_t last_room_update = 0;
-struct mbuf update_data;
+static void slmix_metrics(void *arg)
+{
+	struct le *le;
+	int err;
+	char metric_url[] = "http://127.0.0.1:9091/metrics/job/rtc";
+	struct sl_httpconn *http_conn;
+	const struct rtcp_stats *audio_stat;
+	const struct rtcp_stats *video_stat;
+	struct jbuf_stat audio_jstat;
+	struct jbuf_stat video_jstat;
+	bool types = true;
+	(void)arg;
+
+	struct mbuf *mb	= mbuf_alloc(512);
+	if (!mb)
+		goto out;
+
+	LIST_FOREACH(&mix.sessl, le)
+	{
+		struct session *sess = le->data;
+		char labels[128];
+
+		if (!sess->user || !sess->connected)
+			continue;
+
+		if (types) {
+			mbuf_printf(mb, "# TYPE mix_rtt gauge\n");
+			mbuf_printf(mb, "# TYPE mix_tx_lost counter\n");
+			mbuf_printf(mb, "# TYPE mix_tx_jit gauge\n");
+			mbuf_printf(mb, "# TYPE mix_rx_lost counter\n");
+			mbuf_printf(mb, "# TYPE mix_rx_jit gauge\n");
+			mbuf_printf(mb, "# TYPE mix_jbuf_delay gauge\n");
+			mbuf_printf(mb, "# TYPE mix_jbuf_skew gauge\n");
+			mbuf_printf(mb, "# TYPE mix_jbuf_late counter\n");
+			mbuf_printf(mb, "# TYPE mix_jbuf_late_lost counter\n");
+			mbuf_printf(mb, "# TYPE mix_jbuf_lost counter\n");
+			types = false;
+		}
+
+		re_snprintf(labels, sizeof(labels),
+			    "instance=\"%s\",user=\"%s\"", mix.room,
+			    sess->user->id);
+
+		audio_stat = stream_rtcp_stats(media_get_stream(sess->maudio));
+		video_stat = stream_rtcp_stats(media_get_stream(sess->mvideo));
+
+		if (audio_stat) {
+			mbuf_printf(mb, "mix_rtt{%s,kind=\"audio\"} %u\n",
+				    labels, audio_stat->rtt / 1000);
+			mbuf_printf(mb, "mix_tx_lost{%s,kind=\"audio\"} %d\n",
+				    labels, audio_stat->tx.lost);
+			mbuf_printf(mb, "mix_tx_jit{%s,kind=\"audio\"} %u\n",
+				    labels, audio_stat->tx.jit);
+			mbuf_printf(mb, "mix_rx_lost{%s,kind =\"audio\"} %d\n",
+				    labels, audio_stat->rx.lost);
+			mbuf_printf(mb, "mix_rx_jit{%s,kind=\"audio\"} %u\n",
+				    labels, audio_stat->rx.jit);
+		}
+		if (video_stat) {
+			mbuf_printf(mb, "mix_rtt{%s,kind=\"video\"} %u\n",
+				    labels, video_stat->rtt / 1000);
+			mbuf_printf(mb, "mix_tx_lost{%s,kind=\"video\"} %d\n",
+				    labels, video_stat->tx.lost);
+			mbuf_printf(mb, "mix_tx_jit{%s,kind=\"video\"} %u\n",
+				    labels, video_stat->tx.jit);
+			mbuf_printf(mb, "mix_rx_lost{%s,kind=\"video\"} %d\n",
+				    labels, video_stat->rx.lost);
+			mbuf_printf(mb, "mix_rx_jit{%s,kind=\"video\"} %u\n",
+				    labels, video_stat->rx.jit);
+		}
+
+		err = stream_jbuf_stats(media_get_stream(sess->maudio),
+					&audio_jstat);
+		err |= stream_jbuf_stats(media_get_stream(sess->mvideo),
+					 &video_jstat);
+		if (err)
+			continue;
+
+		mbuf_printf(mb, "mix_jbuf_delay{%s,kind=\"audio\"} %u\n",
+			    labels, audio_jstat.c_delay);
+		mbuf_printf(mb, "mix_jbuf_skew{%s,kind=\"audio\"} %d\n",
+			    labels, audio_jstat.c_skew);
+		mbuf_printf(mb, "mix_jbuf_late{%s,kind=\"audio\"} %u\n",
+			    labels, audio_jstat.n_late);
+		mbuf_printf(mb, "mix_jbuf_late_lost{%s,kind=\"audio\"} %u\n",
+			    labels, audio_jstat.n_late_lost);
+		mbuf_printf(mb, "mix_jbuf_lost{%s,kind=\"audio\"} %u\n",
+			    labels, audio_jstat.n_lost);
+
+		mbuf_printf(mb, "mix_jbuf_delay{%s,kind=\"video\"} %u\n",
+			    labels, video_jstat.c_delay);
+		mbuf_printf(mb, "mix_jbuf_skew{%s,kind=\"video\"} %d\n",
+			    labels, video_jstat.c_skew);
+		mbuf_printf(mb, "mix_jbuf_late{%s,kind=\"video\"} %u\n",
+			    labels, video_jstat.n_late);
+		mbuf_printf(mb, "mix_jbuf_late_lost{%s,kind=\"video\"} %u\n",
+			    labels, video_jstat.n_late_lost);
+		mbuf_printf(mb, "mix_jbuf_lost{%s,kind=\"video\"} %u\n",
+			    labels, video_jstat.n_lost);
+	}
+
+	if (mbuf_pos(mb) == 0)
+		goto out;
+
+	err = sl_httpc_alloc(&http_conn, NULL, NULL, NULL);
+	if (err)
+		goto out;
+
+	sl_httpc_req(http_conn, SL_HTTP_POST, metric_url, mb);
+	mem_deref(http_conn);
+
+out:
+	mem_deref(mb);
+	tmr_start(&tmr_metrics, 2000, slmix_metrics, NULL);
+}
 
 
 void slmix_refresh_rooms(void *arg)
@@ -128,7 +246,7 @@ int slmix_init(void)
 	int err;
 #if 1
 	struct pl srv;
-	pl_set_str(&srv, "turn:195.201.63.86:3478");
+	pl_set_str(&srv, "turn:167.235.37.175:3478");
 
 	err = stunuri_decode(&mix.pc_config.ice_server, &srv);
 	if (err) {
@@ -164,6 +282,9 @@ int slmix_init(void)
 	mbuf_init(&update_data);
 	tmr_init(&tmr_room_update);
 	tmr_start(&tmr_room_update, 100, slmix_refresh_rooms, NULL);
+
+	tmr_init(&tmr_metrics);
+	tmr_start(&tmr_metrics, 2000, slmix_metrics, NULL);
 
 	err = slmix_update_room();
 	if (err)
@@ -241,6 +362,7 @@ void slmix_close(void)
 #endif
 
 	tmr_cancel(&tmr_room_update);
+	tmr_cancel(&tmr_metrics);
 	mbuf_reset(&update_data);
 
 	list_flush(&mix.sessl);
@@ -253,7 +375,6 @@ void slmix_close(void)
 	sl_httpc_close();
 
 	slmix_sip_close();
-
 }
 
 
