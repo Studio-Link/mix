@@ -58,7 +58,7 @@ static void slmix_metrics(void *arg)
 	bool types = true;
 	(void)arg;
 
-	struct mbuf *mb	= mbuf_alloc(512);
+	struct mbuf *mb = mbuf_alloc(512);
 	if (!mb)
 		goto out;
 
@@ -72,8 +72,10 @@ static void slmix_metrics(void *arg)
 
 		if (types) {
 			mbuf_printf(mb, "# TYPE mix_rtt gauge\n");
+			mbuf_printf(mb, "# TYPE mix_tx_sent counter\n");
 			mbuf_printf(mb, "# TYPE mix_tx_lost counter\n");
 			mbuf_printf(mb, "# TYPE mix_tx_jit gauge\n");
+			mbuf_printf(mb, "# TYPE mix_rx_sent counter\n");
 			mbuf_printf(mb, "# TYPE mix_rx_lost counter\n");
 			mbuf_printf(mb, "# TYPE mix_rx_jit gauge\n");
 			mbuf_printf(mb, "# TYPE mix_jbuf_delay gauge\n");
@@ -89,27 +91,35 @@ static void slmix_metrics(void *arg)
 			    sess->user->id);
 
 		audio_stat = stream_rtcp_stats(media_get_stream(sess->maudio));
-		video_stat = stream_rtcp_stats(media_get_stream(sess->mvideo));
-
 		if (audio_stat) {
 			mbuf_printf(mb, "mix_rtt{%s,kind=\"audio\"} %u\n",
 				    labels, audio_stat->rtt / 1000);
+			mbuf_printf(mb, "mix_tx_sent{%s,kind=\"audio\"} %u\n",
+				    labels, audio_stat->tx.sent);
 			mbuf_printf(mb, "mix_tx_lost{%s,kind=\"audio\"} %d\n",
 				    labels, audio_stat->tx.lost);
 			mbuf_printf(mb, "mix_tx_jit{%s,kind=\"audio\"} %u\n",
 				    labels, audio_stat->tx.jit);
+			mbuf_printf(mb, "mix_rx_sent{%s,kind=\"audio\"} %u\n",
+				    labels, audio_stat->rx.sent);
 			mbuf_printf(mb, "mix_rx_lost{%s,kind =\"audio\"} %d\n",
 				    labels, audio_stat->rx.lost);
 			mbuf_printf(mb, "mix_rx_jit{%s,kind=\"audio\"} %u\n",
 				    labels, audio_stat->rx.jit);
 		}
+
+		video_stat = stream_rtcp_stats(media_get_stream(sess->mvideo));
 		if (video_stat) {
 			mbuf_printf(mb, "mix_rtt{%s,kind=\"video\"} %u\n",
 				    labels, video_stat->rtt / 1000);
+			mbuf_printf(mb, "mix_tx_sent{%s,kind=\"video\"} %u\n",
+				    labels, video_stat->tx.sent);
 			mbuf_printf(mb, "mix_tx_lost{%s,kind=\"video\"} %d\n",
 				    labels, video_stat->tx.lost);
 			mbuf_printf(mb, "mix_tx_jit{%s,kind=\"video\"} %u\n",
 				    labels, video_stat->tx.jit);
+			mbuf_printf(mb, "mix_rx_sent{%s,kind=\"video\"} %u\n",
+				    labels, video_stat->rx.sent);
 			mbuf_printf(mb, "mix_rx_lost{%s,kind=\"video\"} %d\n",
 				    labels, video_stat->rx.lost);
 			mbuf_printf(mb, "mix_rx_jit{%s,kind=\"video\"} %u\n",
