@@ -640,8 +640,8 @@ int vmix_record_close(void)
 	avio_close(rec.outputFormatContext->pb);
 
 	/* Clean up */
-	avcodec_close(rec.videoCodecCtx);
-	avcodec_close(rec.audioCodecCtx);
+	avcodec_free_context(&rec.videoCodecCtx);
+	avcodec_free_context(&rec.audioCodecCtx);
 	avformat_free_context(rec.outputFormatContext);
 	swr_free(&rec.resample_context);
 
