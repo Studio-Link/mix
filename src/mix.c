@@ -83,6 +83,8 @@ static void slmix_metrics(void *arg)
 			mbuf_printf(mb, "# TYPE mix_jbuf_late counter\n");
 			mbuf_printf(mb, "# TYPE mix_jbuf_late_lost counter\n");
 			mbuf_printf(mb, "# TYPE mix_jbuf_lost counter\n");
+			mbuf_printf(mb, "# TYPE mix_jbuf_jitter gauge\n");
+			mbuf_printf(mb, "# TYPE mix_jbuf_packets gauge\n");
 			types = false;
 		}
 
@@ -143,6 +145,10 @@ static void slmix_metrics(void *arg)
 			    labels, audio_jstat.n_late_lost);
 		mbuf_printf(mb, "mix_jbuf_lost{%s,kind=\"audio\"} %u\n",
 			    labels, audio_jstat.n_lost);
+		mbuf_printf(mb, "mix_jbuf_jitter{%s,kind=\"audio\"} %u\n",
+			    labels, audio_jstat.c_jitter);
+		mbuf_printf(mb, "mix_jbuf_packets{%s,kind=\"audio\"} %u\n",
+			    labels, audio_jstat.c_packets);
 
 		mbuf_printf(mb, "mix_jbuf_delay{%s,kind=\"video\"} %u\n",
 			    labels, video_jstat.c_delay);
@@ -154,6 +160,10 @@ static void slmix_metrics(void *arg)
 			    labels, video_jstat.n_late_lost);
 		mbuf_printf(mb, "mix_jbuf_lost{%s,kind=\"video\"} %u\n",
 			    labels, video_jstat.n_lost);
+		mbuf_printf(mb, "mix_jbuf_jitter{%s,kind=\"video\"} %u\n",
+			    labels, video_jstat.c_jitter);
+		mbuf_printf(mb, "mix_jbuf_packets{%s,kind=\"video\"} %u\n",
+			    labels, video_jstat.c_packets);
 	}
 
 	if (mbuf_pos(mb) == 0)
