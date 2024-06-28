@@ -38,7 +38,7 @@ struct amix {
 	struct ausrc_st *src;
 	struct auplay_st *play;
 	struct aumix_source *aumix_src;
-	const char *device;
+	char *device;
 	uint16_t speaker_id;
 	bool muted;
 };
@@ -105,6 +105,7 @@ static void amix_destructor(void *arg)
 
 	mem_deref(amix->aumix_src);
 	list_unlink(&amix->le);
+	mem_deref(amix->device);
 }
 
 
@@ -190,8 +191,11 @@ static int src_alloc(struct ausrc_st **stp, const struct ausrc *as,
 	if (err)
 		goto out;
 
-	st->amix     = amix;
-	amix->device = device;
+	st->amix = amix;
+
+	err = str_dup(&amix->device, device);
+	if (err)
+		goto out;
 
 	list_append(&amixl, &amix->le, amix);
 
@@ -266,10 +270,13 @@ static int play_alloc(struct auplay_st **stp, const struct auplay *ap,
 	if (err)
 		goto out;
 
-	st->amix     = amix;
-	amix->device = device;
+	st->amix = amix;
 
-	list_append(&amixl, &amix->le, st);
+	err = str_dup(&amix->device, device);
+	if (err)
+		goto out;
+
+	list_append(&amixl, &amix->le, amix);
 
 out:
 	if (err)
