@@ -141,15 +141,15 @@ static int amix_alloc(struct amix **amixp, const char *device)
 	amix->muted = true;
 
 out:
-	if (err)
+	if (err) {
 		mem_deref(amix);
-	else {
-		*amixp = amix;
-		hash_append(amixl, hash_joaat_str(amix->device), &amix->le,
-			    amix);
+		return err;
 	}
 
-	return err;
+	*amixp = amix;
+	hash_append(amixl, hash_joaat_str(amix->device), &amix->le, amix);
+
+	return 0;
 }
 
 
