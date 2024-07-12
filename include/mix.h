@@ -1,6 +1,8 @@
 #include <re.h>
 #include <baresip.h>
 
+#define METRICS_URL "http://127.0.0.1:9091/metrics/job/rtc"
+
 enum {
 	ROOM_SZ	   = 128,
 	SESSID_SZ  = 32,
