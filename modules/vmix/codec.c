@@ -298,7 +298,7 @@ static int dec_update(struct viddec_state **vdsp, const struct vidcodec *vc,
 	return 0;
 }
 
-#if 0
+
 static void dec_pkt_deref(void *arg)
 {
 	struct dec_pkt *pkt = arg;
@@ -306,7 +306,6 @@ static void dec_pkt_deref(void *arg)
 	mem_deref(pkt->mb);
 	list_unlink(&pkt->le);
 }
-#endif
 
 
 static int decode(struct viddec_state *vds, struct vidframe *frame,
@@ -314,7 +313,7 @@ static int decode(struct viddec_state *vds, struct vidframe *frame,
 {
 	if (!vds || !frame || !vpkt || !vpkt->mb)
 		return EINVAL;
-#if 0
+
 	struct dec_pkt *pkt =
 		mem_zalloc(sizeof(struct dec_pkt), dec_pkt_deref);
 	if (!pkt)
@@ -324,7 +323,7 @@ static int decode(struct viddec_state *vds, struct vidframe *frame,
 	pkt->marker = vpkt->hdr->m;
 	pkt->ts	    = vpkt->timestamp;
 	pkt->ts_eol = pkt->ts + MAX_PKT_TIME * 1000;
-	pkt->id	    = vds->last_id++;
+	pkt->id	    = ++vds->last_id;
 
 	mtx_lock(vds->mtx);
 	list_append(&vds->pktl, &pkt->le, pkt);
@@ -336,13 +335,13 @@ static int decode(struct viddec_state *vds, struct vidframe *frame,
 
 		le = le->next;
 
-		if (pkt->ts > pkt->ts_eol)
+		if (vpkt->timestamp > pkt->ts_eol)
 			mem_deref(pkt);
 		else
 			break;
 	}
 	mtx_unlock(vds->mtx);
-#endif
+
 	return vds->p->ovc->dech(vds->vdsp, frame, vpkt);
 }
 
@@ -351,7 +350,6 @@ static bool list_apply_handler(struct le *le, void *arg)
 {
 	struct vidsrc_st *st	 = arg;
 	struct viddec_state *vds = le->data;
-	struct dec_pkt *pkt	 = NULL;
 
 	if (0 != str_cmp(vds->dev, st->device + sizeof("pktsrc") - 1))
 		return false;
@@ -359,12 +357,12 @@ static bool list_apply_handler(struct le *le, void *arg)
 	mtx_lock(vds->mtx);
 	struct le *ple = vds->pktl.head;
 	while (ple) {
-		pkt = ple->data;
+		struct dec_pkt *pkt = ple->data;
 
 		ple = ple->next;
 
 		/* skip already send */
-		if (st->last_pkt && st->last_pkt >= pkt->id)
+		if (st->last_pkt >= pkt->id)
 			continue;
 
 		struct vidpacket packet = {.buf	      = mbuf_buf(pkt->mb),
