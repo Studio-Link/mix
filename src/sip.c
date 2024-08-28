@@ -4,15 +4,10 @@
 static struct ua *sip_ua;
 
 
-static void ua_event_handler(struct ua *ua, enum ua_event ev,
-			     struct call *call, const char *prm, void *arg)
+static void ua_event_handler(enum ua_event ev, struct bevent *event, void *arg)
 {
 	struct mix *mix = arg;
-	struct le *le;
-	int err;
-
-	(void)ua;
-	(void)prm;
+	struct call *call = bevent_get_call(event);
 
 	switch (ev) {
 
@@ -45,50 +40,12 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 
 		slmix_disp_enable(mix, peer, true);
 
-		LIST_FOREACH(&mix->sessl, le)
-		{
-			struct session *sesse = le->data;
-			struct source_pc *src;
+		slmix_source_append_all(mix, call, peer);
 
-			if (!sesse->user->host)
-				continue;
-
-			err = slmix_source_alloc(&src, sesse, peer);
-			if (err)
-				return;
-
-			err = slmix_source_start(src, mix);
-			if (err)
-				return;
-
-			src->call = call;
-			list_append(&sesse->source_pcl, &src->le, src);
-		}
 		break;
 
 	case UA_EVENT_CALL_CLOSED:
-
-		le = mix->sessl.head;
-		while (le) {
-			struct session *sesse = le->data;
-			struct le *le2;
-			le = le->next;
-
-			le2 = sesse->source_pcl.head;
-			while (le2) {
-				struct source_pc *src = le2->data;
-
-				le2 = le2->next;
-
-				if (src->call == call) {
-					mem_deref(src);
-				}
-			}
-
-			if (sesse->call == call)
-				mem_deref(sesse);
-		}
-
+		slmix_source_deref(mix, call, NULL);
 		break;
 	default:
 		break;
@@ -101,7 +58,7 @@ int slmix_sip_init(struct mix *mix)
 	int err;
 	char aor[128];
 
-	err = uag_event_register(ua_event_handler, mix);
+	err = bevent_register(ua_event_handler, mix);
 	if (err)
 		return err;
 
@@ -119,7 +76,7 @@ int slmix_sip_init(struct mix *mix)
 
 int slmix_sip_close(void)
 {
-	uag_event_unregister(ua_event_handler);
+	bevent_unregister(ua_event_handler);
 
 	return 0;
 }

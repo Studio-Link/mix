@@ -11,8 +11,7 @@ RUN cd /opt/mix_build && make release && \
 
 # --- Final image ---
 FROM archlinux:latest 
-RUN pacman -Syu --noconfirm supervisor ca-certificates \
-        gd opus zlib ffmpeg flac lmdb && \
+RUN pacman -Syu --noconfirm ca-certificates gd opus zlib ffmpeg flac lmdb && \
     yes | pacman -Scc
 
 COPY --from=build /opt/mix /opt/mix

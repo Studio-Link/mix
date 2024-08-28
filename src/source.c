@@ -177,6 +177,9 @@ int slmix_source_alloc(struct source_pc **srcp, struct session *sess,
 {
 	int err = 0;
 
+	if (!srcp || !sess || !dev)
+		return EINVAL;
+
 	struct source_pc *src =
 		mem_zalloc(sizeof(struct source_pc), source_dealloc);
 	if (!src)
@@ -209,6 +212,10 @@ int slmix_source_start(struct source_pc *src, struct mix *mix)
 	struct rtc_configuration pc_config = {.offerer = true};
 	int err;
 
+	if (!src || !mix)
+		return EINVAL;
+
+	/* Modify independent config instance */
 	re_snprintf(config.video.src_mod, sizeof(config.video.src_mod),
 		    "vmix_pktsrc");
 
@@ -237,6 +244,69 @@ int slmix_source_start(struct source_pc *src, struct mix *mix)
 	}
 
 	return 0;
+}
+
+
+int slmix_source_append_all(struct mix *mix, struct call *call,
+			    const char *dev)
+{
+	struct le *le;
+	int err;
+
+	if (!mix)
+		return EINVAL;
+
+	LIST_FOREACH(&mix->sessl, le)
+	{
+		struct session *sesse = le->data;
+		struct source_pc *src;
+
+		if (!sesse->user->host)
+			continue;
+
+		err = slmix_source_alloc(&src, sesse, dev);
+		if (err)
+			return err;
+
+		err = slmix_source_start(src, mix);
+		if (err)
+			return err;
+
+		src->call = call;
+		list_append(&sesse->source_pcl, &src->le, src);
+	}
+
+	return 0;
+}
+
+
+void slmix_source_deref(struct mix *mix, const struct call *call,
+			const char *dev)
+{
+	struct le *le;
+
+	if (!mix)
+		return;
+
+	LIST_FOREACH(&mix->sessl, le)
+	{
+		struct session *sess = le->data;
+
+		struct le *le2 = sess->source_pcl.head;
+		while (le2) {
+			struct source_pc *src = le2->data;
+
+			le2 = le2->next;
+
+			if (call && src->call == call) {
+				mem_deref(src);
+				continue;
+			}
+
+			if (dev && str_cmp(src->dev, dev) == 0)
+				mem_deref(src);
+		}
+	}
 }
 
 

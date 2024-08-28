@@ -136,6 +136,11 @@ static void pc_estab_handler(struct media_track *media, void *arg)
 		sess->mvideo = media;
 		stream_enable(media_get_stream(media), false);
 		stream_enable_tx(media_get_stream(media), true);
+
+		if (!sess->user->host)
+			slmix_source_append_all(sess->mix, NULL,
+						sess->user->id);
+
 		break;
 
 	default:
@@ -158,6 +163,8 @@ static void pc_close_handler(int err, void *arg)
 	struct session *sess = arg;
 
 	warning("mix: session closed (%m)\n", err);
+
+	slmix_source_deref(sess->mix, NULL, sess->user->id);
 
 	slmix_session_user_updated(sess);
 }
