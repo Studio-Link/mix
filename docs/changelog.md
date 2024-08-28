@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved video encode/decode handling
 
 
+## v0.6.0-beta - 2024-04-10
+
+
 ## v0.5.3-beta - 2023-08-15
 
 ### Added

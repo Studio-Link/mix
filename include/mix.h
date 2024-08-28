@@ -264,6 +264,10 @@ void vmix_disp_solo(const char *device);
  */
 int slmix_source_alloc(struct source_pc **srcp, struct session *sess,
 		       const char *dev);
+void slmix_source_deref(struct mix *mix, const struct call *call,
+			const char *dev);
 int slmix_source_start(struct source_pc *src, struct mix *mix);
+int slmix_source_append_all(struct mix *mix, struct call *call,
+			    const char *dev);
 int slmix_handle_ice_candidate(struct peer_connection *pc,
 			       const struct odict *od);
