@@ -159,7 +159,7 @@ export default {
         return await api_fetch('PUT', '/webrtc/sdp/answer?id=' + id, desc)
     },
 
-    async sdp_candidate(cand: RTCIceCandidate | null, id: number) {
+    async sdp_candidate(cand: RTCIceCandidate, id: number) {
         return await api_fetch('PUT', '/webrtc/sdp/candidate?id=' + id, cand)
     },
 

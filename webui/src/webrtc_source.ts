@@ -21,7 +21,8 @@ export class WebRTCSource {
         this.id = id
 
         this.pc.onicecandidate = (event) => {
-            api.sdp_candidate(event.candidate, this.id)
+            if (event.candidate)
+                api.sdp_candidate(event.candidate, this.id)
         }
 
         this.pc.ontrack = (event) => {
