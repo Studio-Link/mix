@@ -42,18 +42,17 @@ struct vidmix *vmix_mix;
 /*
  * Relay UA events as publish messages to the Broker
  */
-static void ua_event_handler(struct ua *ua, enum ua_event ev,
-			     struct call *call, const char *prm, void *arg)
+static void ua_event_handler(enum ua_event ev, struct bevent *event, void *arg)
 {
-	struct pl r, module = pl_null, event = pl_null, sess_id = pl_null;
+	struct pl r, module = pl_null, myevent = pl_null, sess_id = pl_null;
 	struct vidsrc_st *st;
 	struct le *le;
 	char device[64];
 	static uint64_t last_modified;
 	uint64_t now;
-	(void)ua;
-	(void)call;
 	(void)arg;
+
+	const char *prm = bevent_get_text(event);
 
 	if (ev != UA_EVENT_MODULE)
 		return;
@@ -68,13 +67,13 @@ static void ua_event_handler(struct ua *ua, enum ua_event ev,
 
 	/* "aumix,talk,11_audio" */
 	pl_set_str(&r, prm);
-	re_regex(r.p, r.l, "[^,]+,[^,]+,[^_]+_[~]*", &module, &event, &sess_id,
-		 NULL);
+	re_regex(r.p, r.l, "[^,]+,[^,]+,[^_]+_[~]*", &module, &myevent,
+		 &sess_id, NULL);
 
 	if (pl_strcmp(&module, "aumix"))
 		return;
 
-	if (pl_strcmp(&event, "talk"))
+	if (pl_strcmp(&myevent, "talk"))
 		return;
 
 	re_snprintf(device, sizeof(device), "%r_video", &sess_id);
@@ -192,7 +191,7 @@ static int module_init(void)
 	err = vidmix_alloc(&vmix_mix);
 	IF_ERR_GOTO_OUT(err);
 
-	err = uag_event_register(ua_event_handler, NULL);
+	err = bevent_register(ua_event_handler, NULL);
 
 	slmix_set_video_rec_h(slmix(), video_rec_h);
 	slmix_set_video_disp_h(slmix(), disp_enable_h);
@@ -205,7 +204,7 @@ static int module_close(void)
 {
 	vmix_record_close();
 	list_flush(&vmix_srcl);
-	uag_event_unregister(ua_event_handler);
+	bevent_unregister(ua_event_handler);
 	vidsrc = mem_deref(vidsrc);
 	vidisp = mem_deref(vidisp);
 
