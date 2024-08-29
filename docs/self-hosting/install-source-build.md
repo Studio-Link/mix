@@ -24,9 +24,11 @@ mix_token_download      TOKENREPLACEME # protected download folder
 
 ```nginx
 server {
-        listen 443 http2 ssl;
-        listen [::]:443 http2 ssl;
+        listen 443 ssl;
+        listen [::]:443 ssl;
         server_name mix.example.net;
+
+        http2 on;
 
         ssl_certificate /path/to/signed_cert_plus_intermediates;
         ssl_certificate_key /path/to/private_key;
