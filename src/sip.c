@@ -6,7 +6,7 @@ static struct ua *sip_ua;
 
 static void ua_event_handler(enum ua_event ev, struct bevent *event, void *arg)
 {
-	struct mix *mix = arg;
+	struct mix *mix	  = arg;
 	struct call *call = bevent_get_call(event);
 
 	switch (ev) {
@@ -21,8 +21,8 @@ static void ua_event_handler(enum ua_event ev, struct bevent *event, void *arg)
 
 		pl_set_str(&peer_pl, peer);
 
-		slmix_session_alloc(&sess, mix, NULL, NULL, &peer_pl, false,
-				    true);
+		slmix_session_alloc(&sess, mix, NULL, &peer_pl, &peer_pl,
+				    false, true);
 
 		audio_set_devicename(call_audio(call), peer, peer);
 		video_set_devicename(call_video(call), peer, peer);
@@ -46,6 +46,14 @@ static void ua_event_handler(enum ua_event ev, struct bevent *event, void *arg)
 
 	case UA_EVENT_CALL_CLOSED:
 		slmix_source_deref(mix, call, NULL);
+
+		struct le *le = mix->sessl.head;
+		while (le) {
+			struct session *sesse = le->data;
+			if (sesse->call == call)
+				mem_deref(sesse);
+		}
+
 		break;
 	default:
 		break;
