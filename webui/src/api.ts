@@ -177,10 +177,6 @@ export default {
         await api_fetch('PUT', '/webrtc/focus', dev)
     },
 
-    async source_solo(dev: string) {
-        await api_fetch('PUT', '/webrtc/solo', dev)
-    },
-
     async video_solo(dev: string, enable: boolean) {
         if (enable)
             await api_fetch('PUT', '/webrtc/solo/enable', dev)

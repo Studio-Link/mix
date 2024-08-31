@@ -312,7 +312,7 @@ function calc_left(idx: number) {
 }
 
 function solo_source(dev: string) {
-  api.source_solo(dev)
+  api.video_solo(dev, true)
   sources.value.forEach((item) => {
     if (dev === item.dev) item.solo = true
     else item.solo = false
