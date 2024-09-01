@@ -479,8 +479,9 @@ void slmix_session_video_solo(struct user *user, bool enable)
 		if (!sess->connected)
 			continue;
 
-		if (sess->user == user) {
+		if (sess->user == user && sess->user->video) {
 			sess->user->solo = true;
+			slmix_disp_enable(mix, sess->user->id, true);
 			slmix_session_user_updated(sess);
 		}
 		else {
