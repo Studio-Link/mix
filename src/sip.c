@@ -37,8 +37,9 @@ static void ua_event_handler(enum ua_event ev, struct bevent *event, void *arg)
 
 		amix_mute(peer, false, ++mix->next_speaker_id);
 
-		sess->call	= call;
-		sess->connected = true;
+		sess->call	  = call;
+		sess->connected	  = true;
+		sess->user->video = true;
 
 		slmix_disp_enable(mix, peer, true);
 
@@ -46,17 +47,11 @@ static void ua_event_handler(enum ua_event ev, struct bevent *event, void *arg)
 
 		break;
 
-	case UA_EVENT_CALL_CLOSED:
+	case UA_EVENT_CALL_CLOSED: {
 		slmix_source_deref(mix, call, NULL);
 
-		struct le *le = mix->sessl.head;
-		while (le) {
-			struct session *sesse = le->data;
-			if (sesse->call == call)
-				mem_deref(sesse);
-		}
-
 		break;
+	}
 	default:
 		break;
 	}
