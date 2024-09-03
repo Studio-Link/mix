@@ -85,16 +85,6 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 	slmix_update_room();
 	slmix_refresh_rooms(&force);
 
-	/* re-connect webrtc sources */
-	if (wsc->sess->user->host) {
-		struct le *le;
-		LIST_FOREACH(&wsc->sess->source_pcl, le)
-		{
-			struct source_pc *src = le->data;
-			slmix_source_start(src, wsc->mix);
-		}
-	}
-
 	if (0 == user_event_json(&json, USER_ADDED, wsc->sess)) {
 		sl_ws_send_event(wsc->sess, json);
 		json = mem_deref(json);
