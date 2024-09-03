@@ -141,6 +141,16 @@ static void pc_estab_handler(struct media_track *media, void *arg)
 			slmix_source_append_all(sess->mix, NULL,
 						sess->user->id);
 
+		/* re-connect other webrtc sources */
+		if (sess->user->host) {
+			struct le *le;
+			LIST_FOREACH(&sess->source_pcl, le)
+			{
+				struct source_pc *src = le->data;
+				slmix_source_start(src, sess->mix);
+			}
+		}
+
 		break;
 
 	default:
