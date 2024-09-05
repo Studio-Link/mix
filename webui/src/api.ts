@@ -173,6 +173,11 @@ export default {
         else await api_fetch('PUT', '/webrtc/audio/disable', null)
     },
 
+    async amix(user_id: string, enable: boolean) {
+        if (enable) await api_fetch('PUT', '/webrtc/amix/enable', user_id)
+        else await api_fetch('PUT', '/webrtc/amix/disable', user_id)
+    },
+
     async source_focus(dev: string) {
         await api_fetch('PUT', '/webrtc/focus', dev)
     },
