@@ -613,9 +613,14 @@ static void http_req_handler(struct http_conn *conn,
 		if (!sess->user->host)
 			goto err;
 
-		mbuf_read_str(msg->mb, user, sizeof(user));
+		err = re_regex((char *)mbuf_buf(msg->mb),
+			       mbuf_get_left(msg->mb), "[a-zA-Z0-9@:]+",
+			       &user_id);
+		if (err)
+			goto err;
 
-		pl_set_str(&user_id, user);
+		pl_strcpy(&user_id, user, sizeof(user));
+
 		struct session *sess_listener =
 			slmix_session_lookup_user_id(&mix->sessl, &user_id);
 		if (!sess_listener)
@@ -639,7 +644,13 @@ static void http_req_handler(struct http_conn *conn,
 		if (!sess->user->host)
 			goto err;
 
-		mbuf_read_str(msg->mb, user, sizeof(user));
+		err = re_regex((char *)mbuf_buf(msg->mb),
+			       mbuf_get_left(msg->mb), "[a-zA-Z0-9@:]+",
+			       &user_id);
+		if (err)
+			goto err;
+
+		pl_strcpy(&user_id, user, sizeof(user));
 
 		pl_set_str(&user_id, user);
 		struct session *sess_listener =
