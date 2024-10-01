@@ -9,20 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- New documentation (German and English)
-- Basic SIP support
 - Video Source Previews (not stable now)
 - RTMP Live Streaming support
 
 ### Changed
 
-- Improved docker image
-- Native ffmpeg audio and video mp4 recording
-- Improved video encode/decode handling
-
+## v1.0.0-beta - 2024-10-xx
 
 ## v0.6.0-beta - 2024-04-10
 
+### Added/Changed
+
+- New documentation (German and English)
+- Basic SIP support
+- Improved docker image
+- Native ffmpeg audio and video mp4 recording
+- Improved video encode/decode handling
 
 ## v0.5.3-beta - 2023-08-15
 

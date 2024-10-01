@@ -13,7 +13,7 @@ cmake_minimum_required(VERSION 3.18)
 
 set(CMAKE_C_COMPILER clang)
 
-project(slmix VERSION 0.6.1 LANGUAGES C)
+project(slmix VERSION 1.0.0 LANGUAGES C)
 
 ##############################################################################
 #
