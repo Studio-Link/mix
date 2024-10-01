@@ -5,8 +5,8 @@
 
 .PHONY: build
 build: external
-	@[ -f "build/build.ninja" ] || cmake -B build -G Ninja \
-		-DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-gdwarf-4 -g3"
+	@[ -f "build/build.ninja" ] || cmake -B build -G Ninja -DUSE_TRACE=ON \
+		-DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-gdwarf-4 -g3 -DJBUF_STAT -DRE_RTP_PCAP"
 	@cmake --build build --parallel
 
 .PHONY: webui
@@ -47,6 +47,8 @@ external:
 		https://github.com/baresip/baresip.git external/baresip
 	cd external/re && \
 		patch -p1 < ../../patches/re_aubuf_timestamp_order_fix.patch
+	cd external/baresip && \
+		patch -p1 < ../../patches/baresip_jbuf_nack.patch
 
 ##############################################################################
 #

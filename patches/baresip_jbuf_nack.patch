@@ -1,0 +1,111 @@
+diff --git a/include/baresip.h b/include/baresip.h
+index a56768f8..2228862b 100644
+--- a/include/baresip.h
++++ b/include/baresip.h
+@@ -1547,6 +1547,7 @@ struct jbuf_stat {
+ int jbuf_alloc(struct jbuf **jbp, uint32_t mind, uint32_t maxd,
+ 	       uint32_t maxsz);
+ void jbuf_set_srate(struct jbuf *jb, uint32_t srate);
++void jbuf_set_socket(struct jbuf *jb, struct rtp_sock *rtp);
+ void jbuf_set_id(struct jbuf *jb, struct pl *id);
+ int  jbuf_set_type(struct jbuf *jb, enum jbuf_type jbtype);
+ int  jbuf_put(struct jbuf *jb, const struct rtp_header *hdr, void *mem);
+diff --git a/src/jbuf.c b/src/jbuf.c
+index 963acf59..298637bd 100644
+--- a/src/jbuf.c
++++ b/src/jbuf.c
+@@ -62,6 +62,7 @@ struct packet {
+  */
+ struct jbuf {
+ 	struct pl *id;       /**< Jitter buffer Identifier                   */
++	struct rtp_sock *rtp;/**< RTP Socket (Enables RTCP NACK sending)     */
+ 	struct list pooll;   /**< List of free packets in pool               */
+ 	struct list packetl; /**< List of buffered packets                   */
+ 	uint32_t n;          /**< [# packets] Current # of packets in buffer */
+@@ -251,6 +252,23 @@ out:
+ }
+ 
+ 
++/**
++ * Set rtp socket for RTCP NACK handling
++ *
++ * @param jb   The jitter buffer.
++ * @param rtp  RTP Socket
++ */
++void jbuf_set_socket(struct jbuf *jb, struct rtp_sock *rtp)
++{
++	if (!jb)
++		return;
++
++	mtx_lock(jb->lock);
++	jb->rtp = rtp;
++	mtx_unlock(jb->lock);
++}
++
++
+ /**
+  * Set jitter samplerate (clockrate).
+  *
+@@ -464,6 +482,23 @@ static uint32_t calc_playout_time(struct jbuf *jb, struct packet *p)
+ }
+ 
+ 
++static inline void send_nack(struct jbuf *jb, uint16_t last_seq,
++			     int16_t seq_diff)
++{
++	uint16_t pid = last_seq + 1;
++	uint16_t blp = 0;
++
++	for (int i = 0; i < seq_diff - 2; i++) {
++		blp |= (1 << i);
++	}
++
++	warning("jbuf: RTCP_NACK missing: %u diff: %d blp: %02X\n", pid,
++		seq_diff, blp);
++
++	rtcp_send_gnack(jb->rtp, jb->ssrc, pid, blp);
++}
++
++
+ /**
+  * Put one packet into the jitter buffer
+  *
+@@ -525,10 +560,21 @@ int jbuf_put(struct jbuf *jb, const struct rtp_header *hdr, void *mem)
+ 
+ 	tail = jb->packetl.tail;
+ 
+-	/* If buffer is empty -> append to tail
+-	   Frame is later than tail -> append to tail
+-	*/
+-	if (!tail || seq_less(((struct packet *)tail->data)->hdr.seq, seq)) {
++	/* If buffer is empty -> append to tail */
++	if (!tail) {
++		list_append(&jb->packetl, &f->le, f);
++		goto success;
++	}
++
++	uint16_t last_seq = ((struct packet *)tail->data)->hdr.seq;
++
++	/* Frame is later than tail -> append to tail */
++	if (seq_less(last_seq, seq)) {
++		const int16_t seq_diff = seq - last_seq;
++
++		if (jb->rtp && seq_diff > 1)
++			send_nack(jb, last_seq, seq_diff);
++
+ 		list_append(&jb->packetl, &f->le, f);
+ 		goto success;
+ 	}
+diff --git a/src/rtprecv.c b/src/rtprecv.c
+index dc95dc3f..b8d62b26 100644
+--- a/src/rtprecv.c
++++ b/src/rtprecv.c
+@@ -535,6 +535,8 @@ void rtprecv_set_socket(struct rtp_receiver *rx, struct rtp_sock *rtp)
+ {
+ 	mtx_lock(rx->mtx);
+ 	rx->rtp = rtp;
++	if (stream_type(rx->strm) == MEDIA_VIDEO)
++		jbuf_set_socket(rx->jbuf, rx->rtp);
+ 	mtx_unlock(rx->mtx);
+ }
+ 
