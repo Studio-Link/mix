@@ -3,11 +3,10 @@
 ## Checkout und make
 
 ```bash
-git clone https://github.com/Studio-Link/mix.git /opt/slmix
-useradd slmix -d /opt/slmix -s /bin/bash
-groupadd slmix
-chown -R slmix:slmix /opt/slmix
-su - slmix
+sudo git clone https://github.com/Studio-Link/mix.git /opt/slmix
+sudo useradd slmix -d /opt/slmix -s /bin/bash -U
+sudo chown -R slmix:slmix /opt/slmix
+sudo su - slmix
 make release
 make webui
 ```
@@ -20,7 +19,7 @@ mix_token_guests        TOKENREPLACEME # invite url
 mix_token_download      TOKENREPLACEME # protected download folder 
 ```
 
-## Nginx Config
+## Nginx Config  <Badge type="warning" text="SSL is needed for WebRTC" />
 
 ```nginx
 server {

@@ -9,7 +9,7 @@ sudo apt-get install -y ffmpeg
 ```
 
 ```bash
-sudo apt install curl wget ninja-build pkg-config clang cmake make git patch ca-certificates \
+sudo apt install nginx curl wget ninja-build pkg-config clang cmake make git patch ca-certificates \
     libgd-dev libopus-dev libz-dev libssl-dev libflac-dev liblmdb-dev \
     libavformat-dev libavcodec-dev libavfilter-dev libavdevice-dev
 ```

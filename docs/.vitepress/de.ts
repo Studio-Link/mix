@@ -84,6 +84,7 @@ function sidebarSelfHosted(): DefaultTheme.SidebarItem[] {
                             base: '/de/self-hosting/install-source-',
                             items: [
                                 { text: 'Ubuntu 22.04', link: 'ubuntu' },
+                                { text: 'Ubuntu 24.04', link: 'ubuntu24_04' },
                                 { text: 'Arch Linux', link: 'archlinux' },
                                 { text: 'Bauen und konfigurieren', link: 'build' },
                                 { text: 'Update', link: 'update' },

@@ -1,12 +1,6 @@
-# Installation unter Ubuntu 22.04 LTS
+# Installation on Ubuntu 24.04 LTS
 
-## Pakete
-
-```bash
-sudo add-apt-repository ppa:ubuntuhandbook1/ffmpeg6
-sudo apt-get update
-sudo apt-get install -y ffmpeg
-```
+## Packages
 
 ```bash
 sudo apt install nginx curl wget ninja-build pkg-config clang cmake make git patch ca-certificates \
