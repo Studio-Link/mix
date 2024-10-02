@@ -7,7 +7,8 @@ next:
 # Update
 
 ```bash
-su - slmix
+sudo su - slmix
+git pull
 make cleaner
 make release
 make webui
