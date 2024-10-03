@@ -10,7 +10,7 @@ export default defineConfig({
     themeConfig: {
         socialLinks: [
             { icon: 'github', link: 'https://github.com/studio-link/mix' },
-            { icon: 'mastodon', link: 'https://social.studio.link/@hallo' }
+            { icon: 'mastodon', link: 'https://social.studio.link/@social' }
         ],
         search: {
             provider: 'local'
