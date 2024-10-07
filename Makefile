@@ -32,6 +32,9 @@ systemd: external
 		-DCMAKE_C_FLAGS="-g -DJBUF_STAT" -DUSE_SD_SOCK=ON -DUSE_TLS1_3_PHA=OFF
 	make build
 
+.PHONY: systemd_pro
+systemd_pro: external_pro systemd
+
 .PHONY: unix
 unix: external
 	make clean
@@ -47,6 +50,11 @@ external:
 		https://github.com/baresip/baresip.git external/baresip
 	cd external/re && \
 		patch -p1 < ../../patches/re_aubuf_timestamp_order_fix.patch
+
+.PHONY: external_pro
+external_pro: external
+	cd external/baresip && \
+		patch -p1 < ../../../mix_pro/patches/slmagic.diff
 
 ##############################################################################
 #
