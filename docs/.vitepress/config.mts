@@ -7,6 +7,7 @@ export default defineConfig({
     title: "Studio Link - Mix Rooms",
     description: "Mix Rooms",
     cleanUrls: true,
+    mpa: true,
     themeConfig: {
         socialLinks: [
             { icon: 'github', link: 'https://github.com/studio-link/mix' },
@@ -15,7 +16,6 @@ export default defineConfig({
         search: {
             provider: 'local'
         }
-
     },
     locales: {
         root: {
