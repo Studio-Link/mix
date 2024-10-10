@@ -1,3 +1,15 @@
+diff --git a/include/rem_aumix.h b/include/rem_aumix.h
+index 4017fa2..b417fb3 100644
+--- a/include/rem_aumix.h
++++ b/include/rem_aumix.h
+@@ -29,6 +29,7 @@ int aumix_source_alloc(struct aumix_source **srcp, struct aumix *mix,
+ void aumix_source_set_id(struct aumix_source *src, uint16_t id);
+ void aumix_source_enable(struct aumix_source *src, bool enable);
+ void aumix_source_mute(struct aumix_source *src, bool mute);
++void aumix_source_record_only(struct aumix_source *src, bool enable);
+ int  aumix_source_put(struct aumix_source *src, const int16_t *sampv,
+ 		      size_t sampc);
+ void aumix_source_readh(struct aumix_source *src, aumix_read_h *readh);
 diff --git a/rem/aumix/aumix.c b/rem/aumix/aumix.c
 index 95032be..b46fbf7 100644
 --- a/rem/aumix/aumix.c
