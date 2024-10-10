@@ -1,0 +1,54 @@
+diff --git a/rem/aumix/aumix.c b/rem/aumix/aumix.c
+index 95032be..b46fbf7 100644
+--- a/rem/aumix/aumix.c
++++ b/rem/aumix/aumix.c
+@@ -47,6 +47,7 @@ struct aumix_source {
+ 	aumix_read_h *readh;
+ 	void *arg;
+ 	bool muted;
++	bool record_only;
+ };
+ 
+ 
+@@ -193,6 +194,9 @@ static int aumix_thread(void *arg)
+ 				if (csrc->muted)
+ 					continue;
+ 
++				if (csrc->record_only)
++					continue;
++
+ 				for (size_t i = 0; i < mix->frame_size; i++) {
+ 					sample = mix_frame[i] + csrc->frame[i];
+ 
+@@ -222,6 +226,9 @@ static int aumix_thread(void *arg)
+ 				if (csrc->muted)
+ 					continue;
+ 
++				if(!csrc->record_only)
++					continue;
++
+ 				for (size_t i = 0; i < mix->frame_size; i++) {
+ 					sample = mix_frame[i] + csrc->frame[i];
+ 
+@@ -493,6 +500,21 @@ void aumix_source_mute(struct aumix_source *src, bool mute)
+ }
+ 
+ 
++/**
++ * Record only aumix source
++ *
++ * @param src    Audio mixer source
++ * @param mute   True to record only, false to disable
++ */
++void aumix_source_record_only(struct aumix_source *src, bool enable)
++{
++	if (!src)
++		return;
++
++	src->record_only = enable;
++}
++
++
+ /**
+  * Enable/disable aumix source
+  *
