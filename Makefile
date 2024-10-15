@@ -9,6 +9,9 @@ build: external
 		-DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-gdwarf-4 -g3 -DJBUF_STAT -DRE_RTP_PCAP"
 	@cmake --build build --parallel
 
+.PHONY: build_pro
+build_pro: external_pro build
+
 .PHONY: webui
 webui:
 	cd webui && npm install && npm run build-only
