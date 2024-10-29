@@ -51,6 +51,7 @@ function sidebarHosted(): DefaultTheme.SidebarItem[] {
             items: [
                 { text: 'What is Mix Rooms?', link: 'what-is-mix-rooms' },
                 { text: 'Getting Started', link: 'started' },
+                { text: 'Magic Repair', link: 'magic-repair' },
             ]
         },
         {
