@@ -16,7 +16,10 @@ export default {
     },
     ws_host(): string {
         if (process.env.NODE_ENV == 'production') {
-            return 'wss://' + location.hostname
+            if (location.protocol == 'https:')
+                return 'wss://' + location.host
+            else
+                return 'ws://' + location.host
         }
         /* Development */
         return 'ws://' + location.hostname + ':9999'
