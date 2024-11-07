@@ -40,7 +40,7 @@ jobs:
     needs: webui
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-24.04]
     steps:
     - uses: actions/checkout@v4
 
@@ -85,7 +85,7 @@ jobs:
 
   analyze:
     name: CodeQL Analyze
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: webui
 
     steps:
