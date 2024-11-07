@@ -18,7 +18,7 @@ if [ "$1" = 'slmix' ]; then
         echo "No TOKENAPI env!"
         exit 1
     fi
-    cat > /opt/mix/config <<EOF
+    cat > /opt/slmix/config <<EOF
 mix_room                MixRoom
 mix_url                 /
 mix_token_host          $TOKENHOST # can start record
