@@ -22,12 +22,12 @@ if [ "$1" = 'slmix' ]; then
 mix_room                MixRoom
 mix_url                 /
 mix_token_host          $TOKENHOST # can start record
-mix_token_download      $TOKENDOWNLOAD # protected download folder 
-mix_token_guests        $TOKENGUEST # invite url 
+mix_token_download      $TOKENDOWNLOAD # protected download folder
+mix_token_guests        $TOKENGUEST # invite url
 mix_token_api           $TOKENAPI # api token
-#mix_path               /opt/slmix/ 
+#mix_path               /opt/slmix/
 EOF
-    /opt/mix/build/slmix -l 0.0.0.0 -c /opt/mix/config "$@"
+    exec sudo -E /usr/bin/supervisord -n -c /etc/supervisord.conf
 else
     exec "$@"
 fi
