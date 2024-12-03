@@ -49,10 +49,28 @@
       </div>
 
       <div
+        v-show="!Webrtc.video_muted.value && selfview"
+        v-for="(item, index) in vspeakers"
+        class="absolute z-10 border-5 border-red-500 group"
+        :key="item.pidx"
+        :style="{ width: calc_width(), height: calc_height(), left: calc_left(index), top: calc_top(index) }"
+      >
+        <video
+          v-if="item.id == api.session().user_id"
+          class="w-full scale-x-[-1]"
+          id="selfview"
+          playsinline
+          autoplay
+          muted
+          preload="none"
+        ></video>
+      </div>
+
+      <div
         v-if="overlay"
         v-for="(item, index) in vspeakers"
         :class="{ 'border-2': item.talk }"
-        class="absolute z-10 border-green-500 border-0 group"
+        class="absolute z-20 border-green-500 border-0 group"
         :key="item.pidx"
         :style="{ width: calc_width(), height: calc_height(), left: calc_left(index), top: calc_top(index) }"
       >
@@ -200,6 +218,24 @@ Audio RTT: {{ item.stats.artt }} ms
             </svg>
             Disable Audio
           </button>
+          <button
+            v-if="item.video && selfview && item.id === api.session().user_id"
+            @click="selfview = false"
+            type="button"
+            class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          >
+           <EyeIcon class="size-5 mr-1" aria-hidden="true" />
+            Disable Selfview
+          </button>
+          <button
+            v-if="item.video && !selfview && item.id === api.session().user_id"
+            @click="selfview = true"
+            type="button"
+            class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          >
+           <EyeSlashIcon class="size-5 mr-1" aria-hidden="true" />
+            Enable Selfview
+          </button>
         </div>
       </div>
 
@@ -219,11 +255,11 @@ Audio RTT: {{ item.stats.artt }} ms
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { watch, onMounted, ref } from 'vue'
 import { Webrtc, WebrtcState } from '../webrtc'
 import { Users } from '../ws/users'
 import api from '../api'
-import { SpeakerWaveIcon, WifiIcon, PresentationChartBarIcon } from '@heroicons/vue/24/outline'
+import { SpeakerWaveIcon, WifiIcon, PresentationChartBarIcon, EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
 import { useResizeObserver } from '@vueuse/core'
 
 const video = ref<HTMLVideoElement | null>(null)
@@ -235,10 +271,16 @@ const isFullscreen = ref(false)
 const hasPiP = ref(false)
 const PiP = ref(false)
 const overlay = ref(true)
+const selfview = ref(true)
 const vspeakers = Users.vspeakers
 const sources = Users.sources
 const room = Users.room
 let resizeTimer = <NodeJS.Timeout | undefined>undefined
+
+watch(Webrtc.videostream, () => {
+  const self: HTMLVideoElement | null = document.querySelector('video#selfview')
+  if (self) self.srcObject = Webrtc.videostream.value
+})
 
 async function requestPiP() {
   try {
