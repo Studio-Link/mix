@@ -449,6 +449,7 @@ export const Webrtc = {
     audio_muted: ref(true),
     echo: ref(false),
     video_muted: ref(true),
+    videostream: ref(<MediaStream | null>(null)),
 
     listen() {
         pc_setup()
@@ -515,6 +516,7 @@ export const Webrtc = {
         if (this.video_select.value === 'Screen') {
             videostream?.getVideoTracks()[0].stop()
             await pc_screen()
+            this.videostream.value = screenstream
             return screenstream
         }
 
@@ -544,6 +546,8 @@ export const Webrtc = {
             this.deviceInfosVideo.value = await navigator.mediaDevices.enumerateDevices()
             this.video_input_id.value = videostream?.getVideoTracks()[0].getSettings().deviceId
         }
+
+        this.videostream.value = videostream
         if (videostream === null)
             return null
 
@@ -555,12 +559,6 @@ export const Webrtc = {
         constraintsAudio.audio.echoCancellation = this.echo.value
         console.log('echo changed', constraintsAudio)
         await this.change_audio()
-    },
-
-    videostream() {
-        if (this.video_select.value === 'Screen')
-            return screenstream
-        return videostream
     },
 
     async join() {
