@@ -354,23 +354,36 @@ onMounted(() => {
 
 function calc_rows() {
   const n = vspeakers.value.length
+  if (n <= 2) return 1 
+
   let rows = 0
-  for (rows = 1; ; rows++) {
+  for (rows = 2; ; rows++) {
     if (n <= rows * rows) break
   }
+
   return rows
+}
+
+function calc_cols() {
+  const n = vspeakers.value.length
+  if (n <= 2) return n 
+
+  let cols = 0
+  for (cols = 2; ; cols++) {
+    if (n <= cols * cols) break
+  }
+
+  return cols
 }
 
 function calc_width() {
   if (!video.value) return '0 px'
-  const rows = calc_rows()
-  return Math.floor(video.value.clientWidth / rows) + 'px'
+  return Math.floor(video.value.clientWidth / calc_cols()) + 'px'
 }
 
 function calc_height() {
   if (!video.value) return '0 px'
-  const rows = calc_rows()
-  return Math.floor(video.value.clientHeight / rows) + 'px'
+  return Math.floor(video.value.clientHeight / calc_rows()) + 'px'
 }
 
 function calc_top(idx: number) {
@@ -378,13 +391,13 @@ function calc_top(idx: number) {
   const rows = calc_rows()
   const h = Math.floor(video.value.clientHeight / rows)
 
-  return h * Math.floor(idx / rows) + 'px'
+  return h * (idx % rows) + 'px'
 }
 
 function calc_left(idx: number) {
   if (!video.value) return '0 px'
-  const rows = calc_rows()
-  const w = Math.floor(video.value.clientWidth / rows)
+  const cols = calc_cols()
+  const w = Math.floor(video.value.clientWidth / cols)
   let offset
 
   if (isFullscreen.value) {
@@ -393,7 +406,7 @@ function calc_left(idx: number) {
     offset = 0
   }
 
-  return w * (idx % rows) + offset + 'px'
+  return w * (idx % cols) + offset + 'px'
 }
 
 function solo_source(dev: string) {
