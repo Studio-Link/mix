@@ -58,7 +58,7 @@
         <video
           v-if="item.id == api.session().user_id"
           :class="{'scale-x-[-1]': Webrtc.video_select.value !== 'Screen'}"
-          class="object-cover h-full"
+          class="object-cover h-full w-full"
           id="selfview"
           playsinline
           autoplay
