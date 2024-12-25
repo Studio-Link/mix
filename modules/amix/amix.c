@@ -157,6 +157,9 @@ static void ausrc_destructor(void *arg)
 {
 	struct ausrc_st *st = arg;
 
+	if (!st)
+		return;
+
 	if (st->amix)
 		st->amix->src = NULL;
 
