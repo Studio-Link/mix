@@ -354,7 +354,7 @@ onMounted(() => {
 
 function calc_rows() {
   const n = vspeakers.value.length
-  if (n <= 2) return 1 
+  if (n <= 3) return 1 
 
   let rows = 0
   for (rows = 2; ; rows++) {
@@ -366,7 +366,7 @@ function calc_rows() {
 
 function calc_cols() {
   const n = vspeakers.value.length
-  if (n <= 2) return n 
+  if (n <= 3) return n 
 
   let cols = 0
   for (cols = 2; ; cols++) {
@@ -388,10 +388,9 @@ function calc_height() {
 
 function calc_top(idx: number) {
   if (!video.value) return '0 px'
-  const rows = calc_rows()
-  const h = Math.floor(video.value.clientHeight / rows)
+  const h = Math.floor(video.value.clientHeight / calc_rows())
 
-  return h * (idx % rows) + 'px'
+  return h * Math.floor(idx / calc_cols()) + 'px'
 }
 
 function calc_left(idx: number) {
