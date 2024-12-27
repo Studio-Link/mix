@@ -41,7 +41,7 @@ unix: external
 
 external:
 	mkdir -p external
-	git clone --depth 1 -b vidconv_center \
+	git clone --depth 1 \
 		https://github.com/baresip/re.git external/re
 	git clone --depth 1 -b playout_time \
 		https://github.com/baresip/baresip.git external/baresip
