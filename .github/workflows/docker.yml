@@ -9,7 +9,7 @@ on:
       - '.github/workflows/docker.yml'
 
 env:
-  VERSION_SLMIX: v1.0.0-beta
+  VERSION_SLMIX: v1.0.0-beta2
 
 jobs:
   docker:
