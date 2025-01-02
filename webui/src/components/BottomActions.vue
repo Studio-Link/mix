@@ -1,5 +1,8 @@
 <template>
-  <div class="fixed inset-x-0 bottom-0 z-20">
+  <div
+    class="fixed inset-x-0 bottom-0 z-20"
+    :class="[Webrtc.state.value >= WebrtcState.Listening ? '' : 'bg-gray-500']"
+  >
     <div class="">
       <div class="mx-auto py-1 pr-3 sm:pr-6 lg:pr-8">
         <div class="flex items-center justify-between">
@@ -58,7 +61,11 @@
               </button>
             </div>
             <!-- Audio Mute -->
-            <div v-if="Webrtc.state.value >= WebrtcState.Listening && (Users.speaker_status.value || !Users.room.value?.show)">
+            <div
+              v-if="
+                Webrtc.state.value >= WebrtcState.Listening && (Users.speaker_status.value || !Users.room.value?.show)
+              "
+            >
               <button
                 v-if="Webrtc.audio_muted.value"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
@@ -148,7 +155,7 @@
               <button
                 v-if="Webrtc.state.value < WebrtcState.Listening"
                 ref="play"
-                class="hover:bg-gray-700 bg-gray-50 hover:text-white group items-center px-2 py-2 text-base font-medium rounded-md block"
+                class="hover:bg-gray-700 text-white group items-center px-2 py-2 text-base font-medium rounded-md block"
                 title="Join as listener"
                 :class="{ 'animate-pulse': Webrtc.state.value == WebrtcState.Connecting }"
                 @click="listen()"
@@ -208,8 +215,7 @@ function hand_clicked() {
 function mic_clicked(mute: boolean) {
   if (Webrtc.state.value < WebrtcState.ReadySpeaking) {
     Users.settings_active.value = true
-    if (!Users.room.value?.show)
-        api.speaker(api.session().user_id)
+    if (!Users.room.value?.show) api.speaker(api.session().user_id)
   } else Webrtc.audio_mute(mute)
 }
 
