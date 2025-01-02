@@ -170,13 +170,6 @@
                 >
                   <MicrophoneIcon class="h-6 w-6 text-white mr-2" aria-hidden="true" /> Join the conversation
                 </button>
-                <button
-                  type="button"
-                  class="inline-flex items-center w-full rounded-md border border-transparent bg-gray-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
-                  @click="join_listen()"
-                >
-                  <SpeakerWaveIcon class="h-6 w-6 text-white mr-2" aria-hidden="true" /> Listen Only
-                </button>
               </div>
             </DialogPanel>
           </TransitionChild>
@@ -189,7 +182,7 @@
 <script setup lang="ts">
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { RadioGroup, RadioGroupLabel, RadioGroupOption } from '@headlessui/vue'
-import { Cog6ToothIcon, SpeakerWaveIcon, MicrophoneIcon } from '@heroicons/vue/24/outline'
+import { Cog6ToothIcon, MicrophoneIcon } from '@heroicons/vue/24/outline'
 import { Users } from '../ws/users'
 import { Webrtc, WebrtcState } from '../webrtc'
 import { ref, watch } from 'vue'
