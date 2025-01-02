@@ -4,13 +4,15 @@ import { ref } from 'vue'
 import adapter from 'webrtc-adapter'
 import { Error } from './error'
 import { useEventListener, useStorage } from '@vueuse/core'
+import {Avdummy} from './avdummy'
 
 // --- Private Webrtc API ---
 let pc: RTCPeerConnection | null = null
-let avdummy: MediaStream
 let audiostream: MediaStream | null = null
 let videostream: MediaStream | null = null
 let screenstream: MediaStream | null = null
+
+const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay))
 
 const constraintsAudio: any = {
     audio: {
@@ -50,55 +52,6 @@ const configuration: RTCConfiguration = {
     rtcpMuxPolicy: 'require'
 }
 
-/** Start AVdummy **/
-const silence = () => {
-    const ctx = new AudioContext()
-    const oscillator = ctx.createOscillator()
-    const dst = ctx.createMediaStreamDestination()
-    oscillator.connect(dst)
-    oscillator.start()
-    return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false })
-}
-
-const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay))
-
-function drawLoop(ctx: CanvasRenderingContext2D, image: HTMLImageElement, width: number, height: number, cnt: number) {
-    if (cnt > 20)
-        return
-
-    cnt = cnt + 1
-    setTimeout(() => {
-        ctx.fillStyle = "black";
-        ctx.fillRect(0, 0, width, height)
-        ctx.font = "48px serif";
-        ctx.textAlign = "center"
-        ctx.fillStyle = "gray";
-        ctx.fillText(api.session().user_name, width / 2, height / 2 + image.height / 2);
-        ctx.drawImage(image, width / 2 - (image.width / 2), (height / 2 - image.height / 2) - 48)
-        drawLoop(ctx, image, width, height, cnt)
-    }, 100)
-}
-
-const black = ({ width = 1280, height = 720 } = {}) => {
-    const canvas = Object.assign(document.createElement('canvas'), { width, height })
-    const ctx = canvas.getContext('2d')
-    const stream = canvas.captureStream()
-    if (!ctx)
-        return stream.getVideoTracks()[0]
-
-    ctx.fillRect(0, 0, width, height)
-
-    const image = new Image()
-    image.src = '/avatars/' + api.session().user_id + '.png'
-    image.onload = () => {
-        //Chrome workaround: needs canvas frame change to start webrtc rtp
-        drawLoop(ctx, image, width, height, 0)
-    }
-    return stream.getVideoTracks()[0]
-}
-
-const AVSilence = (...args: any) => new MediaStream([black(...args), silence()])
-/** End AVdummy **/
 
 /* Limits bandwidth in in [kbps] */
 async function updateBandwidthRestriction(bandwidth: number) {
@@ -138,7 +91,7 @@ function handle_answer(descr: any) {
             console.log('set remote description -- success')
             Webrtc.state.value = WebrtcState.Listening
         },
-        function (error) {
+        function(error) {
             console.warn('setRemoteDescription: %s', error.toString())
         }
     )
@@ -149,17 +102,17 @@ function pc_offer() {
         iceRestart: false,
     }
     pc?.createOffer(offerOptions)
-        .then(function (desc) {
+        .then(function(desc) {
             console.log('got local description: %s', desc.type)
 
             pc?.setLocalDescription(desc).then(
                 () => { },
-                function (error) {
+                function(error) {
                     console.log('setLocalDescription: %s', error.toString())
                 }
             )
         })
-        .catch(function (error) {
+        .catch(function(error) {
             console.log('Failed to create session description: %s', error.toString())
         })
 }
@@ -238,7 +191,7 @@ async function pc_stats(pc: RTCPeerConnection | null) {
     setTimeout(pc_stats, 5000, pc);
 }
 
-function pc_setup() {
+async function pc_setup() {
     console.log('browser: ', adapter.browserDetails.browser, adapter.browserDetails.version)
     pc = new RTCPeerConnection(configuration)
 
@@ -246,7 +199,7 @@ function pc_setup() {
         console.log('webrtc/icecandidate: ' + event.candidate?.type + ' IP: ' + event.candidate?.candidate)
     }
 
-    pc.ontrack = function (event) {
+    pc.ontrack = function(event) {
         const track = event.track
         console.log('got remote track: kind=%s', track.kind)
         const stream = event.streams[0]
@@ -323,8 +276,8 @@ function pc_setup() {
         console.log('ICE Candidate Error: ' + event.errorCode + ' ' + event.errorText + ' ' + event.url)
     }
 
-    avdummy = AVSilence()
-    avdummy.getTracks().forEach((track) => pc?.addTrack(track, avdummy))
+    await Avdummy.init()
+    Avdummy.stream?.getTracks().forEach((track) => pc?.addTrack(track, Avdummy.stream!))
 
     pc_offer()
 }
@@ -467,6 +420,7 @@ export const Webrtc = {
         let available = false
         await pc_media_audio()
         this.deviceInfosAudio.value = await navigator.mediaDevices.enumerateDevices()
+        this.deviceInfosVideo.value = this.deviceInfosVideo.value
 
         this.deviceInfosAudio.value.forEach((device) => {
             console.log(`${device.kind}: ${device.label} id = ${device.deviceId}`)
@@ -587,7 +541,7 @@ export const Webrtc = {
         }
     },
 
-    audio_mute(mute: boolean) {
+    async audio_mute(mute: boolean) {
         if (!Users.speaker_status.value) mute = true
 
         audiostream?.getAudioTracks().forEach((track) => {
@@ -597,7 +551,7 @@ export const Webrtc = {
         })
     },
 
-    video_mute(mute: boolean, local?: boolean) {
+    async video_mute(mute: boolean, local?: boolean) {
         var stream = videostream
 
         if (this.video_select.value === 'Disabled')
@@ -611,8 +565,8 @@ export const Webrtc = {
         if (!mute && stream)
             pc_replace_tracks(null, stream.getVideoTracks()[0])
         else {
-            avdummy = AVSilence()
-            pc_replace_tracks(null, avdummy.getVideoTracks()[0])
+            pc_replace_tracks(null, Avdummy.getVideoTrack())
+            Avdummy.refresh()
         }
 
         if (!local) {
