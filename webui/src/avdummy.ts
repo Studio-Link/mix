@@ -9,9 +9,15 @@ const silence = () => {
     return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false })
 }
 
+let drawLoopIsRunning = false
+
 function drawLoop(ctx: CanvasRenderingContext2D | null, image: HTMLImageElement, width: number, height: number, cnt: number) {
-    if (cnt++ > 20 || !ctx)
+    if (cnt++ > 25 || !ctx) {
+        drawLoopIsRunning = false
         return
+    }
+
+    drawLoopIsRunning = true
 
     setTimeout(() => {
         ctx.fillStyle = "black";
@@ -22,7 +28,7 @@ function drawLoop(ctx: CanvasRenderingContext2D | null, image: HTMLImageElement,
         ctx.fillText(api.session().user_name, width / 2, height / 2 + image.height / 2);
         ctx.drawImage(image, width / 2 - (image.width / 2), (height / 2 - image.height / 2) - 48)
         drawLoop(ctx, image, width, height, cnt)
-    }, 10 * cnt * cnt)
+    }, (5 * cnt * cnt) + 100)
 }
 
 const width = 1280
@@ -62,6 +68,7 @@ export const Avdummy = {
     },
 
     async refresh() {
-        drawLoop(ctx, image, width, height, 10)
+        if (!drawLoopIsRunning)
+            drawLoop(ctx, image, width, height, 0)
     }
 }
