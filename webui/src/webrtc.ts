@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import adapter from 'webrtc-adapter'
 import { Error } from './error'
 import { useEventListener, useStorage } from '@vueuse/core'
-import {Avdummy} from './avdummy'
+import { Avdummy } from './avdummy'
 
 // --- Private Webrtc API ---
 let pc: RTCPeerConnection | null = null
@@ -392,11 +392,10 @@ export enum WebrtcState {
 // --- Public Webrtc API ---
 export const Webrtc = {
     state: ref(WebrtcState.Offline),
-    deviceInfosAudio: ref<MediaDeviceInfo[] | undefined>([]),
-    deviceInfosVideo: ref<MediaDeviceInfo[] | undefined>([]),
+    deviceInfos: ref<MediaDeviceInfo[] | undefined>([]),
     audio_input_id: useStorage('audio_input_id', undefined as string | undefined),
     audio_output_id: ref<string | undefined>(undefined),
-    video_input_id: ref<string | undefined>(undefined),
+    video_input_id: useStorage('video_input_id', undefined as string | undefined),
     video_select: ref<string>('Disabled'),
     video_resolution: ref<string>('720p'),
     audio_muted: ref(true),
@@ -412,35 +411,42 @@ export const Webrtc = {
     },
 
     async update_avdevices() {
-        Webrtc.deviceInfosAudio.value = await navigator.mediaDevices.enumerateDevices()
-        Webrtc.deviceInfosVideo.value = Webrtc.deviceInfosAudio.value
+        Webrtc.deviceInfos.value = await navigator.mediaDevices.enumerateDevices()
     },
 
     async init_avdevices() {
-        let available = false
+        let audio_available = false
+        let video_available = false
         await pc_media_audio()
-        this.deviceInfosAudio.value = await navigator.mediaDevices.enumerateDevices()
-        this.deviceInfosVideo.value = this.deviceInfosVideo.value
+        this.deviceInfos.value = await navigator.mediaDevices.enumerateDevices()
 
-        this.deviceInfosAudio.value.forEach((device) => {
+        this.deviceInfos.value.forEach((device) => {
             console.log(`${device.kind}: ${device.label} id = ${device.deviceId}`)
             if (device.kind === 'audiooutput' && !this.audio_output_id.value) {
                 this.audio_output_id.value = device.deviceId
                 this.change_audio_out()
                 return
             }
-
+            
             if (this.audio_input_id.value) {
                 if (this.audio_input_id.value == device.deviceId) {
-                    available = true
+                    audio_available = true
+                }
+            }
+            if (this.video_input_id.value) {
+                if (this.video_input_id.value == device.deviceId) {
+                    video_available = true
                 }
             }
         })
 
-        if (available)
+        if (audio_available)
             this.change_audio()
         else
             this.audio_input_id.value = audiostream?.getAudioTracks()[0].getSettings().deviceId
+
+        if (!video_available)
+            this.video_input_id.value = undefined
 
         useEventListener(navigator!.mediaDevices, 'devicechange', Webrtc.update_avdevices)
     },
@@ -497,7 +503,6 @@ export const Webrtc = {
 
         await pc_media_video()
         if (!this.video_input_id.value) {
-            this.deviceInfosVideo.value = await navigator.mediaDevices.enumerateDevices()
             this.video_input_id.value = videostream?.getVideoTracks()[0].getSettings().deviceId
         }
 

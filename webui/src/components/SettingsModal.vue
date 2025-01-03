@@ -45,6 +45,7 @@
                       autoplay
                       muted
                       class="mx-auto px-4 mt-2"
+                      :class="{'scale-x-[-1]': Webrtc.video_select.value !== 'Screen'}"
                       height="640"
                       width="360"
                     ></video>
@@ -92,7 +93,7 @@
                         name="cam"
                         class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                       >
-                        <template v-for="item in Webrtc.deviceInfosVideo.value">
+                        <template v-for="item in Webrtc.deviceInfos.value">
                           <option v-if="item.kind === 'videoinput'" :key="item.deviceId" :value="item.deviceId">
                             {{ item.label }}
                           </option>
@@ -120,7 +121,7 @@
                         name="micro"
                         class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                       >
-                        <template v-for="item in Webrtc.deviceInfosAudio.value">
+                        <template v-for="item in Webrtc.deviceInfos.value">
                           <option v-if="item.kind === 'audioinput'" :key="item.deviceId" :value="item.deviceId">
                             {{ item.label }}
                           </option>
@@ -128,14 +129,14 @@
                       </select>
                     </div>
                     <div v-if="audio_output_id">
-                      <label for="headset" class="block text-sm font-medium text-gray-700">Headset</label>
+                      <label for="headset" class="block text-sm font-medium text-gray-700">Speaker</label>
                       <select
                         v-model="audio_output_id"
                         id="headset"
                         name="headset"
                         class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                       >
-                        <template v-for="item in Webrtc.deviceInfosAudio.value">
+                        <template v-for="item in Webrtc.deviceInfos.value">
                           <option v-if="item.kind === 'audiooutput'" :key="item.deviceId" :value="item.deviceId">
                             {{ item.label }}
                           </option>
