@@ -25,7 +25,7 @@
       class="relative flex bg-black mx-auto"
       :class="[isFullscreen ? 'w-full' : 'max-w-screen-xl mt-8 lg:mt-0']"
     >
-      <div v-show="nav" class="absolute z-20 text-gray-200 bottom-0 right-0 px-2">
+      <div v-show="nav" class="absolute z-30 text-gray-200 bottom-0 right-0 px-2">
         <button class="mr-4" @click="enable_stats()" type="button">
           <WifiIcon class="h-8 w-8" aria-hidden="true" />
         </button>
