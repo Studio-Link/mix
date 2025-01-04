@@ -510,6 +510,8 @@ export const Webrtc = {
         if (videostream === null)
             return null
 
+        Avdummy.stopDrawLoop()
+
         console.log('video changed', constraintsVideo)
         return videostream
     },
@@ -567,8 +569,10 @@ export const Webrtc = {
         if (this.video_select.value === 'Screen')
             stream = screenstream
 
-        if (!mute && stream)
+        if (!mute && stream) {
             pc_replace_tracks(null, stream.getVideoTracks()[0])
+            Avdummy.stopDrawLoop()
+        }
         else {
             pc_replace_tracks(null, Avdummy.getVideoTrack())
             Avdummy.refresh()

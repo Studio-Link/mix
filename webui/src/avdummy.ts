@@ -1,41 +1,45 @@
 import api from './api'
 
-const silence = () => {
-    const ctx = new AudioContext()
-    const oscillator = ctx.createOscillator()
-    const dst = ctx.createMediaStreamDestination()
-    oscillator.connect(dst)
-    oscillator.start()
-    return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false })
-}
+const width = 1280
+const height = 720
+const canvas = Object.assign(document.createElement('canvas'), { width, height })
+const ctx = canvas.getContext('2d')
+const image = new Image()
+const DRAW_MAX = 150
 
 let drawLoopIsRunning = false
+let drawCount = 0
 
-function drawLoop(ctx: CanvasRenderingContext2D | null, image: HTMLImageElement, width: number, height: number, cnt: number) {
-    if (cnt++ > 25 || !ctx) {
+function draw() {
+    if (!ctx)
+        return
+
+    console.log("draw", drawCount)
+
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, width, height)
+    ctx.font = "48px serif";
+    ctx.textAlign = "center"
+    ctx.fillStyle = "gray";
+    ctx.fillText(api.session().user_name, width / 2, height / 2 + image.height / 2);
+    ctx.drawImage(image, width / 2 - (image.width / 2), (height / 2 - image.height / 2) - 48)
+}
+
+function drawLoop() {
+    let wait = 500
+    if (drawCount++ >= DRAW_MAX) {
         drawLoopIsRunning = false
         return
     }
 
     drawLoopIsRunning = true
 
-    setTimeout(() => {
-        ctx.fillStyle = "black";
-        ctx.fillRect(0, 0, width, height)
-        ctx.font = "48px serif";
-        ctx.textAlign = "center"
-        ctx.fillStyle = "gray";
-        ctx.fillText(api.session().user_name, width / 2, height / 2 + image.height / 2);
-        ctx.drawImage(image, width / 2 - (image.width / 2), (height / 2 - image.height / 2) - 48)
-        drawLoop(ctx, image, width, height, cnt)
-    }, (5 * cnt * cnt) + 100)
-}
+    draw()
 
-const width = 1280
-const height = 720
-const canvas = Object.assign(document.createElement('canvas'), { width, height })
-const ctx = canvas.getContext('2d')
-const image = new Image()
+    setTimeout(() => {
+        drawLoop()
+    }, wait)
+}
 
 const black = () => {
     const stream = canvas.captureStream()
@@ -46,10 +50,20 @@ const black = () => {
 
     image.src = '/avatars/' + api.session().user_id + '.png'
     image.onload = () => {
+        drawCount = 0
         //Chrome workaround: needs canvas frame change to start webrtc rtp
-        drawLoop(ctx, image, width, height, 0)
+        drawLoop()
     }
     return stream.getVideoTracks()[0]
+}
+
+const silence = () => {
+    const actx = new AudioContext()
+    const oscillator = actx.createOscillator()
+    const dst = actx.createMediaStreamDestination()
+    oscillator.connect(dst)
+    oscillator.start()
+    return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false })
 }
 
 export const Avdummy = {
@@ -68,7 +82,14 @@ export const Avdummy = {
     },
 
     async refresh() {
-        if (!drawLoopIsRunning)
-            drawLoop(ctx, image, width, height, 0)
+        draw()
+        if (!drawLoopIsRunning) {
+            drawCount = DRAW_MAX - 10
+            drawLoop()
+        }
+    },
+
+    async stopDrawLoop() {
+        drawCount = DRAW_MAX
     }
 }
