@@ -9,49 +9,56 @@ let hvideo: HTMLVideoElement | null
 function getRoundedCanvas(sourceCanvas: HTMLCanvasElement | undefined) {
     if (!sourceCanvas)
         return
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const width = sourceCanvas.width;
-    const height = sourceCanvas.height;
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    const width = sourceCanvas.width
+    const height = sourceCanvas.height
 
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = width
+    canvas.height = height
     if (ctx) {
-        ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(sourceCanvas, 0, 0, width, height);
-        ctx.globalCompositeOperation = 'destination-in';
-        ctx.beginPath();
-        ctx.arc(width / 2, height / 2, Math.min(width, height) / 2, 0, 2 * Math.PI, true);
-        ctx.fill();
+        ctx.imageSmoothingEnabled = true
+        ctx.drawImage(sourceCanvas, 0, 0, width, height)
+        ctx.globalCompositeOperation = 'destination-in'
+        ctx.beginPath()
+        ctx.arc(width / 2, height / 2, Math.min(width, height) / 2, 0, 2 * Math.PI, true)
+        ctx.fill()
     }
     return canvas;
+}
+const constraintsVideo: any = {
+    audio: false,
+    video: {
+        deviceId: undefined,
+    },
 }
 
 export default {
     picture: ref<string | undefined>(),
     preview: ref(false),
+    deviceInfos: ref<MediaDeviceInfo[] | undefined>([]),
+    deviceId: ref<string | undefined>(undefined),
 
     video(video: HTMLVideoElement | null) {
         hvideo = video
     },
 
-    start() {
-        navigator.mediaDevices
-            .getUserMedia({
-                video: true,
-                audio: false,
-            })
-            .then((stream) => {
-                videoStream = stream
-                if (hvideo) hvideo.srcObject = stream
-                hvideo?.play()
-            })
-            .catch((err) => {
-                console.error(`An error occurred: ${err}`)
-            })
+    async start() {
+        try {
+            constraintsVideo.video.deviceId = this.deviceId.value
+            videoStream = await navigator.mediaDevices.getUserMedia(constraintsVideo)
+        } catch (e) {
+            console.error(`An error occurred: ${e}`)
+        }
+        this.deviceId.value = videoStream?.getVideoTracks()[0].getSettings().deviceId
+        if (hvideo && videoStream) {
+            hvideo.srcObject = videoStream
+            hvideo.play()
+        }
 
         this.picture.value = undefined
         this.preview.value = false
+        this.deviceInfos.value = await navigator.mediaDevices.enumerateDevices()
     },
 
     stop() {
