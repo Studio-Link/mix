@@ -157,7 +157,7 @@
                 ref="play"
                 class="hover:bg-gray-700 text-white group items-center px-2 py-2 text-base font-medium rounded-md block"
                 title="Join as listener"
-                :class="{ 'animate-pulse': Webrtc.state.value == WebrtcState.Connecting }"
+                :class="{ 'animate-pulse': Webrtc.state.value != WebrtcState.Offline }"
                 @click="listen()"
               >
                 <PlayCircleIcon class="h-20 w-20 mx-auto" />
