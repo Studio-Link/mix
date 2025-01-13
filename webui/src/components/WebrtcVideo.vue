@@ -335,6 +335,7 @@ function fullscreenchanged() {
 }
 
 onMounted(() => {
+  Webrtc.init()
   if (video.value?.requestPictureInPicture) hasPiP.value = true
   hasFullscreen.value = hasFullscreenSupport(video.value)
 

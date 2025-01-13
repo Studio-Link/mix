@@ -162,7 +162,7 @@
               >
                 <PlayCircleIcon class="h-20 w-20 mx-auto" />
                 <div v-if="Webrtc.state.value == WebrtcState.Offline" class="text-center">Press play to connect</div>
-                <div v-if="Webrtc.state.value == WebrtcState.Connecting" class="text-center">Connecting...</div>
+                <div v-else class="text-center">Connecting...</div>
               </button>
             </div>
           </div>

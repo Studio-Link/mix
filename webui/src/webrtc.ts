@@ -1,6 +1,6 @@
 import api from './api'
 import { Users } from './ws/users'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import adapter from 'webrtc-adapter'
 import { Error } from './error'
 import { useEventListener, useStorage } from '@vueuse/core'
@@ -195,8 +195,21 @@ async function pc_setup() {
     console.log('browser: ', adapter.browserDetails.browser, adapter.browserDetails.version)
     pc = new RTCPeerConnection(configuration)
 
-    pc.onicecandidate = (event) => {
-        console.log('webrtc/icecandidate: ' + event.candidate?.type + ' IP: ' + event.candidate?.candidate)
+    pc.onicecandidate = async (event) => {
+        console.log('webrtc/icecandidate: ' + event.candidate?.type + ' IP: ' + event.candidate?.candidate, event)
+        if (event.candidate?.type != "relay")
+            return
+
+        if (Webrtc.state.value == WebrtcState.ICEGatheringRelay0) {
+            Webrtc.state.value = WebrtcState.ICEGatheringRelay1
+            return
+        }
+
+        if (Webrtc.state.value == WebrtcState.ICEGatheringRelay1) {
+            Webrtc.state.value = WebrtcState.ICEOffering
+            const resp = await api.sdp_offer(pc!.localDescription)
+            if (resp?.ok) handle_answer(await resp.json())
+        }
     }
 
     pc.ontrack = function(event) {
@@ -262,8 +275,6 @@ async function pc_setup() {
                 /* gathering has begun or is ongoing */
                 break
             case 'complete':
-                const resp = await api.sdp_offer(pc.localDescription)
-                if (resp?.ok) handle_answer(await resp.json())
                 break
         }
     }
@@ -383,7 +394,9 @@ async function audio_output(device: string | undefined) {
 export enum WebrtcState {
     Error = 0,
     Offline,
-    Connecting,
+    ICEGatheringRelay0,
+    ICEGatheringRelay1,
+    ICEOffering,
     Listening,
     ReadySpeaking,
     Speaking,
@@ -403,9 +416,14 @@ export const Webrtc = {
     video_muted: ref(true),
     videostream: ref(<MediaStream | null>(null)),
 
-    listen() {
+    init() {
+        watch(this.state, () => { console.log("WebrtcState:", WebrtcState[this.state.value]) })
+    },
+    async listen() {
+        if (this.state.value != WebrtcState.Offline)
+            return
         pc_setup()
-        this.state.value = WebrtcState.Connecting
+        this.state.value = WebrtcState.ICEGatheringRelay0
         const audio: HTMLAudioElement | null = document.querySelector('audio#live')
         audio?.play()
     },
@@ -427,7 +445,7 @@ export const Webrtc = {
                 this.change_audio_out()
                 return
             }
-            
+
             if (this.audio_input_id.value) {
                 if (this.audio_input_id.value == device.deviceId) {
                     audio_available = true
