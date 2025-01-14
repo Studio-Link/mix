@@ -271,3 +271,9 @@ int slmix_source_append_all(struct mix *mix, struct call *call,
 			    const char *dev);
 int slmix_handle_ice_candidate(struct peer_connection *pc,
 			       const struct odict *od);
+
+/******************************************************************************
+ * stats.c
+ */
+int slmix_stats_init(void);
+void slmix_stats_close(void);

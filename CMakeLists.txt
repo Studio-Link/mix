@@ -113,6 +113,7 @@ set(SRCS_LIB
   src/sess.c
   src/sip.c
   src/source.c
+  src/stats.c
   src/users.c
   src/ws.c
   ${CMAKE_CURRENT_BINARY_DIR}/version.c
