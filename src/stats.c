@@ -1,6 +1,27 @@
 #include <mix.h>
 
 static struct tmr tmr_metrics;
+static struct tmr tmr_jitter;
+static uint64_t jitter_last = 0;
+static int64_t max_jitter   = 0; /* Mainloop jitter */
+enum { JITTER_INTERVAL = 10 };
+
+
+static void jitter_stats(void *arg)
+{
+	(void)arg;
+
+	if (jitter_last) {
+		int64_t jitter =
+			(tmr_jiffies() - jitter_last) - JITTER_INTERVAL;
+		if (jitter > max_jitter)
+			max_jitter = jitter;
+	}
+
+	jitter_last = tmr_jiffies();
+	tmr_start(&tmr_jitter, JITTER_INTERVAL, jitter_stats, NULL);
+}
+
 
 static void slmix_metrics(void *arg)
 {
@@ -22,6 +43,10 @@ static void slmix_metrics(void *arg)
 
 	re_snprintf(metric_url, sizeof(metric_url), METRICS_URL "/instance/%s",
 		    mix->room);
+
+	mbuf_printf(mb, "# TYPE mix_jitter gauge\n");
+	mbuf_printf(mb, "mix_jitter %lld\n", max_jitter);
+	max_jitter = 0;
 
 	LIST_FOREACH(&mix->sessl, le)
 	{
@@ -150,7 +175,9 @@ out:
 int slmix_stats_init(void)
 {
 	tmr_init(&tmr_metrics);
+	tmr_init(&tmr_jitter);
 	tmr_start(&tmr_metrics, 2000, slmix_metrics, NULL);
+	tmr_start(&tmr_jitter, JITTER_INTERVAL, jitter_stats, NULL);
 
 	return 0;
 }
