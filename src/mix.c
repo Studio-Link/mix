@@ -246,7 +246,7 @@ void slmix_close(void)
 
 	tmr_cancel(&tmr_room_update);
 	mbuf_reset(&update_data);
-	
+
 	slmix_stats_close();
 
 	list_flush(&mix.sessl);
