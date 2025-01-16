@@ -11,6 +11,8 @@ let pc: RTCPeerConnection | null = null
 let audiostream: MediaStream | null = null
 let videostream: MediaStream | null = null
 let screenstream: MediaStream | null = null
+let sdp_media_0 = 0
+let sdp_media_1 = 0
 
 const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay))
 
@@ -188,24 +190,31 @@ async function pc_stats(pc: RTCPeerConnection | null) {
     });
 
     await api.rtc_stats(data)
-    setTimeout(pc_stats, 5000, pc);
+    setTimeout(pc_stats, 5000, pc)
 }
+
 
 async function pc_setup() {
     console.log('browser: ', adapter.browserDetails.browser, adapter.browserDetails.version)
     pc = new RTCPeerConnection(configuration)
+    sdp_media_0 = 0
+    sdp_media_1 = 0
 
     pc.onicecandidate = async (event) => {
         console.log('webrtc/icecandidate: ' + event.candidate?.type + ' IP: ' + event.candidate?.candidate, event)
         if (event.candidate?.type != "relay")
             return
 
-        if (Webrtc.state.value == WebrtcState.ICEGatheringRelay0) {
-            Webrtc.state.value = WebrtcState.ICEGatheringRelay1
+        if (event.candidate?.component != "rtp")
             return
-        }
 
-        if (Webrtc.state.value == WebrtcState.ICEGatheringRelay1) {
+        if (event.candidate?.sdpMLineIndex === 0)
+            sdp_media_0 = 1
+
+        if (event.candidate?.sdpMLineIndex === 1)
+            sdp_media_1 = 1
+
+        if (Webrtc.state.value == WebrtcState.ICEGatheringRelay && sdp_media_0 && sdp_media_1) {
             Webrtc.state.value = WebrtcState.ICEOffering
             const resp = await api.sdp_offer(pc!.localDescription)
             if (resp?.ok) handle_answer(await resp.json())
@@ -394,8 +403,7 @@ async function audio_output(device: string | undefined) {
 export enum WebrtcState {
     Error = 0,
     Offline,
-    ICEGatheringRelay0,
-    ICEGatheringRelay1,
+    ICEGatheringRelay,
     ICEOffering,
     Listening,
     ReadySpeaking,
@@ -423,7 +431,7 @@ export const Webrtc = {
         if (this.state.value != WebrtcState.Offline)
             return
         pc_setup()
-        this.state.value = WebrtcState.ICEGatheringRelay0
+        this.state.value = WebrtcState.ICEGatheringRelay
         const audio: HTMLAudioElement | null = document.querySelector('audio#live')
         audio?.play()
     },
