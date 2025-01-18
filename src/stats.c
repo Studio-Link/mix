@@ -186,4 +186,5 @@ int slmix_stats_init(void)
 void slmix_stats_close(void)
 {
 	tmr_cancel(&tmr_metrics);
+	tmr_cancel(&tmr_jitter);
 }
