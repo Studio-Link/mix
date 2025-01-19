@@ -53,6 +53,7 @@ else()
     -Wuninitialized
     -Wvla
     -Wno-gnu-zero-variadic-macro-arguments
+    -Wno-c2x-extensions
   )
 endif()
 
