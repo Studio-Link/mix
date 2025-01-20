@@ -46,6 +46,13 @@ interface Chat {
     msg: string
 }
 
+interface Emoji {
+    id: number
+    reaction_id: number
+    x: number
+    size: number
+}
+
 export enum RecordType {
     AudioVideo,
     AudioOnly
@@ -71,6 +78,7 @@ interface Users {
     hand_status: Ref<boolean>
     speaker_status: Ref<boolean>
     host_status: Ref<boolean>
+    emojis: Ref<Emoji[]>
 }
 
 function pad(num: number, size: number) {
@@ -95,6 +103,7 @@ export const Users: Users = {
     hand_status: ref(false),
     speaker_status: ref(false),
     host_status: ref(false),
+    emojis: ref([]),
 
     ws_close() {
         this.socket?.close()
@@ -307,6 +316,22 @@ export const Users: Users = {
                     this.sources.value.splice(i, 1)
                     return
                 }
+
+                return
+            }
+
+            if (data.type === 'emoji') {
+                const newEmoji: Emoji = {
+                    id: Date.now(),
+                    reaction_id: data.id,
+                    x: Math.random() * 80, // Random horizontal position
+                    size: Math.random() * 20 + 30,
+                };
+                this.emojis.value.push(newEmoji);
+
+                setTimeout(() => {
+                    this.emojis.value = this.emojis.value.filter((emoji) => emoji.id !== newEmoji.id);
+                }, 3000);
 
                 return
             }

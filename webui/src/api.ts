@@ -16,8 +16,8 @@ let sess: Session = JSON.parse(window.localStorage.getItem('sess')!)
 async function api_fetch(met: string, url: string, data: any, json = true, gzip = false) {
     const body = json ? JSON.stringify(data) : data
     const headers = {
-            'Content-Type': 'application/json',
-            'Session-ID': sess?.id,
+        'Content-Type': 'application/json',
+        'Session-ID': sess?.id,
     }
 
     // Default options are marked with *
@@ -25,7 +25,7 @@ async function api_fetch(met: string, url: string, data: any, json = true, gzip 
         method: met,
         cache: 'no-cache',
         credentials: 'same-origin',
-        headers: gzip ? {...headers, 'Content-Encoding': 'gzip'} : headers,
+        headers: gzip ? { ...headers, 'Content-Encoding': 'gzip' } : headers,
         redirect: 'follow',
         referrerPolicy: 'no-referrer',
         body: data ? body : null,
@@ -227,4 +227,8 @@ export default {
         if (enable) api_fetch('PUT', '/hand/enable', null)
         else api_fetch('PUT', '/hand/disable', null)
     },
+
+    async emoji(reaction_id: number) {
+        api_fetch('PUT', '/emoji', reaction_id.toString(), false, false)
+    }
 }

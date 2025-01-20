@@ -732,6 +732,23 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	if (0 == pl_strcasecmp(&msg->path, "/api/v1/emoji") &&
+	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+		struct pl id;
+		char json[128];
+		err = re_regex((char *)mbuf_buf(msg->mb),
+			       mbuf_get_left(msg->mb), "[0-9]+", &id);
+		if (err)
+			goto err;
+
+		re_snprintf(json, sizeof(json),
+			    "{\"type\": \"emoji\", \"id\": %r }", &id);
+
+		sl_ws_send_event_all(json);
+		http_sreply(conn, 204, "OK", "text/html", "", 0, NULL);
+		return;
+	}
+
 	if (0 == pl_strcasecmp(&msg->path, "/api/v1/chat") &&
 	    0 == pl_strcasecmp(&msg->met, "GET")) {
 

@@ -60,6 +60,10 @@
                 <HandRaisedIcon class="h-9 w-9 mx-auto" />
               </button>
             </div>
+            <!-- Reaction button -->
+            <div v-if="Webrtc.state.value === WebrtcState.Listening">
+                <ReactionEmoji />
+            </div>
             <!-- Audio Mute -->
             <div
               v-if="
@@ -193,6 +197,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import { PlayCircleIcon } from '@heroicons/vue/24/solid'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
+import ReactionEmoji from '../components/ReactionEmoji.vue'
 
 const user_id = api.session()?.user_id
 const hand_status = Users.hand_status
