@@ -61,7 +61,7 @@
               </button>
             </div>
             <!-- Reaction button -->
-            <div v-if="Webrtc.state.value === WebrtcState.Listening">
+            <div>
                 <ReactionEmoji />
             </div>
             <!-- Audio Mute -->

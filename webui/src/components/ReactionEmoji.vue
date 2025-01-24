@@ -1,5 +1,5 @@
 <template>
-  <div class="relative">
+  <div v-if="Webrtc.state.value === WebrtcState.Listening" class="relative">
     <button
       @click="open = !open"
       :class="{ 'bg-gray-700': open }"
@@ -25,7 +25,7 @@
       aria-hidden="true"
       v-for="emoji in emojis"
       :key="emoji.id"
-      class="emoji text-lime-600"
+      class="emoji text-blue-600"
       :style="{ left: `${emoji.x}%`, fontSize: `${emoji.size}px` }"
     >
       {{ reactions[emoji.reaction_id].emoji }}
@@ -38,14 +38,11 @@ import { ref } from 'vue'
 import { Users } from '../ws/users'
 import api from '../api'
 import { HeartIcon } from '@heroicons/vue/24/outline'
+import { Webrtc, WebrtcState } from '../webrtc'
 
 const emojis = Users.emojis
 const open = ref(false)
-const reactions = [
-  { emoji: '❤' },
-  { emoji: '🤘' },
-  { emoji: '🤣' },
-]
+const reactions = [{ emoji: '❄️' }, { emoji: '❤️' }, { emoji: '🤣' }]
 
 async function push(reaction_id: number) {
   api.emoji(reaction_id)
