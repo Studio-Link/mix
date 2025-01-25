@@ -3,6 +3,9 @@
 #include "systemd/sd-daemon.h"
 #endif
 
+#define ROUTE(route, method)                                                  \
+	if (0 == pl_strcasecmp(&msg->path, (route)) &&                        \
+	    0 == pl_strcasecmp(&msg->met, (method)))
 
 static int handle_put_sdp(struct peer_connection *pc,
 			  const struct http_msg *msg)
@@ -127,9 +130,8 @@ static void http_req_handler(struct http_conn *conn,
 	/*
 	 * API Requests without session
 	 */
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/connect") &&
-	    0 == pl_strcasecmp(&msg->met, "POST")) {
-
+	ROUTE("/api/v1/client/connect", "POST")
+	{
 		err = slmix_session_new(mix, &sess, msg);
 		if (err == EAUTH) {
 			http_sreply(conn, 401, "Unauthorized", "text/html", "",
@@ -143,7 +145,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/sessions/connected")) {
+	ROUTE("/api/v1/sessions/connected", "GET")
+	{
 		struct le *le;
 		uint32_t cnt = 0;
 		char count[ITOA_BUFSZ];
@@ -170,26 +173,23 @@ static void http_req_handler(struct http_conn *conn,
 	/* Every requests from here must provide a valid session */
 	sess = slmix_session_lookup_hdr(&mix->sessl, msg);
 	if (!sess) {
-		http_sreply(conn, 404, "Session Not Found", "text/html", "", 0,
+		http_sreply(conn, 401, "Unauthorized", "text/html", "", 0,
 			    NULL);
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/avatar") &&
-	    0 == pl_strcasecmp(&msg->met, "POST")) {
-
+	ROUTE("/api/v1/client/avatar", "POST")
+	{
 		avatar_save(sess, conn, msg);
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/reauth") &&
-	    0 == pl_strcasecmp(&msg->met, "POST")) {
+	ROUTE("/api/v1/client/reauth", "POST")
+	{
 		err = slmix_session_auth(mix, sess, msg);
-		if (err == EAUTH) {
-			http_sreply(conn, 401, "Unauthorized", "text/html", "",
-				    0, NULL);
-			return;
-		}
+		if (err == EAUTH)
+			goto auth;
+
 		if (err)
 			goto err;
 
@@ -203,9 +203,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/name") &&
-	    0 == pl_strcasecmp(&msg->met, "POST")) {
-
+	ROUTE("/api/v1/client/name", "POST")
+	{
 		struct pl name = PL_INIT;
 
 		err = re_regex((char *)mbuf_buf(msg->mb),
@@ -231,9 +230,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/sdp/offer") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
-
+	ROUTE("/api/v1/webrtc/sdp/offer", "PUT")
+	{
 		err = slmix_session_start(sess, &mix->pc_config, mix->mnat,
 					  mix->menc);
 		if (err)
@@ -253,8 +251,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/sdp/answer") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+	ROUTE("/api/v1/webrtc/sdp/answer", "PUT")
+	{
 		struct pl pl_id = PL_INIT;
 		struct le *le;
 
@@ -289,8 +287,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/sdp/candidate") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+	ROUTE("/api/v1/webrtc/sdp/candidate", "PUT")
+	{
 		struct pl pl_id = PL_INIT;
 		struct le *le;
 
@@ -341,8 +339,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/record/enable") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+	ROUTE("/api/v1/record/enable", "PUT")
+	{
 		/* check permission */
 		if (!sess->user || !sess->user->host)
 			goto auth;
@@ -353,8 +351,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/record/audio/enable") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+	ROUTE("/api/v1/record/audio/enable", "PUT")
+	{
 		/* check permission */
 		if (!sess->user || !sess->user->host)
 			goto auth;
@@ -365,8 +363,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/record/disable") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+	ROUTE("/api/v1/record/disable", "PUT")
+	{
 		/* check permission */
 		if (!sess->user || !sess->user->host)
 			goto auth;
@@ -377,8 +375,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/speaker") &&
-	    0 == pl_strcasecmp(&msg->met, "POST")) {
+	ROUTE("/api/v1/client/speaker", "POST")
+	{
 		struct pl user_id = PL_INIT;
 		struct session *sess_speaker;
 
@@ -409,8 +407,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/listener") &&
-	    0 == pl_strcasecmp(&msg->met, "POST")) {
+	ROUTE("/api/v1/client/listener", "POST")
+	{
 		struct pl user_id = PL_INIT;
 		struct session *sess_listener;
 
@@ -439,9 +437,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/hand/enable") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
-
+	ROUTE("/api/v1/hand/enable", "PUT")
+	{
 		sess->user->hand = true;
 
 		err = slmix_session_user_updated(sess);
@@ -452,9 +449,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/hand/disable") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
-
+	ROUTE("/api/v1/hand/disable", "PUT")
+	{
 		sess->user->hand = false;
 
 		err = slmix_session_user_updated(sess);
@@ -465,8 +461,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/video/enable") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+	ROUTE("/api/v1/webrtc/video/enable", "PUT")
+	{
 
 		slmix_session_video(sess, true);
 
@@ -474,18 +470,16 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/video/disable") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
-
+	ROUTE("/api/v1/webrtc/video/disable", "PUT")
+	{
 		slmix_session_video(sess, false);
 
 		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/audio/enable") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
-
+	ROUTE("/api/v1/webrtc/audio/enable", "PUT")
+	{
 		sess->user->audio = true;
 
 		err = slmix_session_user_updated(sess);
@@ -496,9 +490,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/audio/disable") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
-
+	ROUTE("/api/v1/webrtc/audio/disable", "PUT")
+	{
 		sess->user->audio = false;
 
 		err = slmix_session_user_updated(sess);
@@ -509,8 +502,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/focus") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+	ROUTE("/api/v1/webrtc/focus", "PUT")
+	{
 		char user[512]	  = {0};
 		struct pl user_id = PL_INIT;
 
@@ -532,8 +525,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/solo/enable") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+	ROUTE("/api/v1/webrtc/solo/enable", "PUT")
+	{
 		char user[512]	  = {0};
 		struct pl user_id = PL_INIT;
 
@@ -560,8 +553,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/solo/disable") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+	ROUTE("/api/v1/webrtc/solo/disable", "PUT")
+	{
 		/* check permission */
 		if (!sess->user->host)
 			goto err;
@@ -572,8 +565,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/disp/enable") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+	ROUTE("/api/v1/webrtc/disp/enable", "PUT")
+	{
 		char user[512] = {0};
 
 		/* check permission */
@@ -588,8 +581,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/disp/disable") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+	ROUTE("/api/v1/webrtc/disp/disable", "PUT")
+	{
 		char user[512] = {0};
 
 		/* check permission */
@@ -604,8 +597,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/amix/enable") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+	ROUTE("/api/v1/webrtc/amix/enable", "PUT")
+	{
 		char user[512]	  = {0};
 		struct pl user_id = PL_INIT;
 
@@ -635,8 +628,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/amix/disable") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+	ROUTE("/api/v1/webrtc/amix/disable", "PUT")
+	{
 		char user[512]	  = {0};
 		struct pl user_id = PL_INIT;
 
@@ -667,8 +660,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/webrtc/stats") &&
-	    0 == pl_strcasecmp(&msg->met, "POST")) {
+	ROUTE("/api/v1/webrtc/stats", "POST")
+	{
 		struct sl_httpconn *http_conn;
 		char metric_url[URL_SZ] = {0};
 
@@ -688,9 +681,7 @@ static void http_req_handler(struct http_conn *conn,
 		pl_set_str(&header_gzip, "Content-Encoding: gzip");
 		http_reqconn_add_header(http_conn->conn, &header_gzip);
 
-		err = sl_httpc_req(http_conn, SL_HTTP_POST,
-				   metric_url,
-				   body);
+		err = sl_httpc_req(http_conn, SL_HTTP_POST, metric_url, body);
 		mem_deref(http_conn);
 		mem_deref(body);
 
@@ -701,9 +692,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client/hangup") &&
-	    0 == pl_strcasecmp(&msg->met, "POST")) {
-
+	ROUTE("/api/v1/client/hangup", "POST")
+	{
 		pc_close(sess);
 
 		slmix_session_user_updated(sess);
@@ -712,9 +702,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/client") &&
-	    0 == pl_strcasecmp(&msg->met, "DELETE")) {
-
+	ROUTE("/api/v1/client", "DELETE")
+	{
 		struct pl sess_id;
 		/* draft-ietf-wish-whip-03 */
 		info("mix: DELETE -> disconnect\n");
@@ -732,8 +721,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/emoji") &&
-	    0 == pl_strcasecmp(&msg->met, "PUT")) {
+	ROUTE("/api/v1/emoji", "PUT")
+	{
 		struct pl id;
 		char json[128];
 		err = re_regex((char *)mbuf_buf(msg->mb),
@@ -749,9 +738,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/chat") &&
-	    0 == pl_strcasecmp(&msg->met, "GET")) {
-
+	ROUTE("/api/v1/chat", "GET")
+	{
 		char *json;
 
 		err = chat_json(&json, mix);
@@ -764,9 +752,8 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	if (0 == pl_strcasecmp(&msg->path, "/api/v1/chat") &&
-	    0 == pl_strcasecmp(&msg->met, "POST")) {
-
+	ROUTE("/api/v1/chat", "POST")
+	{
 		err = chat_save(sess->user, mix, msg);
 		if (err && err != ENODATA)
 			goto err;
@@ -782,7 +769,7 @@ static void http_req_handler(struct http_conn *conn,
 	return;
 
 auth:
-	http_sreply(conn, 401, "Unauthorized", "text/html", "", 0, sess);
+	http_sreply(conn, 403, "Forbidden", "text/html", "", 0, sess);
 	return;
 
 err:
