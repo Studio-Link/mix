@@ -1,15 +1,16 @@
 from behave import then, given
 import requests
 import json
+import pprint
 from websocket import create_connection
 
 
 @given('"{user}" connects without a token')
 def step_impl1(context, user):
     response = requests.post(context.base_url + '/api/v1/client/connect')
-    context.sessid[user] = response.headers['Session-ID']
-    assert response.headers['Session-ID'] is not None, response.headers[
-        "Session-ID"]
+    context.sessid[user] = response.cookies
+    assert response.headers['Set-Cookie'] is not None, response.headers[
+        "Set-Cookie"]
 
 
 @given('"{user}" connects with token "{token}"')
@@ -17,26 +18,24 @@ def step_impl1(context, user, token):
     response = requests.post(context.base_url + '/api/v1/client/connect', 
                              data=token)
     assert response.ok, f'Error: {response}'
-    context.sessid[user] = response.headers['Session-ID']
-    assert response.headers['Session-ID'] is not None, response.headers[
-        "Session-ID"]
+    context.sessid[user] = response.cookies
+    assert response.headers['Set-Cookie'] is not None, response.headers[
+        "Set-Cookie"]
 
 
 @given('"{user}" reauth with token "{token}"')
 def step_impl1(context, user, token):
-    headers = {'Session-ID': context.sessid[user]}
     response = requests.post(context.base_url + '/api/v1/client/reauth',
-                             headers=headers,
+                             cookies=context.sessid[user],
                              data=token)
     assert response.ok, f'Error: {response}'
-    assert response.headers['Session-ID'] is not None, response.headers[
-        "Session-ID"]
+    assert response.headers['Set-Cookie'] is not None, response.headers[
+        "Set-Cookie"]
 
 
 @then('"{user}" WebSocket receives "{count}" users')
 def step_impl2(context, user, count):
-    ws = create_connection("ws://127.0.0.1:9999/ws/v1/users")
-    ws.send(context.sessid[user])
+    ws = create_connection("ws://127.0.0.1:9999/ws/v1/users", cookie='mix_session='+context.sessid[user].get('mix_session'))
     context.response[user] = ws.recv()
     context.ws[user] = ws
     resp = json.loads(context.response[user])
@@ -46,22 +45,19 @@ def step_impl2(context, user, count):
 
 @given('"{user}" set client name')
 def step_impl3(context, user):
-    headers = {'Session-ID': context.sessid[user]}
     response = requests.post(context.base_url + '/api/v1/client/name',
-                             headers=headers,
+                             cookies=context.sessid[user],
                              data=user)
     assert response.ok, f'Error: {response.status_code}'
 
 
 @given('"{user}" upload a avatar')
 def step_impl5(context, user):
-    headers = {'Session-ID': context.sessid[user]}
-
     with open('steps/data/avatar.base64', 'r') as f:
         avatar = f.read().replace('\n', '')
 
     response = requests.post(context.base_url + '/api/v1/client/avatar',
-                             headers=headers,
+                             cookies=context.sessid[user],
                              data=avatar)
     assert response.ok, f'Error: {response.status_code}'
     context.response[user] = response
@@ -122,17 +118,15 @@ def step_impl8a(context, user):
 
 @then('"{user}" logouts')
 def step_impl10(context, user):
-    headers = {'Session-ID': context.sessid[user]}
     resp = requests.delete(context.base_url + '/api/v1/client',
-                           headers=headers)
+                             cookies=context.sessid[user])
     assert resp.ok, f'Error: {resp.status_code}'
 
 
 @given('"{user}" posts chat message "{msg}"')
 def step_impl11(context, user, msg):
-    headers = {'Session-ID': context.sessid[user]}
     resp = requests.post(context.base_url + '/api/v1/chat',
-                         headers=headers,
+                        cookies=context.sessid[user],
                          data=msg)
     assert resp.ok, f'Error: {resp.status_code}'
 
