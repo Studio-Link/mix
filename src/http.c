@@ -66,9 +66,20 @@ void http_sreply(struct http_conn *conn, uint16_t scode, const char *reason,
 		goto out;
 	}
 
+#ifdef RELEASE
 	if (sess)
-		re_snprintf(sess_head, sizeof(sess_head), "Session-ID: %s\r\n",
+		re_snprintf(sess_head, sizeof(sess_head),
+			    "Set-Cookie: mix_session=%s; Path=/; HttpOnly; "
+			    "Secure; "
+			    "SameSite=Lax; Max-Age=31536000\r\n",
 			    sess->id);
+#else
+	if (sess)
+		re_snprintf(sess_head, sizeof(sess_head),
+			    "Set-Cookie: mix_session=%s; Path=/; HttpOnly; "
+			    "SameSite=Lax; Max-Age=31536000\r\n",
+			    sess->id);
+#endif
 
 	err = http_reply(
 		conn, scode, reason,
@@ -76,10 +87,6 @@ void http_sreply(struct http_conn *conn, uint16_t scode, const char *reason,
 		"Content-Length: %zu\r\n"
 		"Cache-Control: no-cache, no-store, must-revalidate\r\n"
 		"Referrer-Policy: no-referrer\r\n"
-
-		"Content-Security-Policy: default-src 'self' ws:; "
-		"frame-ancestors 'self'; form-action 'self'; img-src * data:;"
-		"style-src 'self' 'unsafe-inline';\r\n"
 #ifndef RELEASE
 		/* Only allow wildcard CORS on DEV Builds */
 		"Access-Control-Allow-Origin: *\r\n"
@@ -111,6 +118,16 @@ static void http_req_handler(struct http_conn *conn,
 
 	info("conn %r %r %p\n", &msg->met, &msg->path, conn);
 
+#if 0
+	/* Header debug */
+	struct le *hle;
+	LIST_FOREACH(&msg->hdrl, hle)
+	{
+		struct http_hdr *hdr = hle->data;
+		info("  %r: %r\n", &hdr->name, &hdr->val);
+	}
+#endif
+
 #ifndef RELEASE
 	/* Default return OPTIONS - needed on dev for preflight CORS Check */
 	if (0 == pl_strcasecmp(&msg->met, "OPTIONS")) {
@@ -119,13 +136,6 @@ static void http_req_handler(struct http_conn *conn,
 	}
 #endif
 
-	/*
-	 * Websocket Request
-	 */
-	if (0 == pl_strcasecmp(&msg->path, "/ws/v1/users")) {
-		sl_ws_open(conn, msg, sl_ws_users_auth, mix);
-		return;
-	}
 
 	/*
 	 * API Requests without session
@@ -167,7 +177,7 @@ static void http_req_handler(struct http_conn *conn,
 	}
 
 	/*
-	 * API Requests with session
+	 * Requests with session
 	 */
 
 	/* Every requests from here must provide a valid session */
@@ -175,6 +185,14 @@ static void http_req_handler(struct http_conn *conn,
 	if (!sess) {
 		http_sreply(conn, 401, "Unauthorized", "text/html", "", 0,
 			    NULL);
+		return;
+	}
+
+	/*
+	 * Websocket Request
+	 */
+	if (0 == pl_strcasecmp(&msg->path, "/ws/v1/users")) {
+		sl_ws_open(conn, msg, mix, sess);
 		return;
 	}
 
