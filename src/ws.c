@@ -43,7 +43,7 @@ void sl_ws_dummyh(const struct websock_hdr *hdr, struct mbuf *mb, void *arg)
 	(void)arg;
 }
 
-
+#if 0
 void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 		      void *arg)
 {
@@ -90,7 +90,7 @@ void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 		json = mem_deref(json);
 	}
 }
-
+#endif
 
 static void conn_destroy(void *arg)
 {
@@ -127,7 +127,7 @@ static void conn_destroy(void *arg)
 }
 
 
-static void close_handler(int err, void *arg)
+static void ws_close_h(int err, void *arg)
 {
 	struct ws_conn *wsc = arg;
 	(void)err;
@@ -136,8 +136,19 @@ static void close_handler(int err, void *arg)
 }
 
 
-int sl_ws_open(struct http_conn *conn, const struct http_msg *msg,
-	       websock_recv_h *recvh, struct mix *mix)
+static void ws_recv_h(const struct websock_hdr *hdr, struct mbuf *mb,
+		      void *arg)
+{
+	(void)hdr;
+	(void)mb;
+	(void)arg;
+
+	return;
+}
+
+
+int sl_ws_open(struct http_conn *httpc, const struct http_msg *msg,
+	       struct mix *mix, struct session *sess)
 {
 	struct ws_conn *ws_conn;
 	int err;
@@ -148,12 +159,31 @@ int sl_ws_open(struct http_conn *conn, const struct http_msg *msg,
 
 	ws_conn->mix = mix;
 
-	err = websock_accept(&ws_conn->c, ws, conn, msg, KEEPALIVE, recvh,
-			     close_handler, ws_conn);
+	err = websock_accept(&ws_conn->c, ws, httpc, msg, KEEPALIVE, ws_recv_h,
+			     ws_close_h, ws_conn);
 	if (err)
 		goto out;
 
+	ws_conn->sess = mem_ref(sess);
+	mem_ref(ws_conn->sess->user);
+	ws_conn->sess->connected = true;
+
 	list_append(&wsl, &ws_conn->le, ws_conn);
+
+	char *json = NULL;
+	if (0 == users_json(&json, ws_conn->mix)) {
+		websock_send(ws_conn->c, WEBSOCK_TEXT, "%s", json);
+		json = mem_deref(json);
+	}
+
+	bool force = true;
+	slmix_update_room();
+	slmix_refresh_rooms(&force);
+
+	if (0 == user_event_json(&json, USER_ADDED, ws_conn->sess)) {
+		sl_ws_send_event(ws_conn->sess, json);
+		json = mem_deref(json);
+	}
 
 out:
 	if (err)
@@ -237,7 +267,7 @@ static void ws_send_rtcp_stats(struct mix *mix)
 			    "{\"type\": \"stats\","
 			    "\"id\": %u, \"stats\": {"
 			    "\"artt\": %u," /* rtt in ms */
-			    "\"vrtt\": %u" /* rtt in ms */
+			    "\"vrtt\": %u"  /* rtt in ms */
 			    "}}",
 			    sess->user->speaker_id, audio_stat->rtt / 1000,
 			    video_stat->rtt / 1000);

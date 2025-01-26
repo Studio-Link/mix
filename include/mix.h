@@ -198,8 +198,8 @@ int user_event_json(char **json, enum user_event event, struct session *sess);
  */
 int sl_ws_init(void);
 int sl_ws_close(void);
-int sl_ws_open(struct http_conn *conn, const struct http_msg *msg,
-	       websock_recv_h *recvh, struct mix *mix);
+int sl_ws_open(struct http_conn *httpc, const struct http_msg *msg,
+	       struct mix *mix, struct session *sess);
 void sl_ws_send_event(struct session *sess, char *str);
 void sl_ws_send_event_self(struct session *sess, char *str);
 void sl_ws_send_event_all(char *json);

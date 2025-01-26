@@ -325,13 +325,18 @@ struct session *slmix_session_lookup_hdr(const struct list *sessl,
 {
 	const struct http_hdr *hdr;
 
-	hdr = http_msg_xhdr(msg, "Session-ID");
+	hdr = http_msg_xhdr(msg, "Cookie");
 	if (!hdr) {
-		warning("mix: no Session-ID header\n");
+		warning("mix: no Session Cookie header\n");
 		return NULL;
 	}
 
-	return slmix_session_lookup(sessl, &hdr->val);
+	struct pl token;
+	if (re_regex(hdr->val.p, hdr->val.l, "mix_session=[a-z0-9A-Z]+",
+		     &token))
+		return NULL;
+
+	return slmix_session_lookup(sessl, &token);
 }
 
 
