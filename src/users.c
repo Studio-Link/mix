@@ -2,7 +2,7 @@
 #include <baresip.h>
 #include "mix.h"
 
-enum { MAX_LISTENERS = 40 };
+enum { MAX_LISTENERS = 100 };
 
 
 int users_json(char **json, struct mix *mix)
@@ -32,11 +32,10 @@ int users_json(char **json, struct mix *mix)
 		if (!sess->connected)
 			continue;
 
-		if (!sess->user->speaker)
-			++listeners;
-
-		if (listeners > MAX_LISTENERS)
-			continue;
+		if (!sess->user->speaker) {
+			if (++listeners > MAX_LISTENERS)
+				continue;
+		}
 
 		err = odict_alloc(&o_user, 8);
 		if (err)
