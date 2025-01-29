@@ -1,5 +1,5 @@
 <template>
-  <div v-if="Webrtc.state.value === WebrtcState.Listening" class="relative">
+  <div class="relative">
     <button
       @click="open = !open"
       :class="{ 'bg-gray-700': open }"
@@ -38,7 +38,6 @@ import { ref } from 'vue'
 import { Users } from '../ws/users'
 import api from '../api'
 import { HeartIcon } from '@heroicons/vue/24/outline'
-import { Webrtc, WebrtcState } from '../webrtc'
 
 const emojis = Users.emojis
 const open = ref(false)
