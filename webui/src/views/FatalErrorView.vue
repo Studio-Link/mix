@@ -31,6 +31,6 @@
 <script setup lang="ts">
 import api from '../api'
 function logout_clicked() {
-  api.logout(false)
+  api.logout()
 }
 </script>

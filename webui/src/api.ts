@@ -4,20 +4,13 @@ import router from './router'
 import { Users, RecordType } from './ws/users'
 import { Error } from './error'
 
-interface Session {
-    id: string
-    auth: boolean
-    user_id: string | null
-    user_name: string
-}
 
-let sess: Session = JSON.parse(window.localStorage.getItem('sess')!)
+let user_id: string | undefined = undefined
 
 async function api_fetch(met: string, url: string, data: any, json = true, gzip = false) {
     const body = json ? JSON.stringify(data) : data
     const headers = {
         'Content-Type': 'application/json',
-        'Session-ID': sess?.id,
     }
 
     // Default options are marked with *
@@ -33,67 +26,33 @@ async function api_fetch(met: string, url: string, data: any, json = true, gzip 
         Error.error('API Network error: ' + error.toString())
     })
 
-    if (resp?.status! >= 400) {
-        Error.error('API error: ' + resp?.status + ' ' + resp?.headers.get('Status-Reason'))
+    if (resp?.status! === 401) {
+        router.push({ name: 'Login' })
     }
 
-    const session_id = resp?.headers.get('Session-ID')
-    if (!session_id && resp?.status! >= 400) {
-        window.localStorage.removeItem('sessid')
-        router.push({ name: 'Login' })
-        // if (url !== '/client/connect')
-        //         location.reload()
+    if (resp?.status! > 401) {
+        Error.error('API error: ' + resp?.status + ' ' + resp?.headers.get('Status-Reason'))
     }
 
     return resp
 }
 
 export default {
-    session() {
-        return sess
+
+    user_id() {
+        return user_id
     },
+
     async isAuthenticated() {
-        sess = JSON.parse(window.localStorage.getItem('sess')!)
-        if (sess?.auth) return true
+        if (user_id) return true
         return false
     },
 
-    async reauth(token: string | string[]) {
-        if (!token)
-            return
-
-        const resp = await api_fetch('POST', '/client/reauth', token)
-        const session_id = resp?.headers.get('Session-ID')
-        if (!session_id) {
-            window.localStorage.removeItem('sess')
-            window.localStorage.removeItem('token')
-            router.push({ name: 'Login' })
-            return
-        }
-
-        sess.id = session_id
-        window.localStorage.setItem('sess', JSON.stringify(sess))
-    },
-
-    async connect(token?: string | null) {
-        if (!token)
-            token = window.localStorage.getItem('token')
-        else
-            window.localStorage.setItem('token', token)
-
+    async connect(token?: string | string[] | null) {
         const resp = await api_fetch('POST', '/client/connect', token)
+        if (!resp?.ok) return
 
-        const session_id = resp?.headers.get('Session-ID')
-        if (!session_id) {
-            window.localStorage.removeItem('sess')
-            window.localStorage.removeItem('token')
-            return
-        }
-
-        /* Readonly! Use ws/users for updated states */
-        sess = { id: session_id, auth: false, user_id: null, user_name: '' }
-
-        window.localStorage.setItem('sess', JSON.stringify(sess))
+        user_id = await resp?.text()
     },
 
     async login(name: string, image: string) {
@@ -104,12 +63,7 @@ export default {
         resp = await api_fetch('POST', '/client/avatar', image)
         if (!resp?.ok) return
 
-        sess.auth = true
-        const user = JSON.parse(await resp?.text())
-
-        sess.user_id = user.id
-        sess.user_name = name
-        window.localStorage.setItem('sess', JSON.stringify(sess))
+        await this.connect(null)
 
         router.push({ name: 'Home' })
     },
@@ -122,18 +76,18 @@ export default {
         return await api_fetch('GET', '/chat', null)
     },
 
-    async speaker(user_id: string | null) {
+    async speaker(user_id: string | undefined) {
         if (user_id)
             await api_fetch('POST', '/client/speaker', user_id)
     },
 
-    async listener(user_id: string | null) {
+    async listener(user_id: string | undefined) {
         if (user_id)
             await api_fetch('POST', '/client/listener', user_id)
     },
 
     async websocket() {
-        Users.websocket(sess.id)
+        Users.websocket()
     },
 
     async hangup() {
@@ -141,12 +95,9 @@ export default {
         await api_fetch('POST', '/client/hangup', null)
     },
 
-    async logout(force: boolean) {
+    async logout() {
         Webrtc.hangup()
-        await api_fetch('DELETE', '/client', sess)
-        window.localStorage.removeItem('sess')
-        if (force)
-            window.localStorage.removeItem('token')
+        await api_fetch('DELETE', '/client', null)
         router.push({ name: 'Login' })
         Users.ws_close()
     },
