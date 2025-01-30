@@ -85,6 +85,7 @@ struct source_pc {
 
 struct session {
 	struct le le;
+	bool auth;
 	struct peer_connection *pc;
 	struct list source_pcl;
 	struct http_conn *conn_pending;

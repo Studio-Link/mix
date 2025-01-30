@@ -56,7 +56,7 @@
         :style="{ width: calc_width(), height: calc_height(), left: calc_left(index), top: calc_top(index) }"
       >
         <video
-          v-if="item.id == api.session().user_id"
+          v-if="item.id == api.user_id()"
           :class="{'scale-x-[-1]': Webrtc.video_select.value !== 'Screen'}"
           class="object-cover h-full w-full"
           id="selfview"
@@ -147,7 +147,7 @@ Audio RTT: {{ item.stats.artt }} ms
             To Audience
           </button>
           <button
-            v-if="!Users.host_status.value && item.id === api.session().user_id && room?.show"
+            v-if="!Users.host_status.value && item.id === api.user_id() && room?.show"
             @click="api.listener(item.id)"
             type="button"
             class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -220,7 +220,7 @@ Audio RTT: {{ item.stats.artt }} ms
             Disable Audio
           </button>
           <button
-            v-if="item.video && selfview && item.id === api.session().user_id"
+            v-if="item.video && selfview && item.id === api.user_id()"
             @click="selfview = false"
             type="button"
             class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -229,7 +229,7 @@ Audio RTT: {{ item.stats.artt }} ms
             Disable Selfview
           </button>
           <button
-            v-if="item.video && !selfview && item.id === api.session().user_id"
+            v-if="item.video && !selfview && item.id === api.user_id()"
             @click="selfview = true"
             type="button"
             class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"

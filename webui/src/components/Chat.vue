@@ -137,7 +137,7 @@ const msg = ref('')
 const scroll_stop = ref(false)
 const chat = ref<HTMLElement | null>(null)
 
-const user_id = api.session().user_id
+const user_id = api.user_id()
 const md = markdownit({
   html: false,
   linkify: true,

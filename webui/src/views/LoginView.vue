@@ -76,8 +76,10 @@ import FooterLinks from '../components/FooterLinks.vue'
 import webcam from '../webcam'
 import api from '../api'
 
+/*
 const vprops = defineProps({ token: String })
 api.connect(vprops?.token)
+*/
 
 const error = ref(false)
 const name = ref('')

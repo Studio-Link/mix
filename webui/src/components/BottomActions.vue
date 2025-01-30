@@ -199,7 +199,7 @@ import { PlayCircleIcon } from '@heroicons/vue/24/solid'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 import ReactionEmoji from '../components/ReactionEmoji.vue'
 
-const user_id = api.session()?.user_id
+const user_id = api.user_id()
 const hand_status = Users.hand_status
 const version = ref(APP_VERSION)
 
@@ -220,7 +220,7 @@ function hand_clicked() {
 function mic_clicked(mute: boolean) {
   if (Webrtc.state.value < WebrtcState.ReadySpeaking) {
     Users.settings_active.value = true
-    if (!Users.room.value?.show) api.speaker(api.session().user_id)
+    if (!Users.room.value?.show) api.speaker(api.user_id())
   } else Webrtc.audio_mute(mute)
 }
 
@@ -240,7 +240,7 @@ async function settings_clicked() {
 }
 
 function logout_clicked() {
-  api.logout(true)
+  api.logout()
 }
 
 function hangup_clicked() {

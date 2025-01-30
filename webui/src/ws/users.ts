@@ -61,7 +61,7 @@ export enum RecordType {
 interface Users {
     socket?: WebSocket
     ws_close(): void
-    websocket(sessid: string): void
+    websocket(): void
     room: Ref<Room | undefined>
     rooms: Ref<Room[]>
     sources: Ref<Source[]>
@@ -78,6 +78,7 @@ interface Users {
     hand_status: Ref<boolean>
     speaker_status: Ref<boolean>
     host_status: Ref<boolean>
+    user_name: Ref<string>
     emojis: Ref<Emoji[]>
 }
 
@@ -103,12 +104,13 @@ export const Users: Users = {
     hand_status: ref(false),
     speaker_status: ref(false),
     host_status: ref(false),
+    user_name: ref(''),
     emojis: ref([]),
 
     ws_close() {
         this.socket?.close()
     },
-    websocket(sessid) {
+    websocket() {
         this.socket = new WebSocket(config.ws_host() + config.base() + 'ws/v1/users')
 
         this.socket.onerror = () => {
@@ -118,15 +120,11 @@ export const Users: Users = {
         this.socket.onclose = (e) => {
             console.log('Websocket users closed', e.reason)
             if (e.code === 1007) {
-                api.logout(false)
+                api.logout()
             }
             if (e.code === 1011) {
                 Error.fatal('Already connected! Please close remaining windows.')
             }
-        }
-
-        this.socket.onopen = () => {
-            this.socket?.send(sessid)
         }
 
         this.socket.onmessage = (message: any) => {
@@ -136,10 +134,11 @@ export const Users: Users = {
                 this.speakers.value = []
                 this.listeners.value = []
                 for (const key in data.users) {
-                    if (data.users[key].id === api.session().user_id) {
+                    if (data.users[key].id === api.user_id()) {
                         this.hand_status.value = data.users[key].hand
                         this.speaker_status.value = data.users[key].speaker
                         this.host_status.value = data.users[key].host
+                        this.user_name = data.users[key].name
                     }
 
                     if (data.users[key].name.startsWith('sip:'))
@@ -183,7 +182,7 @@ export const Users: Users = {
                     stats: { artt: 0, vrtt: 0 }
                 }
 
-                if (user.id === api.session().user_id) {
+                if (user.id === api.user_id()) {
                     this.hand_status.value = user.hand
                     this.speaker_status.value = data.speaker
                     this.host_status.value = data.host

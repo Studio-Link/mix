@@ -25,13 +25,12 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  await api.connect(to.params.token)
   const auth = await api.isAuthenticated()
   if (!auth && to.name !== 'Login') {
     return { name: 'Login' }
   }
   if (auth && to.name === 'Login') {
-    if (to.params.token)
-        await api.reauth(to.params.token) 
     return { name: 'Home' }
   }
 })

@@ -257,6 +257,6 @@ function join() {
 function join_listen() {
   open.value = false
   Webrtc.state.value = WebrtcState.Listening
-  api.listener(api.session().user_id)
+  api.listener(api.user_id())
 }
 </script>

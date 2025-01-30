@@ -21,7 +21,7 @@ function draw() {
     ctx.font = "48px serif";
     ctx.textAlign = "center"
     ctx.fillStyle = "gray";
-    ctx.fillText(api.session().user_name, width / 2, height / 2 + image.height / 2);
+    ctx.fillText(api.user_id()!, width / 2, height / 2 + image.height / 2);
     ctx.drawImage(image, width / 2 - (image.width / 2), (height / 2 - image.height / 2) - 48)
 }
 
@@ -48,7 +48,7 @@ const black = () => {
 
     ctx.fillRect(0, 0, width, height)
 
-    image.src = '/avatars/' + api.session().user_id + '.png'
+    image.src = '/avatars/' + api.user_id() + '.png'
     image.onload = () => {
         drawCount = 0
         //Chrome workaround: needs canvas frame change to start webrtc rtp

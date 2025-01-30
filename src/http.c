@@ -135,26 +135,9 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 #endif
-
-
 	/*
 	 * API Requests without session
 	 */
-	ROUTE("/api/v1/client/connect", "POST")
-	{
-		err = slmix_session_new(mix, &sess, msg);
-		if (err == EAUTH) {
-			http_sreply(conn, 401, "Unauthorized", "text/html", "",
-				    0, NULL);
-			return;
-		}
-		if (err)
-			goto err;
-
-		http_sreply(conn, 201, "Created", "text/html", "", 0, sess);
-		return;
-	}
-
 	ROUTE("/api/v1/sessions/connected", "GET")
 	{
 		struct le *le;
@@ -176,12 +159,45 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	sess = slmix_session_lookup_hdr(&mix->sessl, msg);
+
+	ROUTE("/api/v1/client/connect", "POST")
+	{
+		if (!sess) {
+			err = slmix_session_new(mix, &sess, msg);
+			if (err == EAUTH) {
+				http_sreply(conn, 401, "Unauthorized",
+					    "text/html", "", 0, NULL);
+				return;
+			}
+			if (err)
+				goto err;
+		}
+		else {
+			err = slmix_session_auth(mix, sess, msg);
+			if (err == EAUTH)
+				goto auth;
+
+			if (err)
+				goto err;
+		}
+
+		if (sess->auth) {
+			http_sreply(conn, 201, "Created", "text/html",
+				    sess->user->id, str_len(sess->user->id),
+				    sess);
+		}
+		else {
+			http_sreply(conn, 201, "Created", "text/html", "", 0,
+				    sess);
+		}
+		return;
+	}
+
 	/*
 	 * Requests with session
 	 */
-
 	/* Every requests from here must provide a valid session */
-	sess = slmix_session_lookup_hdr(&mix->sessl, msg);
 	if (!sess) {
 		http_sreply(conn, 401, "Unauthorized", "text/html", "", 0,
 			    NULL);
@@ -243,6 +259,7 @@ static void http_req_handler(struct http_conn *conn,
 		}
 
 		slmix_session_save(sess);
+		sess->auth = true;
 
 		http_sreply(conn, 204, "Updated", "text/html", "", 0, sess);
 		return;
