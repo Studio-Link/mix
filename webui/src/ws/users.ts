@@ -138,7 +138,7 @@ export const Users: Users = {
                         this.hand_status.value = data.users[key].hand
                         this.speaker_status.value = data.users[key].speaker
                         this.host_status.value = data.users[key].host
-                        this.user_name = data.users[key].name
+                        this.user_name.value = data.users[key].name
                     }
 
                     if (data.users[key].name.startsWith('sip:'))
