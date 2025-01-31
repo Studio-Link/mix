@@ -1,4 +1,5 @@
 import api from './api'
+import { Users } from './ws/users'
 
 const width = 1280
 const height = 720
@@ -14,14 +15,12 @@ function draw() {
     if (!ctx)
         return
 
-    console.log("draw", drawCount)
-
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, width, height)
     ctx.font = "48px serif";
     ctx.textAlign = "center"
     ctx.fillStyle = "gray";
-    ctx.fillText(api.user_id()!, width / 2, height / 2 + image.height / 2);
+    ctx.fillText(Users.user_name.value, width / 2, height / 2 + image.height / 2);
     ctx.drawImage(image, width / 2 - (image.width / 2), (height / 2 - image.height / 2) - 48)
 }
 
