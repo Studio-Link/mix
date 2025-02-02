@@ -14,6 +14,7 @@
 
 /webui/public/avatars/*
 !/webui/public/avatars/index.html
+!/webui/public/avatars/default.png
 
 /webui/public/download/*
 !/webui/public/download/index.html
