@@ -29,8 +29,9 @@
                         <source type="image/webp" :srcset="'/avatars/' + item.user_id + '.webp'" />
                         <img
                           class="h-10 w-10 rounded-full"
-                          :src="'/avatars/' + item.user_id + '.png'"
-                          alt="Avatar Image"
+                          src="/avatars/default.png"
+                          alt="Avatar"
+                          @error="imgError"
                         />
                       </picture>
                     </span>
@@ -144,6 +145,10 @@ const md = markdownit({
   typographer: true,
   breaks: true,
 })
+
+function imgError(e: any) {
+    e.target.parentNode.children[0].srcset = e.target.src
+}
 
 function chat_button() {
   api.chat(msg.value)
