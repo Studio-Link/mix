@@ -243,6 +243,7 @@ int slmix_session_alloc(struct session **sessp, struct mix *mix,
 		info("session: create from database\n");
 		pl_strcpy(sess_id, sess->id, sizeof(sess->id));
 		pl_strcpy(user_id, user->id, sizeof(user->id));
+		sess->auth = true;
 	}
 	else {
 		/* generate a unique session and user id */
@@ -542,6 +543,9 @@ int slmix_session_save(struct session *sess)
 
 	if (!sess || !sess->user)
 		return EINVAL;
+
+	if (!sess->auth)
+		return 0;
 
 	re_snprintf(str, sizeof(str), "%llu;%s;%s;%d;%d",
 		    tmr_jiffies_rt_usec() / 1000, sess->user->id,

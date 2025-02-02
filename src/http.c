@@ -258,8 +258,8 @@ static void http_req_handler(struct http_conn *conn,
 			return;
 		}
 
-		slmix_session_save(sess);
 		sess->auth = true;
+		slmix_session_save(sess);
 
 		http_sreply(conn, 204, "Updated", "text/html", "", 0, sess);
 		return;
