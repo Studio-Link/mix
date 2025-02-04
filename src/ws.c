@@ -43,54 +43,6 @@ void sl_ws_dummyh(const struct websock_hdr *hdr, struct mbuf *mb, void *arg)
 	(void)arg;
 }
 
-#if 0
-void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
-		      void *arg)
-{
-	struct ws_conn *wsc = arg;
-	struct pl sessid;
-	char *json = NULL;
-	(void)hdr;
-
-	sessid.p = (const char *)mbuf_buf(mb);
-	sessid.l = mbuf_get_left(mb);
-
-	wsc->sess = slmix_session_lookup(&wsc->mix->sessl, &sessid);
-	if (!wsc->sess) {
-		websock_close(wsc->c, WEBSOCK_INVALID_PAYLOAD,
-			      "Session not found");
-		mem_deref(wsc);
-		return;
-	}
-
-	mem_ref(wsc->sess);
-	mem_ref(wsc->sess->user);
-
-	if (wsc->sess->connected) {
-		websock_close(wsc->c, WEBSOCK_INTERNAL_ERROR,
-			      "Session in use");
-		mem_deref(wsc);
-		return;
-	}
-
-	wsc->sess->connected = true;
-
-	if (0 == users_json(&json, wsc->mix)) {
-		websock_send(wsc->c, WEBSOCK_TEXT, "%s", json);
-		json = mem_deref(json);
-	}
-
-	bool force = true;
-
-	slmix_update_room();
-	slmix_refresh_rooms(&force);
-
-	if (0 == user_event_json(&json, USER_ADDED, wsc->sess)) {
-		sl_ws_send_event(wsc->sess, json);
-		json = mem_deref(json);
-	}
-}
-#endif
 
 static void conn_destroy(void *arg)
 {
@@ -221,6 +173,23 @@ void sl_ws_send_event_self(struct session *sess, char *json)
 	{
 		struct ws_conn *ws_conn = le->data;
 		if (ws_conn->sess != sess)
+			continue;
+		websock_send(ws_conn->c, WEBSOCK_TEXT, "%s", json);
+	}
+}
+
+
+void sl_ws_send_event_host(char *json)
+{
+	struct le *le;
+
+	if (!json)
+		return;
+
+	LIST_FOREACH(&wsl, le)
+	{
+		struct ws_conn *ws_conn = le->data;
+		if (!ws_conn->sess->user->host)
 			continue;
 		websock_send(ws_conn->c, WEBSOCK_TEXT, "%s", json);
 	}

@@ -201,8 +201,9 @@ int sl_ws_init(void);
 int sl_ws_close(void);
 int sl_ws_open(struct http_conn *httpc, const struct http_msg *msg,
 	       struct mix *mix, struct session *sess);
-void sl_ws_send_event(struct session *sess, char *str);
-void sl_ws_send_event_self(struct session *sess, char *str);
+void sl_ws_send_event(struct session *sess, char *json);
+void sl_ws_send_event_self(struct session *sess, char *json);
+void sl_ws_send_event_host(char *json);
 void sl_ws_send_event_all(char *json);
 void sl_ws_dummyh(const struct websock_hdr *hdr, struct mbuf *mb, void *arg);
 void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
