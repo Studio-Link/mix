@@ -57,7 +57,7 @@ static int work(void *arg)
 
 		in = gdImageCreateFromPngPtr((int)pl.l, (void *)pl.p);
 		if (!in) {
-			warning("\navatar: create image failed\n");
+			warning("avatar: create image failed\n");
 			err = EIO;
 			goto err;
 		}
@@ -72,13 +72,13 @@ static int work(void *arg)
 						      mbuf_buf(mb));
 		}
 		else {
-			warning("\navatar: unkown file extension\n");
+			warning("avatar: unkown file extension\n");
 			err = EIO;
 			goto err;
 		}
 
 		if (!in) {
-			warning("\navatar: create image failed\n");
+			warning("avatar: create image failed\n");
 			err = EIO;
 			goto err;
 		}
