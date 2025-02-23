@@ -31,9 +31,9 @@ static void avatarsavedh(int err, void *arg)
 		char *status = NULL;
 		re_sdprintf(&status,
 			    "{\"status\": 200, \"id\": \"%s\", \"name\": "
-			    "\"%s\", \"summary\": \"%s\" }",
+			    "\"%s\", \"summary\": \"%H\" }",
 			    social->sess->user->id, social->name,
-			    social->summary);
+			    utf8_encode, social->summary);
 		http_sreply(social->oreq, 200, "OK", "application/json",
 			    status, str_len(status), social->sess);
 		mem_deref(status);
