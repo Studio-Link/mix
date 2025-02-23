@@ -79,10 +79,14 @@ int sl_httpc_req(struct sl_httpconn *slconn, enum sl_httpc_met sl_met,
 	}
 
 	err = http_reqconn_set_method(slconn->conn, &met);
-	err |= http_reqconn_set_body(slconn->conn, body);
-
 	if (err)
 		return err;
+
+	if (body) {
+		err = http_reqconn_set_body(slconn->conn, body);
+		if (err)
+			return err;
+	}
 
 	pl_set_str(&uri, url);
 	return http_reqconn_send(slconn->conn, &uri);

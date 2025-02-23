@@ -181,5 +181,12 @@ export default {
 
     async emoji(reaction_id: number) {
         api_fetch('PUT', '/emoji', reaction_id.toString(), false, false)
+    },
+
+    async social(url: string) {
+        let resp = await api_fetch('POST', '/social', url, false)
+        if (!resp?.ok)
+            return
+        return JSON.parse(await resp?.text()!)
     }
 }
