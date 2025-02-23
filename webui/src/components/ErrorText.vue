@@ -11,10 +11,10 @@
               <span class="">Error: {{ Error.text.value }}</span>
             </p>
           </div>
-          <div class="order-2 flex-shrink-0 sm:order-3 sm:ml-3">
+          <div class="order-2 shrink-0 sm:order-3 sm:ml-3">
             <button
               type="button"
-              class="-mr-1 flex rounded-md p-2 hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-white sm:-mr-2"
+              class="-mr-1 flex rounded-md p-2 hover:bg-red-800 focus:outline-hidden focus:ring-2 focus:ring-white sm:-mr-2"
               @click="Error.reset()"
             >
               <span class="sr-only">Dismiss</span>

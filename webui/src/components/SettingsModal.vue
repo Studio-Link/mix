@@ -30,7 +30,7 @@
               <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div class="sm:flex sm:items-start">
                   <div
-                    class="mx-auto hidden sm:flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10"
+                    class="mx-auto hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10"
                   >
                     <Cog6ToothIcon class="h-6 w-6 text-gray-800" aria-hidden="true" />
                   </div>
@@ -91,7 +91,7 @@
                         id="cam"
                         v-model="video_input_id"
                         name="cam"
-                        class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                        class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
                       >
                         <template v-for="item in Webrtc.deviceInfos.value">
                           <option v-if="item.kind === 'videoinput'" :key="item.deviceId" :value="item.deviceId">
@@ -106,7 +106,7 @@
                         id="resolution"
                         v-model="video_resolution"
                         name="resolution"
-                        class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                        class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
                       >
                         <option value="720p">High Quality (720p HD)</option>
                         <option value="360p">Normal Quality (360p SD)</option>
@@ -119,7 +119,7 @@
                         id="micro"
                         v-model="audio_input_id"
                         name="micro"
-                        class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                        class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
                       >
                         <template v-for="item in Webrtc.deviceInfos.value">
                           <option v-if="item.kind === 'audioinput'" :key="item.deviceId" :value="item.deviceId">
@@ -134,7 +134,7 @@
                         v-model="audio_output_id"
                         id="headset"
                         name="headset"
-                        class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                        class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
                       >
                         <template v-for="item in Webrtc.deviceInfos.value">
                           <option v-if="item.kind === 'audiooutput'" :key="item.deviceId" :value="item.deviceId">
@@ -150,7 +150,7 @@
                           v-model="echo"
                           name="echo_headset"
                           type="checkbox"
-                          class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                          class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded-sm"
                         />
                       </div>
                       <div class="ml-3 text-base">
@@ -166,7 +166,7 @@
               <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 justify-between">
                 <button
                   type="button"
-                  class="inline-flex w-full items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
+                  class="inline-flex w-full items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-xs hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
                   @click="join()"
                 >
                   <MicrophoneIcon class="h-6 w-6 text-white mr-2" aria-hidden="true" /> Join the conversation

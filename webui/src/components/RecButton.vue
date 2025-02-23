@@ -1,6 +1,6 @@
 <template>
   <div
-    class="fadeout inline-flex rounded-md shadow-sm px-3 h-9"
+    class="fadeout inline-flex rounded-md shadow-xs px-3 h-9"
     :class="{
       hidden: !Users.record.value && !Users.host_status.value,
     }"
@@ -35,7 +35,7 @@
         leave-to-class="transform opacity-0 scale-95"
       >
         <MenuItems
-          class="absolute right-0 z-10 mt-2 -mr-1 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+          class="absolute right-0 z-10 mt-2 -mr-1 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-hidden"
         >
           <div class="py-1">
             <MenuItem v-slot="{ active }">

@@ -1,13 +1,14 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { execSync } from 'child_process'
+import tailwindcss from "@tailwindcss/vite";
 
 const commitHash = execSync('git rev-parse --short HEAD')
     .toString();
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    plugins: [vue()],
+    plugins: [vue(), tailwindcss()],
     define: {
         APP_VERSION: JSON.stringify("v1.0.0-beta-" + commitHash)
     },

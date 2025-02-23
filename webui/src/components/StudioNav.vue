@@ -12,7 +12,7 @@
     </button>
   </div>
   <!-- Static sidebar for desktop -->
-  <div :class="[menuOpen ? 'flex' : 'hidden']" class="md:flex flex-shrink-0 bg-gray-600 min-h-screen">
+  <div :class="[menuOpen ? 'flex' : 'hidden']" class="md:flex shrink-0 bg-gray-600 min-h-screen">
     <div class="flex w-16 flex-col h-screen">
       <div class="flex min-h-0 flex-1 flex-col overflow-y-auto bg-sl-01dpa">
         <div class="flex-1">
