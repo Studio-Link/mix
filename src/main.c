@@ -65,7 +65,7 @@ static int slmix_getopt(int argc, char *const argv[])
 		"\n");
 
 	(void)re_printf("Mix v%s-%s"
-			" Copyright (C) 2013 - 2024"
+			" Copyright (C) 2013 - 2025"
 			" Sebastian Reimers\n\n",
 			SLMIX_VERSION, slmix_git_revision());
 
