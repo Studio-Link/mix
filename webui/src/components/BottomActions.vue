@@ -145,7 +145,7 @@
               </button>
             </div>
             <!-- Hangup -->
-            <div v-if="Webrtc.state.value >= WebrtcState.Listening">
+            <div v-if="Webrtc.state.value >= WebrtcState.Listening && Users.speaker_status.value">
               <button
                 ref="hangup"
                 class="text-red-400 hover:bg-gray-700 group block px-2 py-2 text-base font-medium rounded-md"
@@ -205,6 +205,7 @@ const version = ref(APP_VERSION)
 
 onMounted(() => {
   Fadeout.init()
+  Webrtc.listen()
 })
 
 function listen() {
@@ -246,4 +247,5 @@ function logout_clicked() {
 function hangup_clicked() {
   api.hangup()
 }
+
 </script>
