@@ -4,10 +4,18 @@
 
 #include <mix.h>
 
+#define BASE64_PNG "\"data:image/png;base64,"
+#define BASE64_PNG_SZ sizeof(BASE64_PNG) - 1
+
+enum file_type { FILE_NULL, FILE_JPEG, FILE_PNG };
+
 struct avatar {
 	struct http_conn *conn;
 	struct mbuf *mb;
 	struct session *sess;
+	void *arg;
+	re_async_h *cb;
+	enum file_type type;
 };
 
 
@@ -16,37 +24,64 @@ static int work(void *arg)
 	struct avatar *avatar = arg;
 	struct mbuf *mb	      = avatar->mb;
 	FILE *img;
-	int w = 256;
-	int h = 256;
-	gdImagePtr in, out;
+	int w	      = 256;
+	int h	      = 256;
+	gdImagePtr in = NULL, out;
 	struct pl pl  = PL_INIT;
 	int err	      = 0;
-	size_t offset = 0x17; /* "data:image/png;base64, */
 	char file[PATH_SZ];
 
-	if (mbuf_get_left(mb) < offset + 1) /* offset + ending '"' */
+	if (mbuf_get_left(mb) < BASE64_PNG_SZ + 1) /* offset + ending '"' */
 		return EINVAL;
 
-	pl.l = mbuf_get_left(mb) * 2;
-	pl.p = mem_zalloc(pl.l, NULL);
-	if (!pl.p)
-		return ENOMEM;
+	bool base64 = str_ncmp((const char *)mbuf_buf(mb), BASE64_PNG,
+			       BASE64_PNG_SZ) == 0;
 
-	mbuf_advance(mb, offset);
+	if (base64) {
+		warning("avatar: base64\n");
+		pl.l = mbuf_get_left(mb) * 2;
+		pl.p = mem_zalloc(pl.l, NULL);
+		if (!pl.p)
+			return ENOMEM;
 
-	err = base64_decode((char *)mbuf_buf(mb), mbuf_get_left(mb) - 1,
-			    (uint8_t *)pl.p, &pl.l);
-	if (err) {
-		mem_deref((void *)pl.p);
-		warning("avatar: base64_decode failed %m\n", err);
-		return err;
+		mbuf_advance(mb, BASE64_PNG_SZ);
+
+		err = base64_decode((char *)mbuf_buf(mb),
+				    mbuf_get_left(mb) - 1, (uint8_t *)pl.p,
+				    &pl.l);
+		if (err) {
+			mem_deref((void *)pl.p);
+			warning("avatar: base64_decode failed %m\n", err);
+			goto err;
+		}
+
+		in = gdImageCreateFromPngPtr((int)pl.l, (void *)pl.p);
+		if (!in) {
+			warning("avatar: create image failed\n");
+			err = EIO;
+			goto err;
+		}
 	}
+	else {
+		if (avatar->type == FILE_PNG) {
+			in = gdImageCreateFromPngPtr((int)mbuf_get_left(mb),
+						     mbuf_buf(mb));
+		}
+		else if (avatar->type == FILE_JPEG) {
+			in = gdImageCreateFromJpegPtr((int)mbuf_get_left(mb),
+						      mbuf_buf(mb));
+		}
+		else {
+			warning("avatar: unkown file extension\n");
+			err = EIO;
+			goto err;
+		}
 
-	in = gdImageCreateFromPngPtr((int)pl.l, (void *)pl.p);
-	if (!in) {
-		warning("\navatar: create image failed\n");
-		err = EIO;
-		goto err;
+		if (!in) {
+			warning("avatar: create image failed\n");
+			err = EIO;
+			goto err;
+		}
 	}
 
 	gdImageSetInterpolationMethod(in, GD_BILINEAR_FIXED);
@@ -101,11 +136,18 @@ err:
 }
 
 
-static void http_callback(int err, void *arg)
+static void callback(int err, void *arg)
 {
 	struct avatar *avatar = arg;
 	char *json	      = NULL;
 
+	/* use callback if provided and return */
+	if (avatar->cb) {
+		avatar->cb(err, avatar->arg);
+		goto out;
+	}
+
+	/* generic http reply callback handling */
 	if (err) {
 		http_ereply(avatar->conn, 500, "Error");
 		goto out;
@@ -136,7 +178,7 @@ static void avatar_destruct(void *data)
 
 
 int avatar_save(struct session *sess, struct http_conn *conn,
-		const struct http_msg *msg)
+		const struct http_msg *msg, re_async_h *cb, void *arg)
 {
 	struct avatar *avatar;
 
@@ -150,10 +192,20 @@ int avatar_save(struct session *sess, struct http_conn *conn,
 	avatar->conn = mem_ref(conn);
 	avatar->sess = mem_ref(sess);
 	avatar->mb   = mem_ref(msg->mb);
+	avatar->arg  = arg;
+	avatar->cb   = cb;
 
-	re_thread_async(work, http_callback, avatar);
+	if (pl_strcasecmp(&msg->ctyp.subtype, "jpeg") == 0) {
+		avatar->type = FILE_JPEG;
+	}
+	else if (pl_strcasecmp(&msg->ctyp.subtype, "jpg") == 0) {
+		avatar->type = FILE_JPEG;
+	}
+	else if (pl_strcasecmp(&msg->ctyp.subtype, "png") == 0) {
+		avatar->type = FILE_PNG;
+	}
 
-	return 0;
+	return re_thread_async(work, callback, avatar);
 }
 
 

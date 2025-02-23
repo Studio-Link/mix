@@ -17,6 +17,11 @@ const router = createRouter({
       component: () => import('../views/LoginView.vue'),
     },
     {
+      path: '/social',
+      name: 'Social',
+      component: () => import('../views/SocialLoginView.vue'),
+    },
+    {
       path: '/fatal',
       name: 'FatalError',
       component: () => import('../views/FatalErrorView.vue'),
@@ -27,7 +32,7 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   await api.connect(to.params.token)
   const auth = await api.isAuthenticated()
-  if (!auth && to.name !== 'Login') {
+  if (!auth && to.name !== 'Login' && to.name !== 'Social') {
     return { name: 'Login' }
   }
   if (auth && to.name === 'Login') {

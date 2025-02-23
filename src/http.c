@@ -116,7 +116,7 @@ static void http_req_handler(struct http_conn *conn,
 	if (!conn || !msg)
 		return;
 
-	info("conn %r %r %p\n", &msg->met, &msg->path, conn);
+	info("http: conn %r %r %p\n", &msg->met, &msg->path, conn);
 
 #if 0
 	/* Header debug */
@@ -212,9 +212,21 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	ROUTE("/api/v1/social", "POST")
+	{
+		err = social_request(conn, msg, sess);
+		if (err) {
+			char status[] = "{\"status\": 404 }";
+			info("http/api: social err %m\n", err);
+			http_sreply(conn, 200, "OK", "application/json",
+				    status, sizeof(status) - 1, sess);
+		}
+		return;
+	}
+
 	ROUTE("/api/v1/client/avatar", "POST")
 	{
-		avatar_save(sess, conn, msg);
+		avatar_save(sess, conn, msg, NULL, NULL);
 		return;
 	}
 

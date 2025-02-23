@@ -113,6 +113,7 @@ set(SRCS_LIB
   src/mix.c
   src/sess.c
   src/sip.c
+  src/social.c
   src/source.c
   src/stats.c
   src/users.c

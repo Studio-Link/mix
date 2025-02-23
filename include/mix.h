@@ -138,7 +138,7 @@ int slmix_sip_close(void);
  * avatar.c
  */
 int avatar_save(struct session *sess, struct http_conn *conn,
-		const struct http_msg *msg);
+		const struct http_msg *msg, re_async_h *cb, void *arg);
 int avatar_delete(struct session *sess);
 
 
@@ -279,3 +279,9 @@ int slmix_handle_ice_candidate(struct peer_connection *pc,
  */
 int slmix_stats_init(void);
 void slmix_stats_close(void);
+
+/******************************************************************************
+ * social.c
+ */
+int social_request(struct http_conn *conn, const struct http_msg *msg,
+		   struct session *sess);

@@ -55,13 +55,15 @@ export default {
         user_id = await resp?.text()
     },
 
-    async login(name: string, image: string) {
+    async login(name: string, image: string | null) {
         Error.reset()
         let resp = await api_fetch('POST', '/client/name', name)
         if (!resp?.ok) return
 
-        resp = await api_fetch('POST', '/client/avatar', image)
-        if (!resp?.ok) return
+        if (image) {
+            resp = await api_fetch('POST', '/client/avatar', image)
+            if (!resp?.ok) return
+        }
 
         await this.connect(null)
 
@@ -181,5 +183,12 @@ export default {
 
     async emoji(reaction_id: number) {
         api_fetch('PUT', '/emoji', reaction_id.toString(), false, false)
+    },
+
+    async social(url: string) {
+        let resp = await api_fetch('POST', '/social', url, false)
+        if (!resp?.ok)
+            return
+        return JSON.parse(await resp?.text()!)
     }
 }
