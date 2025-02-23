@@ -10,7 +10,7 @@
 
     <div
       v-if="open"
-      class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white rounded shadow-lg p-4"
+      class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white rounded-sm shadow-lg p-4"
     >
       <div class="flex space-x-4 text-lime-600 text-3xl">
         <button v-for="(reaction, index) in reactions" @click="push(index)">

@@ -11,7 +11,7 @@
             <Menu as="div" class="relative x-shrink-0">
               <div>
                 <MenuButton
-                  class="mx-auto flex text-sm text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-700"
+                  class="mx-auto flex text-sm text-white focus:outline-hidden focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-700"
                 >
                   <span class="sr-only">Open user menu</span>
                   <picture>
@@ -29,7 +29,7 @@
                 leave-to-class="transform opacity-0 scale-95"
               >
                 <MenuItems
-                  class="bottom-full absolute left-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                  class="bottom-full absolute left-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-hidden"
                 >
                   <MenuItem v-slot="active">
                     <a

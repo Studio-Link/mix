@@ -24,7 +24,7 @@
                 <div class="relative group py-4 px-2 flex items-center">
                   <div class="absolute inset-0 group-hover:bg-gray-50" aria-hidden="true"></div>
                   <div class="flex-1 flex items-top min-w-0 relative">
-                    <span class="flex-shrink-0 inline-block relative">
+                    <span class="shrink-0 inline-block relative">
                       <picture>
                         <source type="image/webp" :srcset="'/avatars/' + item.user_id + '.webp'" />
                         <img
@@ -51,7 +51,7 @@
                 <div class="relative group py-4 px-2 flex items-center">
                   <div class="absolute inset-0 group-hover:bg-gray-50" aria-hidden="true"></div>
                   <div class="flex-1 flex items-top min-w-0 relative">
-                    <span class="flex-shrink-0 inline-block relative">
+                    <span class="shrink-0 inline-block relative">
                       <picture>
                         <source type="image/webp" :srcset="'/avatars/' + item.user_id + '.webp'" />
                         <img
@@ -78,7 +78,7 @@
               <button
                 @click="scroll_stop = false"
                 type="button"
-                class="rounded-full bg-indigo-600 p-2 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                class="rounded-full bg-indigo-600 p-2 text-white shadow-xs hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               >
                 <ArrowDownIcon class="h-5 w-5" aria-hidden="true" />
                 <span class="sr-only">Scroll down</span>
@@ -86,7 +86,7 @@
             </div>
             <div class="bg-gray-50 py-6 px-2">
               <div class="flex space-x-3">
-                <div class="flex-shrink-0">
+                <div class="shrink-0">
                   <picture>
                     <source type="image/webp" :srcset="'/avatars/' + user_id + '.webp'" />
                     <img class="h-10 w-10 rounded-full" :src="'/avatars/' + user_id + '.png'" alt="Avatar Image" />
@@ -98,7 +98,7 @@
                     <textarea
                       v-model="msg"
                       v-on:keydown.enter.exact.prevent="chat_button()"
-                      class="shadow-sm block w-full h-12 p-2 focus:ring-lime-600 focus:border-lime-600 sm:text-sm border border-gray-300 rounded-md"
+                      class="shadow-xs block w-full h-12 p-2 focus:ring-lime-600 focus:border-lime-600 sm:text-sm border border-gray-300 rounded-md"
                       placeholder="Add a comment"
                     ></textarea>
                   </div>
@@ -108,7 +108,7 @@
                     <button
                       @click="chat_button()"
                       type="submit"
-                      class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-xs text-white bg-blue-600 hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
                       Comment
                     </button>

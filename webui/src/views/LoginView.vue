@@ -5,7 +5,7 @@
     </div>
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-      <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+      <div class="bg-white py-8 px-4 shadow-sm sm:rounded-lg sm:px-10">
         <form class="space-y-6" @submit.prevent="login()">
           <div id="avatar">
           <Avatar v-if="random" v-bind="props" class="h-48 mx-auto" />
@@ -22,7 +22,7 @@
                 type="text"
                 required
                 pattern="[a-zA-Z0-9 ]+" minlength="3" maxlength="20"
-                class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-xs focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
                 :class="{ 'border-red-300': error }"
               />
               <p v-if="error" id="name-error" class="mt-2 text-sm text-red-600">Please enter name</p>
@@ -32,7 +32,7 @@
             <button
               type="button"
               v-if="!random && !webcam.picture.value"
-              class="flex w-full justify-center rounded-md border border-transparent bg-red-700 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              class="flex w-full justify-center rounded-md border border-transparent bg-red-700 py-2 px-4 text-sm font-medium text-white shadow-xs hover:bg-red-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               @click="randomize()"
             >
               Cancel
@@ -40,7 +40,7 @@
             <button
               type="button"
               v-if="random"
-              class="flex w-full justify-center rounded-md border border-transparent bg-gray-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              class="flex w-full justify-center rounded-md border border-transparent bg-gray-600 py-2 px-4 text-sm font-medium text-white shadow-xs hover:bg-gray-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               @click="randomize()"
             >
               Random Avatar
@@ -48,7 +48,7 @@
             <button
               type="button"
               v-if="random || webcam.picture.value"
-              class="flex w-full justify-center rounded-md border border-transparent bg-green-700 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              class="flex w-full justify-center rounded-md border border-transparent bg-green-700 py-2 px-4 text-sm font-medium text-white shadow-xs hover:bg-green-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               @click="activateCam()"
             >
               Webcam Photo
@@ -57,7 +57,7 @@
           <button
             v-if="random || webcam.picture.value"
             type="submit"
-            class="w-full justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-base font-bold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            class="w-full justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-base font-bold text-white shadow-xs hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             Join Room
           </button>
