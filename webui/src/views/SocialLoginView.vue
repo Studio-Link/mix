@@ -1,32 +1,12 @@
 <template>
     <div class="relative z-10" role="dialog" aria-modal="true">
-        <!--
-    Background backdrop, show/hide based on modal state.
-
-    Entering: "ease-out duration-300"
-      From: "opacity-0"
-      To: "opacity-100"
-    Leaving: "ease-in duration-200"
-      From: "opacity-100"
-      To: "opacity-0"
-  -->
         <div class="fixed inset-0 bg-gray-500/25 transition-opacity" aria-hidden="true"></div>
 
         <div class="fixed inset-0 z-10 w-screen overflow-y-auto p-4 sm:p-6 md:p-20">
-            <!--
-      Command palette, show/hide based on modal state.
-
-      Entering: "ease-out duration-300"
-        From: "opacity-0 scale-95"
-        To: "opacity-100 scale-100"
-      Leaving: "ease-in duration-200"
-        From: "opacity-100 scale-100"
-        To: "opacity-0 scale-95"
-    -->
             <div
                 class="mx-auto max-w-3xl transform divide-y divide-gray-100 overflow-hidden rounded-xl bg-white ring-1 shadow-2xl ring-black/5 transition-all">
                 <div class="grid grid-cols-1">
-                    <input v-model="profile" autofocus type="text"
+                    <input v-model="profile" autofocus type="text" spellcheck="false"
                         class="col-start-1 row-start-1 h-12 w-full pr-4 pl-11 text-base text-gray-900 outline-hidden placeholder:text-gray-400 sm:text-sm"
                         placeholder="@me@mastodon.social" role="combobox" aria-expanded="false"
                         aria-controls="options" />
@@ -36,12 +16,11 @@
 
                 <div v-if="state === State.Ready" class="flex transform-gpu content-center divide-x divide-gray-100">
                     <!-- Active item side-panel, show/hide based on active state -->
-                    <div
-                        class="mx-auto h-96 w-1/2 flex-none flex-col divide-y divide-gray-100 overflow-y-auto sm:flex">
+                    <div class="mx-auto h-96 w-1/2 flex-none flex-col divide-y divide-gray-100 overflow-y-auto sm:flex">
                         <div class="flex-none p-6 text-center">
                             <img :src="avatar" alt="" class="mx-auto size-32 rounded-full" />
-                            <h2 class="mt-3 font-semibold text-gray-900">{{name}}</h2>
-                            <p class="text-sm/6 text-gray-500 line-clamp-3">{{summary}}</p>
+                            <h2 class="mt-3 font-semibold text-gray-900">{{ name }}</h2>
+                            <p class="text-sm/6 text-gray-500 line-clamp-3">{{ summary }}</p>
                         </div>
                         <div class="flex flex-auto flex-col justify-between p-6">
                             <button @click="api.login(name, null)" type="button"
@@ -51,11 +30,6 @@
                     </div>
                 </div>
                 <div v-if="state === State.NotFound" class="px-6 py-14 text-center text-sm sm:px-14">
-                    Not Found...
-                </div>
-
-                <!-- Empty state, show/hide based on command palette state -->
-                <div v-if="state === State.Empty" class="px-6 py-14 text-center text-sm sm:px-14">
                     <svg class="mx-auto size-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" aria-hidden="true" data-slot="icon">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -63,8 +37,11 @@
                     </svg>
                     <p class="mt-4 font-semibold text-gray-900">No social profile found</p>
                     <p class="mt-2 text-gray-500">Please enter a valid Social URL or Account</p>
+                </div>
 
-                    <div class="mt-4 mb-2"><b>Examples</b></div>
+                <!-- Empty state, show/hide based on command palette state -->
+                <div v-if="state === State.Empty" class="px-6 py-8 text-center text-sm sm:px-14">
+                    <div class="mb-2"><b>Examples</b></div>
                     <fieldset aria-label="Server size">
                         <div class="space-y-4">
                             <!-- Active: "border-indigo-600 ring-2 ring-indigo-600", Not Active: "border-gray-300" -->
@@ -113,6 +90,12 @@
                         </div>
                     </div>
                 </div>
+                <div class="text-center py-2">
+                <button @click="router.push({ name: 'Login' })" class="inline-flex justify-center rounded-md bg-white px-3 py-2 text-sm text-gray-900 ring-1 shadow-xs ring-gray-300 ring-inset hover:bg-gray-50 sm:col-start-1 sm:mt-0">
+                    <ArrowUturnLeftIcon class="pointer-events-none mr-2 size-5 self-center text-gray-400"
+                        aria-hidden="true" />
+                    Back to Login</button>
+                </div>
             </div>
         </div>
     </div>
@@ -120,9 +103,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { LinkIcon } from '@heroicons/vue/24/outline'
+import { LinkIcon, ArrowUturnLeftIcon } from '@heroicons/vue/24/outline'
 import { watchDebounced } from '@vueuse/core'
 import api from '../api'
+import router from '../router'
 
 enum State {
     NotFound = -1,
@@ -141,13 +125,13 @@ watchDebounced(profile, async () => {
         state.value = State.Empty
         return
     }
+
     state.value = State.Loading
     let json = await api.social(profile.value)
-    console.log(json)
+
     if (json.status === 404) {
         state.value = State.NotFound
-    }
-    if (json.status === 200) {
+    } else if (json.status === 200) {
         avatar.value = "/avatars/" + json.id + ".webp?" + new Date().getTime()
         name.value = json.name
         summary.value = json.summary.replace(/<\/?[^>]+(>|$)/g, "");
