@@ -17,60 +17,50 @@ struct social {
 	char *summary;
 };
 
-
 static void avatarsavedh(int err, void *arg)
 {
 	struct social *social = arg;
 
-	if (err) {
-		char status[] = "{\"status\": 404 }";
-		http_sreply(social->oreq, 200, "OK", "application/json",
-			    status, sizeof(status) - 1, social->sess);
-	}
-	else {
-		char *status = NULL;
-		re_sdprintf(&status,
-			    "{\"status\": 200, \"id\": \"%s\", \"name\": "
-			    "\"%s\", \"summary\": \"%H\" }",
-			    social->sess->user->id, social->name,
-			    utf8_encode, social->summary);
-		http_sreply(social->oreq, 200, "OK", "application/json",
-			    status, str_len(status), social->sess);
-		mem_deref(status);
-	}
+	if (err)
+		goto out;
 
+	char *status = NULL;
+	re_sdprintf(&status,
+		    "{\"status\": 200, \"id\": \"%s\", \"name\": "
+		    "\"%s\", \"summary\": \"%H\" }",
+		    social->sess->user->id, social->name, utf8_encode,
+		    social->summary);
+	http_sreply(social->oreq, 200, "OK", "application/json", status,
+		    str_len(status), social->sess);
+	mem_deref(status);
+	social->oreq = mem_deref(social->oreq);
+
+out:
 	mem_deref(social);
 }
 
 
 static void avatarh(int err, const struct http_msg *msg, void *arg)
 {
-	struct sl_httpconn *slconn = arg;
-	struct social *social	   = slconn->arg;
+	struct social *social = arg;
 
 	if (err)
 		goto out;
 
-	warning("avatar size: %zu\n", mbuf_get_left(msg->mb));
 	err = avatar_save(social->sess, social->oreq, msg, avatarsavedh,
 			  social);
 
 out:
-	if (err) {
-		char status[] = "{\"status\": 404 }";
-		http_sreply(social->oreq, 200, "OK", "application/json",
-			    status, sizeof(status) - 1, social->sess);
+	if (err)
 		mem_deref(social);
-	}
 }
 
 
 static void userh(int err, const struct http_msg *msg, void *arg)
 {
-	struct sl_httpconn *slconn = arg;
-	struct social *social	   = slconn->arg;
-	struct odict *o		   = NULL;
-	char *json		   = NULL;
+	struct social *social = arg;
+	struct odict *o	      = NULL;
+	char *json	      = NULL;
 
 	if (err) {
 		warning("userh: http error %m\n", err);
@@ -89,17 +79,17 @@ static void userh(int err, const struct http_msg *msg, void *arg)
 
 	struct odict *icon = odict_get_object(o, "icon");
 	if (!icon) {
+		warning("userh: icon not found\n");
 		err = ENODATA;
 		goto out;
 	}
 
 	const char *url = odict_string(icon, "url");
 	if (!url) {
+		warning("userh: url not found\n");
 		err = ENODATA;
 		goto out;
 	}
-
-	warning("url: %s\n", url);
 
 	social->slconn = mem_deref(social->slconn);
 
@@ -113,22 +103,17 @@ out:
 	mem_deref(o);
 	mem_deref(json);
 
-	if (err) {
-		char status[] = "{\"status\": 404 }";
-		http_sreply(social->oreq, 200, "OK", "application/json",
-			    status, sizeof(status) - 1, social->sess);
+	if (err)
 		mem_deref(social);
-	}
 }
 
 
 static void webfingerh(int err, const struct http_msg *msg, void *arg)
 {
-	struct sl_httpconn *slconn = arg;
-	struct social *social	   = slconn->arg;
-	struct odict *o		   = NULL;
-	char *json		   = NULL;
-	const char *href	   = NULL;
+	struct social *social = arg;
+	struct odict *o	      = NULL;
+	char *json	      = NULL;
+	const char *href      = NULL;
 
 	if (err) {
 		warning("webfingerh: http error %m\n", err);
@@ -155,8 +140,7 @@ static void webfingerh(int err, const struct http_msg *msg, void *arg)
 		const char *rel	 = odict_string(oo, "rel");
 		if (str_casecmp(rel, "self") == 0) {
 			href = odict_string(oo, "href");
-			warning("self user: %s\n", href);
-			err = 0;
+			err  = 0;
 			break;
 		}
 	}
@@ -182,12 +166,8 @@ out:
 	mem_deref(o);
 	mem_deref(json);
 
-	if (err) {
-		char status[] = "{\"status\": 404 }";
-		http_sreply(social->oreq, 200, "OK", "application/json",
-			    status, sizeof(status) - 1, social->sess);
+	if (err)
 		mem_deref(social);
-	}
 }
 
 
@@ -195,7 +175,12 @@ static void social_destruct(void *arg)
 {
 	struct social *social = arg;
 
-	mem_deref(social->oreq);
+	if (social->oreq) {
+		char status[] = "{\"status\": 404 }";
+		http_sreply(social->oreq, 200, "OK", "application/json",
+			    status, sizeof(status) - 1, social->sess);
+		mem_deref(social->oreq);
+	}
 	mem_deref(social->slconn);
 	mem_deref(social->sess);
 	mem_deref(social->name);

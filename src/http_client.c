@@ -2,6 +2,9 @@
 
 static struct http_cli *client = NULL;
 
+struct http_conf sl_http_conf = {.conn_timeout = 10 * 1000,
+				 .recv_timeout = 60 * 1000,
+				 .idle_timeout = 900 * 1000};
 
 static void destroy(void *arg)
 {
@@ -10,21 +13,18 @@ static void destroy(void *arg)
 }
 
 
-int sl_httpc_init(void)
+static void resph(int err, const struct http_msg *msg, void *arg)
 {
-	int err;
+	struct sl_httpconn *p = arg;
 
-	err = http_client_alloc(&client, net_dnsc(baresip_network()));
-	if (err)
-		return err;
+	if (p->slresph)
+		p->slresph(err, msg, p->arg);
 
-	err = http_client_add_ca(client, "/etc/ssl/certs/ca-certificates.crt");
-
-	return err;
+	mem_deref(p);
 }
 
 
-int sl_httpc_alloc(struct sl_httpconn **slconn, http_resp_h *resph,
+int sl_httpc_alloc(struct sl_httpconn **slconn, http_resp_h *slresph,
 		   http_data_h *datah, void *arg)
 {
 	int err;
@@ -37,7 +37,8 @@ int sl_httpc_alloc(struct sl_httpconn **slconn, http_resp_h *resph,
 	if (!p)
 		return ENOMEM;
 
-	p->arg = arg;
+	p->arg	   = arg;
+	p->slresph = slresph;
 
 	err = http_reqconn_alloc(&p->conn, client, resph, datah, p);
 	if (err)
@@ -88,8 +89,27 @@ int sl_httpc_req(struct sl_httpconn *slconn, enum sl_httpc_met sl_met,
 			return err;
 	}
 
+	mem_ref(slconn);
 	pl_set_str(&uri, url);
 	return http_reqconn_send(slconn->conn, &uri);
+}
+
+
+int sl_httpc_init(void)
+{
+	int err;
+
+	err = http_client_alloc(&client, net_dnsc(baresip_network()));
+	if (err)
+		return err;
+
+	err = http_client_add_ca(client, "/etc/ssl/certs/ca-certificates.crt");
+	if (err)
+		return err;
+
+	err = http_client_set_config(client, &sl_http_conf);
+
+	return err;
 }
 
 

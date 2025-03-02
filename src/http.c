@@ -215,12 +215,8 @@ static void http_req_handler(struct http_conn *conn,
 	ROUTE("/api/v1/social", "POST")
 	{
 		err = social_request(conn, msg, sess);
-		if (err) {
-			char status[] = "{\"status\": 404 }";
-			info("http/api: social err %m\n", err);
-			http_sreply(conn, 200, "OK", "application/json",
-				    status, sizeof(status) - 1, sess);
-		}
+		if (err == ENOMEM)
+			goto err;
 		return;
 	}
 
