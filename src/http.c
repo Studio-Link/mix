@@ -177,9 +177,10 @@ static void http_req_handler(struct http_conn *conn,
 			err = slmix_session_auth(mix, sess, msg);
 			if (err == EAUTH)
 				goto auth;
-
-			if (err)
+			else if (err)
 				goto err;
+
+			slmix_session_save(sess);
 		}
 
 		if (sess->auth) {
