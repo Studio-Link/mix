@@ -240,7 +240,8 @@ int slmix_session_alloc(struct session **sessp, struct mix *mix,
 	}
 
 	if (sess_id && user_id) {
-		info("session: create from database\n");
+		info("session: create from database host: %d speaker: %d\n",
+		     host, speaker);
 		pl_strcpy(sess_id, sess->id, sizeof(sess->id));
 		pl_strcpy(user_id, user->id, sizeof(user->id));
 		sess->auth = true;
@@ -277,31 +278,32 @@ int slmix_session_auth(struct mix *mix, struct session *sess,
 	re_regex((char *)mbuf_buf(msg->mb), mbuf_get_left(msg->mb),
 		 "[a-zA-Z0-9]+", &token);
 
-	if (token.l > 0) {
-		if (str_isset(mix->token_host) &&
-		    0 == pl_strcmp(&token, mix->token_host)) {
+	if (!token.l)
+		return 0;
 
-			info("sess: host token\n");
-			sess->user->host    = true;
-			sess->user->speaker = true;
-		}
-		else if (str_isset(mix->token_guests) &&
-			 0 == pl_strcmp(&token, mix->token_guests)) {
+	if (str_isset(mix->token_host) &&
+	    0 == pl_strcmp(&token, mix->token_host)) {
 
-			info("sess: guest token\n");
-			sess->user->host    = false;
-			sess->user->speaker = true;
-		}
-		else if (str_isset(mix->token_listeners) &&
-			 0 == pl_strcmp(&token, mix->token_listeners)) {
+		info("sess: host token\n");
+		sess->user->host    = true;
+		sess->user->speaker = true;
+	}
+	else if (str_isset(mix->token_guests) &&
+		 0 == pl_strcmp(&token, mix->token_guests)) {
 
-			info("sess: listener token\n");
-			sess->user->host    = false;
-			sess->user->speaker = false;
-		}
-		else {
-			return EAUTH;
-		}
+		info("sess: guest token\n");
+		sess->user->host    = false;
+		sess->user->speaker = true;
+	}
+	else if (str_isset(mix->token_listeners) &&
+		 0 == pl_strcmp(&token, mix->token_listeners)) {
+
+		info("sess: listener token\n");
+		sess->user->host    = false;
+		sess->user->speaker = false;
+	}
+	else {
+		return EAUTH;
 	}
 
 	return 0;
