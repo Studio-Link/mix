@@ -352,44 +352,49 @@ struct session *slmix_session_lookup(const struct list *sessl,
 	struct pl pl_host    = PL_INIT;
 	struct pl pl_speaker = PL_INIT;
 	bool host, speaker;
-	struct session *sess;
+	struct session *sess = NULL;
 	int err;
 
 	for (struct le *le = sessl->head; le; le = le->next) {
-		sess = le->data;
+		struct session *sessp = le->data;
 
-		if (0 == pl_strcasecmp(sessid, sess->id))
-			return sess;
+		if (0 == pl_strcasecmp(sessid, sessp->id)) {
+			sess = sessp;
+			break;
+		}
 	}
 
-	/* Session DB lookup fallback */
+	/* Session DB lookup */
 	mbuf_init(&mb);
 	err = slmix_db_get(slmix_db_sess(), sessid, &mb);
 	if (err)
-		goto err;
+		goto out;
 
 	err = re_regex((const char *)mb.buf, mb.end - 1,
 		       "[^;]+;[^;]+;[^;]+;[^;]+;[^;]+", NULL, &pl_user_id,
 		       &pl_name, &pl_host, &pl_speaker);
 	if (err)
-		goto err;
+		goto out;
 
 	pl_bool(&host, &pl_host);
 	pl_bool(&speaker, &pl_speaker);
 
-	err = slmix_session_alloc(&sess, slmix(), sessid, &pl_user_id,
-				  &pl_name, host, speaker);
-	if (err)
-		goto err;
+	if (sess) {
+		sess->user->host = host;
+	}
+	else {
+		err = slmix_session_alloc(&sess, slmix(), sessid, &pl_user_id,
+					  &pl_name, host, speaker);
+		if (err)
+			goto out;
+	}
 
+out:
 	mbuf_reset(&mb);
+	if (!sess)
+		warning("mix: session not found (%r)\n", sessid);
+
 	return sess;
-
-err:
-	mbuf_reset(&mb);
-	warning("mix: session not found (%r)\n", sessid);
-
-	return NULL;
 }
 
 
