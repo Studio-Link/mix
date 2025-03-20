@@ -180,6 +180,11 @@ static void http_req_handler(struct http_conn *conn,
 			else if (err)
 				goto err;
 
+			/* generate new session - ensures rooms load new
+			 * session */
+			/* @TODO: only if needed */
+			rand_str(sess->id, sizeof(sess->id));
+
 			slmix_session_save(sess);
 		}
 
