@@ -219,7 +219,7 @@ function hand_clicked() {
 }
 
 function mic_clicked(mute: boolean) {
-  if (!Users.speaker_status.value) {
+  if (Webrtc.state.value < WebrtcState.ReadySpeaking || !Users.speaker_status.value) {
     Users.settings_active.value = true
     if (!Users.room.value?.show) api.speaker(api.user_id())
   } else Webrtc.audio_mute(mute)
