@@ -28,7 +28,7 @@
                 <div
                   class="text-gray-100 group-hover:rounded-2xl group-hover:bg-gray-100 group-hover:text-white bg-sl-02dpa rounded-3xl flex items-center justify-center w-12 h-12 transition-all duration-200 overflow-hidden"
                 >
-                  <img alt="Studio" class="rounded-lg" src="https://www.podstock.de/assets/default_logo.jpg" />
+                  <img alt="Studio" class="rounded-lg" src="/podstock.png" />
                   <span class="sr-only">{{ room.name }}</span>
 
                   <span
