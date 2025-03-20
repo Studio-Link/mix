@@ -51,7 +51,7 @@
       <div
         v-show="!Webrtc.video_muted.value && selfview"
         v-for="(item, index) in vspeakers"
-        class="absolute z-10 border-5 border-red-500 group"
+        class="absolute z-10 group"
         :key="item.pidx"
         :style="{ width: calc_width(), height: calc_height(), left: calc_left(index), top: calc_top(index) }"
       >
