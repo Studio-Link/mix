@@ -244,11 +244,12 @@ async function pc_setup() {
                 console.log("Error attaching audio stream to element", e)
             }
 
-            try {
-                audio.play()
-            } catch (e) {
+            const audio_return = audio.play()
+
+            audio_return.catch(e => {
+                Error.errorAudio(true)
                 console.log("Error audio play", e)
-            }
+            })
         }
 
         if (track.kind == 'video') {
@@ -433,7 +434,12 @@ export const Webrtc = {
         pc_setup()
         this.state.value = WebrtcState.ICEGatheringRelay
         const audio: HTMLAudioElement | null = document.querySelector('audio#live')
-        audio?.play()
+        const audio_return = audio?.play()
+
+        audio_return?.catch(e => {
+            Error.errorAudio(true)
+            console.log("Error audio play", e)
+        })
     },
 
     async update_avdevices() {

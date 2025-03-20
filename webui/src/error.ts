@@ -4,6 +4,7 @@ import router from './router'
 export const Error = {
     text: ref(''),
     video: ref(''),
+    audio: ref(false),
 
     fatal(msg: string) {
         this.text.value = msg
@@ -16,6 +17,10 @@ export const Error = {
 
     errorVideo(msg: string) {
         this.video.value = msg
+    },
+
+    errorAudio(enable: boolean) {
+        this.audio.value = enable
     },
 
     reset() {
