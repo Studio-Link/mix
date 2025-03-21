@@ -47,7 +47,7 @@
           <!-- Button group centered -->
           <div
             :class="[Webrtc.state.value >= WebrtcState.Listening ? 'bg-gray-600 fadeout' : '']"
-            class="ml-16 flex pl-2 space-x-1 sm:space-x-2 rounded-md"
+            class="ml-6 sm:ml-16 flex pl-2 space-x-0 sm:space-x-2 rounded-md"
           >
             <!-- Hand button -->
             <div v-if="Webrtc.state.value >= WebrtcState.Listening">
@@ -172,7 +172,7 @@
           </div>
           <!-- Version -->
           <div class="fadeout flex justify-center text-sm text-gray-500 mt-10">
-            <span class="font-bold">{{ version }}</span>
+            <span class="font-bold invisible sm:visible">{{ version }}</span>
           </div>
         </div>
       </div>
