@@ -244,6 +244,8 @@ Audio RTT: {{ item.stats.artt }} ms
         <video
           ref="video"
           :class="[isFullscreen ? 'h-full' : '']"
+          height=1080
+          width=1920
           id="live"
           playsinline
           autoplay
