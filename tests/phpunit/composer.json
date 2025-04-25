@@ -1,0 +1,12 @@
+{
+    "require": {
+        "phpunit/phpunit": "^11.5",
+        "guzzlehttp/guzzle": "^7.9",
+        "phrity/websocket": "^3.4"
+    },
+   "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    }
+}
