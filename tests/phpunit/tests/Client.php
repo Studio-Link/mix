@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Tests;
 
-define("SERVER", "http://127.0.0.1:9999");
-
 use \GuzzleHttp\Client as HttpClient;
 
 
@@ -37,5 +35,10 @@ class Client
         $this->post('/api/v1/client/connect');
         $session_id = $this->cookies->getCookieByName("mix_session")->getValue();
         $this->ws->addHeader("Cookie", "mix_session=" . $session_id);
+    }
+
+
+    function login($name) {
+        $this->post('/api/v1/client/name', $name);
     }
 }

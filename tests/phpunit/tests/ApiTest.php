@@ -2,46 +2,13 @@
 
 declare(strict_types=1);
 
-use PHPUnit\Framework\TestCase;
 use Tests\Client;
+use Tests\TestCase;
 use PHPUnit\Framework\Attributes\TestDox;
 
 
 class ApiTest extends TestCase
 {
-    public static function setUpBeforeClass(): void
-    {
-        $client = new Client();
-
-        shell_exec("cd ../.. &&" .
-            "{ build/slmix -c config_example > /tmp/slmix.log 2>&1 & }");
-        $start_count = 0;
-
-        while ($start_count++ < 1000) {
-            usleep(10000);
-            try {
-                $client->get("/api/v1/sessions/connected");
-                break;
-            } catch (Exception $_) {
-                continue;
-            }
-        }
-    }
-
-    public static function tearDownAfterClass(): void
-    {
-        system("pkill slmix");
-    }
-
-    protected function setUp(): void {}
-
-    protected function tearDown(): void
-    {
-
-        if (!$this->status()->isSuccess()) {
-            system("cat /tmp/slmix.log");
-        }
-    }
 
     #[TestDox('GET /api/v1/sessions/connected')]
     public function test_sessions_connected()
@@ -62,7 +29,6 @@ class ApiTest extends TestCase
         $this->assertIsString($session_id);
     }
 
-    /*
     #[TestDox('POST /api/v1/social')]
     public function test_social()
     {
@@ -79,13 +45,12 @@ class ApiTest extends TestCase
         $this->assertEquals("Studio Link", $json->name);
 
         // Negative Test
-        $r = $client->post('/api/v1/social', "test@example.net");
+        $r = $client->post('/api/v1/social', "test@localhost");
         $this->assertEquals(200, $r->getStatusCode());
 
         $json = json_decode((string)$r->getBody());
         $this->assertEquals(404, $json->status);
     }
-*/
 
     #[TestDox('POST /api/v1/client/avatar')]
     public function test_client_avatar()
