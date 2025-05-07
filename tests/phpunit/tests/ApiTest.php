@@ -125,6 +125,17 @@ xVbaqOT/A9h1gw4GklKaAAAAAElFTkSuQmCC\"";
         }
     }
 
-    // ROUTE("/api/v1/chat", "GET")
-    // ROUTE("/api/v1/chat", "POST")
+    #[TestDox('GET/POST /api/v1/chat')]
+    public function test_chat()
+    {
+        $client = new Client();
+        $client->login();
+        
+        $client->post("/api/v1/chat", '"test"');
+
+        $r = $client->get("/api/v1/chat"); 
+        $json = json_decode((string)$r->getBody());
+
+        $this->assertEquals("test", $json->chats[0]->msg);
+    }
 }

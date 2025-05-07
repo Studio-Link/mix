@@ -74,6 +74,6 @@ class Client
             }
         }
 
-        return NULL;
+        throw new \Exception('ws_next event timedout');
     }
 }
