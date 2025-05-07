@@ -33,7 +33,7 @@ class ApiTest extends TestCase
     public function test_social()
     {
         $client = new Client();
-        $client->getSession();
+        $client->login();
 
         // Positive Test
         $r = $client->post('/api/v1/social', "social@social.studio.link");
@@ -56,7 +56,7 @@ class ApiTest extends TestCase
     public function test_client_avatar()
     {
         $client = new Client();
-        $client->getSession();
+        $client->login();
 
         $image_webp =
             "\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAAXNSR0IB2cksfwAAAARnQU1BAACx
@@ -109,7 +109,7 @@ xVbaqOT/A9h1gw4GklKaAAAAAElFTkSuQmCC\"";
     public function test_client_name()
     {
         $client = new Client();
-        $client->getSession();
+        $client->login();
 
         $msg = $client->ws->receive();
         $json = json_decode($msg->getContent());
