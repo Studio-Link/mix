@@ -227,25 +227,6 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
-	ROUTE("/api/v1/client/reauth", "POST")
-	{
-		err = slmix_session_auth(mix, sess, msg);
-		if (err == EAUTH)
-			goto auth;
-
-		if (err)
-			goto err;
-
-		/* generate new session - ensures rooms load new session */
-		rand_str(sess->id, sizeof(sess->id));
-
-		slmix_session_user_updated(sess);
-		slmix_session_save(sess);
-
-		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
-		return;
-	}
-
 	ROUTE("/api/v1/client/name", "POST")
 	{
 		struct pl name = PL_INIT;
