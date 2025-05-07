@@ -68,7 +68,7 @@ jobs:
       run: CC=clang-18 make
 
     - name: test requirements
-      run: cd tests/bdd && python -m venv env && env/bin/pip install -r requirements.txt
+      run: cd tests/phpunit && composer install
 
     - name: make test
       run: make test
