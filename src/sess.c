@@ -334,12 +334,12 @@ struct session *slmix_session_lookup_hdr(const struct list *sessl,
 		return NULL;
 	}
 
-	struct pl token;
+	struct pl sessid;
 	if (re_regex(hdr->val.p, hdr->val.l, "mix_session=[a-z0-9A-Z]+",
-		     &token))
+		     &sessid))
 		return NULL;
 
-	return slmix_session_lookup(sessl, &token);
+	return slmix_session_lookup(sessl, &sessid);
 }
 
 
