@@ -195,6 +195,29 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	ROUTE("/api/v1/client/session", "POST")
+	{
+		if (sess) {
+			http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+			return;
+		}
+
+		struct pl sessid = PL_INIT;
+
+		err = re_regex((char *)mbuf_buf(msg->mb),
+			       mbuf_get_left(msg->mb), "[a-zA-Z0-9]+",
+			       &sessid);
+		if (err)
+			goto err;
+
+		sess = slmix_session_lookup(&mix->sessl, &sessid);
+		if (!sess)
+			goto notfound;
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
 	/*
 	 * Requests with session
 	 */
@@ -787,6 +810,7 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+notfound:
 	/*
 	 * Default 404
 	 */

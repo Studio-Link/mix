@@ -2,6 +2,7 @@
 <phpunit bootstrap="vendor/autoload.php"
     colors="true"                                                               
     stopOnFailure="true"
+    stopOnError="true"
     testdox="true"
     >
     <testsuites>

@@ -25,8 +25,32 @@ class ApiTest extends TestCase
         $r = $client->post('/api/v1/client/connect');
         $this->assertEquals(201, $r->getStatusCode());
 
-        $session_id = $client->cookies->getCookieByName("mix_session")->getValue();
+        $session_id = $client->cookies->getCookieByName("mix_session")
+            ->getValue();
         $this->assertIsString($session_id);
+    }
+
+    #[TestDox('POST /api/v1/client/session migration')]
+    public function test_client_session_migration()
+    {
+        $client = new Client();
+        $r = $client->post('/api/v1/client/connect');
+        $this->assertEquals(201, $r->getStatusCode());
+
+        $session_id = $client->cookies->getCookieByName("mix_session")
+            ->getValue();
+        $this->assertIsString($session_id);
+
+        $client2 = new Client();
+        $r = $client2->post('/api/v1/client/session', "notfound");
+        $this->assertEquals(404, $r->getStatusCode());
+
+        $r = $client2->post('/api/v1/client/session', $session_id);
+        $this->assertEquals(204, $r->getStatusCode());
+
+        $session_id2 = $client2->cookies->getCookieByName("mix_session")
+            ->getValue();
+        $this->assertEquals($session_id, $session_id2);
     }
 
     #[TestDox('POST /api/v1/social')]
@@ -101,7 +125,10 @@ QUxttu0OX7WDQ7GYMm9GRECArgGcKPc//UCMwTR6seAdEbQbjIoMQqMxWO7N5fbROtdyPtHVXHCF
 9rCPfrRYvxpdzhGhK2/ZhuWl609M1YeSbF3wsGcelsQYhEZRRDOzqAAoQphlmbw2XzwZKhGa+EiL
 xVbaqOT/A9h1gw4GklKaAAAAAElFTkSuQmCC\"";
 
-        $r = $client->post('/api/v1/client/avatar', str_replace(array("\n", "\r"), '', $image_webp));
+        $r = $client->post(
+            '/api/v1/client/avatar',
+            str_replace(array("\n", "\r"), '', $image_webp)
+        );
         $this->assertEquals(201, $r->getStatusCode());
     }
 
@@ -118,11 +145,11 @@ xVbaqOT/A9h1gw4GklKaAAAAAElFTkSuQmCC\"";
         $r = $client->post('/api/v1/client/name', "sreimers");
         $this->assertEquals(204, $r->getStatusCode());
 
-        try {
-            $r = $client->post('/api/v1/client/name', "extraloooooooooooooooooooooooong");
-        } catch (Exception $error) {
-            $this->assertEquals(400, $error->getCode());
-        }
+        $r = $client->post(
+            '/api/v1/client/name',
+            "extraloooooooooooooooooooooooong"
+        );
+        $this->assertEquals(400, $r->getStatusCode());
     }
 
     #[TestDox('GET/POST /api/v1/chat')]
@@ -130,10 +157,10 @@ xVbaqOT/A9h1gw4GklKaAAAAAElFTkSuQmCC\"";
     {
         $client = new Client();
         $client->login();
-        
+
         $client->post("/api/v1/chat", '"test"');
 
-        $r = $client->get("/api/v1/chat"); 
+        $r = $client->get("/api/v1/chat");
         $json = json_decode((string)$r->getBody());
 
         $this->assertEquals("test", $json->chats[0]->msg);

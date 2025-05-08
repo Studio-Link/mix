@@ -22,30 +22,42 @@ class Client
     function __construct()
     {
         $this->cookies = new \GuzzleHttp\Cookie\CookieJar;
-        $this->client = new HttpClient(['base_uri' => 'http://127.0.0.1:9999']);
+        $this->client = new HttpClient(['base_uri' => 'http://127.0.0.1:9999', 'http_errors' => false]);
         $this->ws = new \WebSocket\Client("ws://127.0.0.1:9999/ws/v1/users");
     }
 
     function get($url)
     {
-        return $this->client->request('GET', $url, ['cookies' => $this->cookies]);
+        return $this->client->request(
+            'GET',
+            $url,
+            ['cookies' => $this->cookies]
+        );
     }
 
     function delete($url)
     {
-        return $this->client->request('DELETE', $url, ['cookies' => $this->cookies]);
+        return $this->client->request(
+            'DELETE',
+            $url,
+            ['cookies' => $this->cookies]
+        );
     }
 
     function post($url, $body = NULL)
     {
-        return $this->client->request('POST', $url, ['cookies' => $this->cookies, 'body' => $body]);
+        return $this->client->request(
+            'POST',
+            $url,
+            ['cookies' => $this->cookies, 'body' => $body]
+        );
     }
 
     function login($name = NULL, ClientAuth $auth = ClientAuth::Audience)
     {
         $this->post('/api/v1/client/connect', $auth->value);
-        $session_id = $this->cookies->getCookieByName("mix_session")->getValue();
-        $this->ws->addHeader("Cookie", "mix_session=" . $session_id);
+        $sess_id = $this->cookies->getCookieByName("mix_session")->getValue();
+        $this->ws->addHeader("Cookie", "mix_session=" . $sess_id);
 
         if ($name)
             $this->post('/api/v1/client/name', $name);

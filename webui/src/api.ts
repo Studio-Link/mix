@@ -55,6 +55,12 @@ export default {
         user_id = await resp?.text()
     },
 
+    /* deprecated session fallback */
+    async session(id: string) {
+        const resp = await api_fetch('POST', '/client/session', id)
+        if (!resp?.ok) return
+    },
+
     async login(name: string, image: string | null) {
         Error.reset()
         let resp = await api_fetch('POST', '/client/name', name)
