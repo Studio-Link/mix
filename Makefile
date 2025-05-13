@@ -60,7 +60,7 @@ run_san:
 	make run
 
 .PHONY: asan
-asan:
+asan: external
 	make clean
 	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Debug \
 		-DCMAKE_C_FLAGS="-fsanitize=undefined,address \
