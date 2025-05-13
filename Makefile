@@ -5,7 +5,7 @@
 
 .PHONY: build
 build: external
-	@[ -f "build/build.ninja" ] || cmake -B build -G Ninja -DUSE_TRACE=ON \
+	@[ -f "build/build.ninja" ] || cmake -B build -G Ninja -DUSE_TRACE=ON -DUSE_TLS1_3_PHA=OFF \
 		-DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-gdwarf-4 -g3 -DJBUF_STAT -DRE_RTP_PCAP"
 	@cmake --build build --parallel
 
@@ -22,21 +22,21 @@ webui:
 release: external
 	make clean
 	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release \
-		-DCMAKE_C_FLAGS="-g -DJBUF_STAT"
+		-DCMAKE_C_FLAGS="-g -DJBUF_STAT" -DUSE_TLS1_3_PHA=OFF
 	make build
 
 .PHONY: systemd
 systemd: external
 	make clean
 	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release \
-		-DCMAKE_C_FLAGS="-g -DJBUF_STAT" -DUSE_SD_SOCK=ON
+		-DCMAKE_C_FLAGS="-g -DJBUF_STAT" -DUSE_SD_SOCK=ON -DUSE_TLS1_3_PHA=OFF
 	make build
 
 .PHONY: unix
 unix: external
 	make clean
 	cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release \
-		-DCMAKE_C_FLAGS="-g -DJBUF_STAT" -DUSE_UNIX_SOCK=ON
+		-DCMAKE_C_FLAGS="-g -DJBUF_STAT" -DUSE_UNIX_SOCK=ON -DUSE_TLS1_3_PHA=OFF
 	make build
 
 external:
