@@ -41,7 +41,7 @@ import { HeartIcon } from '@heroicons/vue/24/outline'
 
 const emojis = Users.emojis
 const open = ref(false)
-const reactions = [{ emoji: '❄️' }, { emoji: '❤️' }, { emoji: '🤣' }]
+const reactions = [{ emoji: '❤️' }, { emoji: '🤣' }]
 
 async function push(reaction_id: number) {
   api.emoji(reaction_id)
