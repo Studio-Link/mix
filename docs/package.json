@@ -1,13 +1,14 @@
 {
   "devDependencies": {
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.47",
-    "tailwindcss": "^3.4.13",
-    "vitepress": "^1.0.0-rc.35"
+    "tailwindcss": "^4.1.7",
+    "vitepress": "^1.6.3"
   },
   "scripts": {
     "dev": "vitepress dev .",
     "build": "vitepress build .",
     "preview": "vitepress preview ."
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.7"
   }
 }

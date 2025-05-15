@@ -22,3 +22,6 @@ features:
     link: /self-hosting/install-intro
 ---
 
+
+
+<div class="text-bold mt-8">test</div>
