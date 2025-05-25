@@ -8,6 +8,7 @@ extern const char *GIT_BRANCH;
 
 
 static struct mix mix = {.room		  = "main",
+			 .url		  = "/",
 			 .sessl		  = LIST_INIT,
 			 .pc_config	  = {.offerer = false},
 			 .token_host	  = "",
