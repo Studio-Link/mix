@@ -35,12 +35,12 @@ class Client
         );
     }
 
-    function delete($url)
+    function delete($url, $body = NULL)
     {
         return $this->client->request(
             'DELETE',
             $url,
-            ['cookies' => $this->cookies]
+            ['cookies' => $this->cookies, 'body' => $body]
         );
     }
 
