@@ -67,7 +67,7 @@
             <!-- Audio Mute -->
             <div
               v-if="
-                Webrtc.state.value >= WebrtcState.Listening && (Users.speaker_status.value || !Users.room.value?.show)
+                Webrtc.state.value >= WebrtcState.Listening && (Users.speaker_status.value)
               "
             >
               <button
@@ -154,6 +154,16 @@
                 <PhoneXMarkIcon class="h-10 w-10" />
               </button>
             </div>
+            <!-- Hangup -->
+            <div v-if="Webrtc.state.value >= WebrtcState.Listening && !Users.speaker_status.value">
+              <button
+                ref="call"
+                class="text-green-500 hover:bg-gray-700 group block px-2 py-2 text-base font-medium rounded-md"
+                @click="call_clicked()"
+              >
+                <PhoneIcon class="h-10 w-10" />
+              </button>
+            </div>
             <!-- Play button -->
             <div class="text-gray-600">
               <button
@@ -189,6 +199,7 @@ import api from '../api'
 import SettingsModal from '../components/SettingsModal.vue'
 import { ref, onMounted } from 'vue'
 import {
+  PhoneIcon,
   HandRaisedIcon,
   AdjustmentsVerticalIcon,
   VideoCameraIcon,
@@ -242,6 +253,10 @@ async function settings_clicked() {
 
 function logout_clicked() {
   api.logout()
+}
+
+function call_clicked() {
+  api.call()
 }
 
 function hangup_clicked() {

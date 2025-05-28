@@ -740,6 +740,56 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	ROUTE("/api/v1/client/call", "POST")
+	{
+		if (sess->user)
+			sess->user->calling = true;
+
+		err = slmix_session_user_updated(sess);
+		if (err)
+			goto err;
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, NULL);
+		return;
+	}
+
+	ROUTE("/api/v1/client/call", "DELETE")
+	{
+		char user[512]	  = {0};
+		struct pl user_id = PL_INIT;
+
+		err = re_regex((char *)mbuf_buf(msg->mb),
+			       mbuf_get_left(msg->mb), "[a-zA-Z0-9@:]+",
+			       &user_id);
+		if (err)
+			goto err;
+
+		pl_strcpy(&user_id, user, sizeof(user));
+
+		struct session *sess_call =
+			slmix_session_lookup_user_id(&mix->sessl, &user_id);
+		if (!sess_call) {
+			warning("http/client/call/delete: user not found %r\n",
+				&user_id);
+			goto notfound;
+		}
+
+		if (sess_call != sess) {
+			/* check host permission */
+			if (!sess->user || !sess->user->host)
+				goto auth;
+		}
+
+		sess_call->user->calling = false;
+
+		err = slmix_session_user_updated(sess_call);
+		if (err)
+			goto err;
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, NULL);
+		return;
+	}
+
 	ROUTE("/api/v1/client/hangup", "POST")
 	{
 		pc_close(sess);

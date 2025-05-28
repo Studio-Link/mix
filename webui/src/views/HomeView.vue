@@ -39,6 +39,7 @@
         <Chat />
       </div>
       <BottomActions />
+      <Calls />
     </div>
   </div>
 </template>
@@ -50,6 +51,7 @@ import Listeners from '../components/Listeners.vue'
 import BottomActions from '../components/BottomActions.vue'
 import Chat from '../components/Chat.vue'
 import RecButton from '../components/RecButton.vue'
+import Calls from '../components/Calls.vue'
 import api from '../api'
 import { onMounted } from 'vue'
 //import StudioNav from '../components/StudioNav.vue'

@@ -64,6 +64,7 @@ struct user {
 	bool audio;
 	bool hand;
 	bool solo;
+	bool calling;
 };
 
 struct chat {
