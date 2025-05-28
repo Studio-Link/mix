@@ -552,8 +552,8 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/webrtc/focus", "PUT")
 	{
-		char user[512]	  = {0};
-		struct pl user_id = PL_INIT;
+		char user[USERID_SZ] = {0};
+		struct pl user_id    = PL_INIT;
 
 		/* check permission */
 		if (!sess->user->host)
@@ -575,8 +575,8 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/webrtc/solo/enable", "PUT")
 	{
-		char user[512]	  = {0};
-		struct pl user_id = PL_INIT;
+		char user[USERID_SZ] = {0};
+		struct pl user_id    = PL_INIT;
 
 		/* check permission */
 		if (!sess->user->host)
@@ -615,7 +615,7 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/webrtc/disp/enable", "PUT")
 	{
-		char user[512] = {0};
+		char user[USERID_SZ] = {0};
 
 		/* check permission */
 		if (!sess->user->host)
@@ -631,7 +631,7 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/webrtc/disp/disable", "PUT")
 	{
-		char user[512] = {0};
+		char user[USERID_SZ] = {0};
 
 		/* check permission */
 		if (!sess->user->host)
@@ -647,8 +647,8 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/webrtc/amix/enable", "PUT")
 	{
-		char user[512]	  = {0};
-		struct pl user_id = PL_INIT;
+		char user[USERID_SZ] = {0};
+		struct pl user_id    = PL_INIT;
 
 		/* check permission */
 		if (!sess->user->host)
@@ -678,8 +678,8 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/webrtc/amix/disable", "PUT")
 	{
-		char user[512]	  = {0};
-		struct pl user_id = PL_INIT;
+		char user[USERID_SZ] = {0};
+		struct pl user_id    = PL_INIT;
 
 		/* check permission */
 		if (!sess->user->host)
@@ -755,8 +755,8 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/client/call", "DELETE")
 	{
-		char user[512]	  = {0};
-		struct pl user_id = PL_INIT;
+		char user[USERID_SZ] = {0};
+		struct pl user_id    = PL_INIT;
 
 		err = re_regex((char *)mbuf_buf(msg->mb),
 			       mbuf_get_left(msg->mb), "[a-zA-Z0-9@:]+",
