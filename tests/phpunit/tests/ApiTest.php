@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Tests\Client;
+use Tests\ClientAuth;
 use Tests\TestCase;
 use PHPUnit\Framework\Attributes\TestDox;
 
@@ -164,5 +165,41 @@ xVbaqOT/A9h1gw4GklKaAAAAAElFTkSuQmCC\"";
         $json = json_decode((string)$r->getBody());
 
         $this->assertEquals("test", $json->chats[0]->msg);
+    }
+
+    #[TestDox('POST/DELETE /api/v1/client/call')]
+    public function test_client_call()
+    {
+        $client = new Client();
+        $client->login("Alice");
+        
+        $host= new Client();
+        $host->login("Bob", ClientAuth::Host);
+
+        $client->ws_next(); /* connect websocket */
+        $host->ws_next(); /* connect websocket */
+
+        $r = $client->post("/api/v1/client/call");
+        $this->assertEquals(204, $r->getStatusCode());
+
+        $msg = $host->ws_next("user", "updated");
+        $this->assertEquals("Alice", $msg->name);
+        $this->assertEquals(true, $msg->calling);
+        $user_id = $msg->id;
+
+        $msg = $client->ws_next("user", "updated");
+        $this->assertEquals("Alice", $msg->name);
+        $this->assertEquals(true, $msg->calling);
+
+        $r = $host->delete("/api/v1/client/call", $user_id);
+        $this->assertEquals(204, $r->getStatusCode());
+
+        $msg = $host->ws_next("user", "updated");
+        $this->assertEquals(false, $msg->calling);
+        $this->assertEquals($user_id, $msg->id);
+
+        $msg = $client->ws_next("user", "updated");
+        $this->assertEquals(false, $msg->calling);
+        $this->assertEquals($user_id, $msg->id);
     }
 }
