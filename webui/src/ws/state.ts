@@ -27,6 +27,7 @@ interface Source {
 export interface User {
     id: string
     speaker_id: number
+    speaker: boolean
     pidx: number
     name: string
     hand: boolean
@@ -59,7 +60,7 @@ export enum RecordType {
     AudioOnly
 }
 
-interface Users {
+interface State {
     socket?: WebSocket
     ws_close(): void
     websocket(): void
@@ -77,10 +78,6 @@ interface Users {
     record_timer: Ref<string>
     record: Ref<boolean>
     record_type: Ref<RecordType>
-    hand_status: Ref<boolean>
-    speaker_status: Ref<boolean>
-    host_status: Ref<boolean>
-    user_name: Ref<string>
     emojis: Ref<Emoji[]>
     user: Ref<User>
 }
@@ -90,10 +87,11 @@ function pad(num: number, size: number) {
     return s.substring(s.length - size)
 }
 
-const default_user: User =
+const dummy_user: User =
 {
     id: "0",
     speaker_id: 0,
+    speaker: false,
     pidx: 0,
     name: "",
     host: false,
@@ -107,7 +105,7 @@ const default_user: User =
     stats: { artt: 0, vrtt: 0 }
 }
 
-export const Users: Users = {
+export const State: State = {
     room: ref(undefined),
     rooms: ref([]),
     calls: ref([]),
@@ -122,12 +120,8 @@ export const Users: Users = {
     record_timer: ref('0:00:00'),
     record: ref(false),
     record_type: ref(RecordType.AudioVideo),
-    hand_status: ref(false),
-    speaker_status: ref(false),
-    host_status: ref(false),
-    user_name: ref(''),
     emojis: ref([]),
-    user: ref(default_user),
+    user: ref(dummy_user),
 
     ws_close() {
         this.socket?.close()
@@ -157,10 +151,7 @@ export const Users: Users = {
                 this.listeners.value = []
                 for (const key in data.users) {
                     if (data.users[key].id === api.user_id()) {
-                        this.hand_status.value = data.users[key].hand
-                        this.speaker_status.value = data.users[key].speaker
-                        this.host_status.value = data.users[key].host
-                        this.user_name.value = data.users[key].name
+                        this.user.value = data.users[key]
                     }
 
                     if (data.users[key].name.startsWith('sip:'))
@@ -193,6 +184,7 @@ export const Users: Users = {
                 const user: User = {
                     id: data.id,
                     speaker_id: data.speaker_id,
+                    speaker: data.speaker,
                     pidx: data.pidx,
                     name: data.name,
                     host: data.host,
@@ -210,9 +202,6 @@ export const Users: Users = {
                     this.calls.value.push(user)
 
                 if (user.id === api.user_id()) {
-                    this.hand_status.value = user.hand
-                    this.speaker_status.value = data.speaker
-                    this.host_status.value = data.host
                     this.user.value = user
 
                     /* Only allow remote disable */

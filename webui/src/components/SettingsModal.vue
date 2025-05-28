@@ -184,13 +184,13 @@
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { RadioGroup, RadioGroupLabel, RadioGroupOption } from '@headlessui/vue'
 import { Cog6ToothIcon, MicrophoneIcon } from '@heroicons/vue/24/outline'
-import { Users } from '../ws/users'
+import { State } from '../ws/state'
 import { Webrtc, WebrtcState } from '../webrtc'
 import { ref, watch } from 'vue'
 import api from '../api'
 import { Error } from '../error'
 
-const open = Users.settings_active
+const open = State.settings_active
 const videoOptions = ['Disabled', 'Camera', 'Screen']
 const video_select = Webrtc.video_select
 const video_resolution = Webrtc.video_resolution

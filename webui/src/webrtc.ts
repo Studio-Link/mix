@@ -1,5 +1,5 @@
 import api from './api'
-import { Users } from './ws/users'
+import { State } from './ws/state'
 import { ref, watch } from 'vue'
 import adapter from 'webrtc-adapter'
 import { Error } from './error'
@@ -581,7 +581,7 @@ export const Webrtc = {
     },
 
     async audio_mute(mute: boolean) {
-        if (!Users.speaker_status.value) mute = true
+        if (!State.user.value.speaker) mute = true
 
         audiostream?.getAudioTracks().forEach((track) => {
             track.enabled = !mute
@@ -596,7 +596,7 @@ export const Webrtc = {
         if (this.video_select.value === 'Disabled')
             mute = true
 
-        if (!Users.speaker_status.value) mute = true
+        if (!State.user.value.speaker) mute = true
 
         if (this.video_select.value === 'Screen')
             stream = screenstream

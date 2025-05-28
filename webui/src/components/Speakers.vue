@@ -5,7 +5,7 @@
         <ul
           class="mx-auto grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-3 md:gap-x-4 lg:max-w-5xl lg:gap-x-8 lg:gap-y-12 xl:grid-cols-6"
         >
-          <li v-for="item in Users.speakers.value" :key="item.id">
+          <li v-for="item in State.speakers.value" :key="item.id">
             <div class="space-y-2">
               <div class="group">
                 <div>
@@ -104,7 +104,7 @@
                   </picture>
                 </div>
                 <button
-                  v-if="Users.host_status.value"
+                  v-if="State.user.value.host"
                   @click="api.listener(item.id)"
                   type="button"
                   class="hidden group-hover:inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -113,7 +113,7 @@
                   To Audience
                 </button>
                 <button
-                  v-if="!Users.host_status.value && item.id === api.user_id() && room?.show"
+                  v-if="!State.user.value.host && item.id === api.user_id() && room?.show"
                   @click="api.listener(item.id)"
                   type="button"
                   class="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -136,9 +136,9 @@
 </template>
 
 <script setup lang="ts">
-import { Users } from '../ws/users'
+import { State } from '../ws/state'
 import api from '../api'
 import { SpeakerWaveIcon } from '@heroicons/vue/24/outline'
 
-const room = Users.room
+const room = State.room
 </script>

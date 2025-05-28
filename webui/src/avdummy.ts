@@ -1,5 +1,5 @@
 import api from './api'
-import { Users } from './ws/users'
+import { State } from './ws/state'
 
 const width = 1280
 const height = 720
@@ -20,7 +20,7 @@ function draw() {
     ctx.font = "48px serif";
     ctx.textAlign = "center"
     ctx.fillStyle = "gray";
-    ctx.fillText(Users.user_name.value, width / 2, height / 2 + image.height / 2);
+    ctx.fillText(State.user.value.name, width / 2, height / 2 + image.height / 2);
     ctx.drawImage(image, width / 2 - (image.width / 2), (height / 2 - image.height / 2) - 48)
 }
 
