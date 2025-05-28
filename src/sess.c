@@ -534,6 +534,7 @@ int slmix_session_speaker(struct session *sess, bool enable)
 	stream_enable(media_get_stream(sess->mvideo), enable);
 	stream_enable_tx(media_get_stream(sess->mvideo), true);
 	sess->user->hand = false;
+	sess->user->calling = false;
 
 	/* only allow disable for privacy reasons */
 	if (!enable)

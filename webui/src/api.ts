@@ -98,6 +98,14 @@ export default {
         Users.websocket()
     },
 
+    async call() {
+        await api_fetch('POST', '/client/call', null)
+    },
+
+    async call_delete(user_id: string) {
+        await api_fetch('DELETE', '/client/call', user_id)
+    },
+
     async hangup() {
         Webrtc.hangup()
         await api_fetch('POST', '/client/hangup', null)

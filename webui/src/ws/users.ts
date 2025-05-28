@@ -24,7 +24,7 @@ interface Source {
     solo: boolean
 }
 
-interface User {
+export interface User {
     id: string
     speaker_id: number
     pidx: number
@@ -36,6 +36,7 @@ interface User {
     webrtc: boolean
     talk: boolean
     solo: boolean
+    calling: boolean
     stats: Stats
 }
 
@@ -62,6 +63,7 @@ interface Users {
     socket?: WebSocket
     ws_close(): void
     websocket(): void
+    calls: Ref<User[]>
     room: Ref<Room | undefined>
     rooms: Ref<Room[]>
     sources: Ref<Source[]>
@@ -80,6 +82,7 @@ interface Users {
     host_status: Ref<boolean>
     user_name: Ref<string>
     emojis: Ref<Emoji[]>
+    user: Ref<User>
 }
 
 function pad(num: number, size: number) {
@@ -87,9 +90,27 @@ function pad(num: number, size: number) {
     return s.substring(s.length - size)
 }
 
+const default_user: User =
+{
+    id: "0",
+    speaker_id: 0,
+    pidx: 0,
+    name: "",
+    host: false,
+    video: false,
+    audio: false,
+    hand: false,
+    webrtc: false,
+    solo: false,
+    talk: false,
+    calling: false,
+    stats: { artt: 0, vrtt: 0 }
+}
+
 export const Users: Users = {
     room: ref(undefined),
     rooms: ref([]),
+    calls: ref([]),
     sources: ref([]),
     speakers: ref([]),
     vspeakers: ref([]),
@@ -106,6 +127,7 @@ export const Users: Users = {
     host_status: ref(false),
     user_name: ref(''),
     emojis: ref([]),
+    user: ref(default_user),
 
     ws_close() {
         this.socket?.close()
@@ -113,12 +135,12 @@ export const Users: Users = {
     websocket() {
         this.socket = new WebSocket(config.ws_host() + config.base() + 'ws/v1/users')
 
-        this.socket.onerror = () => {
-            console.log('Websocket users error')
+        this.socket.onerror = (e) => {
+            console.log('Websocket users error', e)
         }
 
         this.socket.onclose = (e) => {
-            console.log('Websocket users closed', e.reason)
+            console.log('Websocket users closed', e)
             if (e.code === 1007) {
                 api.logout()
             }
@@ -163,6 +185,7 @@ export const Users: Users = {
                 this.speakers.value = this.speakers.value?.filter((u) => u.id !== data.id)
                 this.listeners.value = this.listeners.value?.filter((u) => u.id !== data.id)
                 this.vspeakers.value = this.vspeakers.value?.filter((u) => u.id !== data.id)
+                this.calls.value = this.calls.value?.filter((u) => u.id !== data.id)
 
                 if (data.event === 'deleted')
                     return
@@ -178,14 +201,19 @@ export const Users: Users = {
                     hand: data.hand,
                     webrtc: data.webrtc,
                     solo: data.solo,
+                    calling: data.calling,
                     talk: false,
                     stats: { artt: 0, vrtt: 0 }
                 }
+
+                if (user.calling)
+                    this.calls.value.push(user)
 
                 if (user.id === api.user_id()) {
                     this.hand_status.value = user.hand
                     this.speaker_status.value = data.speaker
                     this.host_status.value = data.host
+                    this.user.value = user
 
                     /* Only allow remote disable */
                     if (!data.speaker) {

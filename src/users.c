@@ -112,6 +112,7 @@ int user_event_json(char **json, enum user_event event, struct session *sess)
 	odict_entry_add(o, "hand", ODICT_BOOL, sess->user->hand);
 	odict_entry_add(o, "solo", ODICT_BOOL, sess->user->solo);
 	odict_entry_add(o, "webrtc", ODICT_BOOL, sess->pc ? true : false);
+	odict_entry_add(o, "calling", ODICT_BOOL, sess->user->calling);
 
 	err = re_sdprintf(json, "%H", json_encode_odict, o);
 
