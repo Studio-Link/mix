@@ -17,7 +17,7 @@
       <div class="flex min-h-0 flex-1 flex-col overflow-y-auto bg-sl-01dpa">
         <div class="flex-1">
           <nav aria-label="Sidebar" class="flex flex-col items-center space-y-3 py-4">
-            <a target="_self" v-for="room in Users.rooms.value" :key="room.name" :href="room.url" class="relative block group">
+            <a target="_self" v-for="room in State.rooms.value" :key="room.name" :href="room.url" class="relative block group">
               <div class="absolute flex items-center h-full -left-2 -top-2">
                 <div
                   :class="[room.url != path ? 'scale-0 opacity-0' : '']"
@@ -52,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { Users } from '../ws/users'
+import { State } from '../ws/state'
 import { ref } from 'vue'
 import { Bars3Icon, XMarkIcon } from '@heroicons/vue/24/outline'
 

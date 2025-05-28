@@ -8,7 +8,7 @@
           <button
             @click="solo_source(item.dev)"
             :class="{ 'bg-red-600 hover:bg-red-500': item.solo }"
-            class="rounded-sm bg-indigo-600 px-2 py-1 text-xs font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            class="rounded-sm bg-indigo-600 px-2 py-1 text-xs font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
             Solo
           </button>
@@ -138,7 +138,7 @@ Audio RTT: {{ item.stats.artt }} ms
           </span>
 
           <button
-            v-if="Users.host_status.value"
+            v-if="State.user.value.host"
             @click="api.listener(item.id)"
             type="button"
             class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -147,7 +147,7 @@ Audio RTT: {{ item.stats.artt }} ms
             To Audience
           </button>
           <button
-            v-if="!Users.host_status.value && item.id === api.user_id() && room?.show"
+            v-if="!State.user.value.host && item.id === api.user_id() && room?.show"
             @click="api.listener(item.id)"
             type="button"
             class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -156,7 +156,7 @@ Audio RTT: {{ item.stats.artt }} ms
             Leave Stage
           </button>
           <button
-            v-if="Users.host_status.value && !item.solo"
+            v-if="State.user.value.host && !item.solo"
             @click="api.video_solo(item.id, true)"
             type="button"
             class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -165,7 +165,7 @@ Audio RTT: {{ item.stats.artt }} ms
             Solo
           </button>
           <button
-            v-if="Users.host_status.value && item.solo"
+            v-if="State.user.value.host && item.solo"
             @click="api.video_solo(item.id, false)"
             type="button"
             class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -174,7 +174,7 @@ Audio RTT: {{ item.stats.artt }} ms
             Disable Solo
           </button>
           <button
-            v-if="Users.host_status.value && !item.audio"
+            v-if="State.user.value.host && !item.audio"
             @click="api.amix(item.id, true)"
             type="button"
             class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -197,7 +197,7 @@ Audio RTT: {{ item.stats.artt }} ms
             Enable Audio
           </button>
           <button
-            v-if="Users.host_status.value && item.audio"
+            v-if="State.user.value.host && item.audio"
             @click="api.amix(item.id, false)"
             type="button"
             class="hidden group-hover:inline-flex ml-2 items-center rounded-md border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -260,7 +260,7 @@ Audio RTT: {{ item.stats.artt }} ms
 <script setup lang="ts">
 import { watch, onMounted, ref } from 'vue'
 import { Webrtc, WebrtcState } from '../webrtc'
-import { Users } from '../ws/users'
+import { State } from '../ws/state'
 import api from '../api'
 import { SpeakerWaveIcon, WifiIcon, PresentationChartBarIcon, EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
 import { useResizeObserver } from '@vueuse/core'
@@ -275,9 +275,9 @@ const hasPiP = ref(false)
 const PiP = ref(false)
 const overlay = ref(true)
 const selfview = ref(true)
-const vspeakers = Users.vspeakers
-const sources = Users.sources
-const room = Users.room
+const vspeakers = State.vspeakers
+const sources = State.sources
+const room = State.room
 let resizeTimer = <NodeJS.Timeout | undefined>undefined
 
 watch(Webrtc.videostream, () => {

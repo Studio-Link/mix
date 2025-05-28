@@ -53,9 +53,9 @@
             <div v-if="Webrtc.state.value >= WebrtcState.Listening">
               <button
                 ref="hand"
-                :class="{ 'animate-bounce': hand_status }"
+                :class="{ 'animate-bounce': State.user.value.hand }"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
-                @click="hand_clicked()"
+                @click="api.hand(!State.user.value.hand)"
               >
                 <HandRaisedIcon class="h-9 w-9 mx-auto" />
               </button>
@@ -67,7 +67,7 @@
             <!-- Audio Mute -->
             <div
               v-if="
-                Webrtc.state.value >= WebrtcState.Listening && (Users.speaker_status.value)
+                Webrtc.state.value >= WebrtcState.Listening && (State.user.value.speaker)
               "
             >
               <button
@@ -116,7 +116,7 @@
               </button>
             </div>
             <!-- Video Mute -->
-            <div v-if="Webrtc.state.value >= WebrtcState.Listening && Users.speaker_status.value">
+            <div v-if="Webrtc.state.value >= WebrtcState.Listening && State.user.value.speaker">
               <button
                 v-if="Webrtc.video_muted.value"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
@@ -135,7 +135,7 @@
               </button>
             </div>
             <!-- Settings -->
-            <div v-if="Webrtc.state.value >= WebrtcState.Listening && Users.speaker_status.value">
+            <div v-if="Webrtc.state.value >= WebrtcState.Listening && State.user.value.speaker">
               <button
                 ref="settings"
                 class="text-gray-300 hover:bg-gray-700 hover:text-white group block px-2 py-2 text-base font-medium rounded-md"
@@ -145,7 +145,7 @@
               </button>
             </div>
             <!-- Hangup -->
-            <div v-if="Webrtc.state.value >= WebrtcState.Listening && Users.speaker_status.value">
+            <div v-if="Webrtc.state.value >= WebrtcState.Listening && State.user.value.speaker">
               <button
                 ref="hangup"
                 class="text-red-400 hover:bg-gray-700 group block px-2 py-2 text-base font-medium rounded-md"
@@ -155,7 +155,7 @@
               </button>
             </div>
             <!-- Hangup -->
-            <div v-if="Webrtc.state.value >= WebrtcState.Listening && !Users.speaker_status.value">
+            <div v-if="Webrtc.state.value >= WebrtcState.Listening && !State.user.value.speaker">
               <button
                 ref="call"
                 class="text-green-500 hover:bg-gray-700 group block px-2 py-2 text-base font-medium rounded-md"
@@ -194,7 +194,7 @@
 <script setup lang="ts">
 import { Fadeout } from '../fadeout'
 import { Webrtc, WebrtcState } from '../webrtc'
-import { Users } from '../ws/users'
+import { State } from '../ws/state'
 import api from '../api'
 import SettingsModal from '../components/SettingsModal.vue'
 import { ref, onMounted } from 'vue'
@@ -211,7 +211,6 @@ import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 import ReactionEmoji from '../components/ReactionEmoji.vue'
 
 const user_id = api.user_id()
-const hand_status = Users.hand_status
 const version = ref(APP_VERSION)
 
 onMounted(() => {
@@ -221,26 +220,21 @@ onMounted(() => {
 
 function listen() {
   Webrtc.listen()
-  if (Users.speaker_status.value) Users.settings_active.value = true
-}
-
-function hand_clicked() {
-  hand_status.value = !hand_status.value
-  api.hand(hand_status.value)
+  if (State.user.value.speaker) State.settings_active.value = true
 }
 
 function mic_clicked(mute: boolean) {
-  if (Webrtc.state.value < WebrtcState.ReadySpeaking || !Users.speaker_status.value) {
-    Users.settings_active.value = true
-    if (!Users.room.value?.show) api.speaker(api.user_id())
+  if (Webrtc.state.value < WebrtcState.ReadySpeaking || !State.user.value.speaker) {
+    State.settings_active.value = true
+    if (!State.room.value?.show) api.speaker(api.user_id())
   } else Webrtc.audio_mute(mute)
 }
 
 function video_clicked(mute: boolean) {
   if (Webrtc.state.value < WebrtcState.ReadySpeaking) {
-    Users.settings_active.value = true
+    State.settings_active.value = true
   } else if (Webrtc.video_select.value === 'Disabled') {
-    Users.settings_active.value = true
+    State.settings_active.value = true
     Webrtc.video_select.value = 'Camera'
   } else {
     Webrtc.video_mute(mute)
@@ -248,7 +242,7 @@ function video_clicked(mute: boolean) {
 }
 
 async function settings_clicked() {
-  Users.settings_active.value = true
+  State.settings_active.value = true
 }
 
 function logout_clicked() {

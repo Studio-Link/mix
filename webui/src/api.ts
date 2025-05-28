@@ -1,7 +1,7 @@
 import config from './config'
 import { Webrtc } from './webrtc'
 import router from './router'
-import { Users, RecordType } from './ws/users'
+import { State, RecordType } from './ws/state'
 import { Error } from './error'
 
 
@@ -95,7 +95,7 @@ export default {
     },
 
     async websocket() {
-        Users.websocket()
+        State.websocket()
     },
 
     async call() {
@@ -115,7 +115,7 @@ export default {
         Webrtc.hangup()
         await api_fetch('DELETE', '/client', null)
         router.push({ name: 'Login' })
-        Users.ws_close()
+        State.ws_close()
     },
 
     async sdp_offer(desc: RTCSessionDescription | null) {
@@ -171,20 +171,20 @@ export default {
     },
 
     async record_switch(type: RecordType) {
-        if (!Users.host_status.value) return
+        if (!State.user.value.host) return
 
-        if (Users.record.value) {
-            Users.record.value = false
-            Users.record_timer.value = '0:00:00'
+        if (State.record.value) {
+            State.record.value = false
+            State.record_timer.value = '0:00:00'
             await api_fetch('PUT', '/record/disable', null)
         } else {
-            Users.record.value = true
+            State.record.value = true
             if (type === RecordType.AudioOnly) {
-                Users.record_type.value = RecordType.AudioOnly
+                State.record_type.value = RecordType.AudioOnly
                 await api_fetch('PUT', '/record/audio/enable', null)
             }
             else {
-                Users.record_type.value = RecordType.AudioVideo
+                State.record_type.value = RecordType.AudioVideo
                 await api_fetch('PUT', '/record/enable', null)
             }
         }

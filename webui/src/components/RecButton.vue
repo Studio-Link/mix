@@ -2,24 +2,24 @@
   <div
     class="fadeout inline-flex rounded-md shadow-xs px-3 h-9"
     :class="{
-      hidden: !Users.record.value && !Users.host_status.value,
+      hidden: !State.record.value && !State.user.value.host,
     }"
   >
     <button
       @click="api.record_switch(RecordType.AudioVideo)"
       type="button"
       :class="{
-        'bg-red-700 hover:bg-red-600 rounded-l-md': !Users.record.value,
-        'bg-gray-600 hover:bg-gray-500 rounded-md': Users.record.value,
+        'bg-red-700 hover:bg-red-600 rounded-l-md': !State.record.value,
+        'bg-gray-600 hover:bg-gray-500 rounded-md': State.record.value,
       }"
       class="relative inline-flex items-center px-3 py-2 uppercase text-xs font-semibold text-white hover:bg-red-600 focus:z-10"
-      :disabled="!Users.host_status.value"
+      :disabled="!State.user.value.host"
     >
-      <span v-if="Users.record.value && Users.record_type.value === RecordType.AudioVideo" class="font-mono">REC {{ Users.record_timer.value }}</span>
-      <span v-if="Users.record.value && Users.record_type.value === RecordType.AudioOnly" class="font-mono">REC Audio {{ Users.record_timer.value }}</span>
-      <span v-if="!Users.record.value" class="font-mono">Record</span>
+      <span v-if="State.record.value && State.record_type.value === RecordType.AudioVideo" class="font-mono">REC {{ State.record_timer.value }}</span>
+      <span v-if="State.record.value && State.record_type.value === RecordType.AudioOnly" class="font-mono">REC Audio {{ State.record_timer.value }}</span>
+      <span v-if="!State.record.value" class="font-mono">Record</span>
     </button>
-    <Menu v-if="!Users.record.value" as="div" class="relative -ml-px block">
+    <Menu v-if="!State.record.value" as="div" class="relative -ml-px block">
       <MenuButton
         class="relative inline-flex items-center rounded-r-md bg-red-700 px-2 py-2 text-white hover:bg-red-600 focus:z-10"
       >
@@ -56,5 +56,5 @@
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 import { ChevronDownIcon } from '@heroicons/vue/20/solid'
 import api from '../api'
-import { Users, RecordType } from '../ws/users'
+import { State , RecordType } from '../ws/state'
 </script>

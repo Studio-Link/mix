@@ -1,5 +1,5 @@
 <template>
-  <div class="z-30" v-if="Users.chat_active.value">
+  <div class="z-30" v-if="State.chat_active.value">
     <div class="hidden md:flex w-screen max-w-xs xl:max-w-sm"></div>
     <div class="overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
       <div class="fixed inset-y-0 right-0 pl-4 max-w-full flex sm:pl-16">
@@ -47,7 +47,7 @@
                   </div>
                 </div>
               </li>
-              <li v-for="(item, index) in Users.chat_messages?.value" :key="index">
+              <li v-for="(item, index) in State.chat_messages?.value" :key="index">
                 <div class="relative group py-4 px-2 flex items-center">
                   <div class="absolute inset-0 group-hover:bg-gray-50" aria-hidden="true"></div>
                   <div class="flex-1 flex items-top min-w-0 relative">
@@ -78,7 +78,7 @@
               <button
                 @click="scroll_stop = false"
                 type="button"
-                class="rounded-full bg-indigo-600 p-2 text-white shadow-xs hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                class="rounded-full bg-indigo-600 p-2 text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               >
                 <ArrowDownIcon class="h-5 w-5" aria-hidden="true" />
                 <span class="sr-only">Scroll down</span>
@@ -126,7 +126,7 @@
 <script setup lang="ts">
 import api from '../api'
 import { onMounted, onUpdated, ref } from 'vue'
-import { Users } from '../ws/users'
+import { State } from '../ws/state'
 import { formatTimeAgo } from '@vueuse/core'
 import type { UseScrollReturn } from '@vueuse/core'
 import { vScroll } from '@vueuse/components'
@@ -168,8 +168,8 @@ onUpdated(() => {
     if (chat.value) chat.value.scrollTop = chat.value.scrollHeight
   }
 
-  if (Users.chat_active.value && Users.chat_unread.value) {
-    Users.chat_unread.value = 0
+  if (State.chat_active.value && State.chat_unread.value) {
+    State.chat_unread.value = 0
   }
 })
 

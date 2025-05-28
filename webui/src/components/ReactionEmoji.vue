@@ -35,11 +35,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Users } from '../ws/users'
+import { State } from '../ws/state'
 import api from '../api'
 import { HeartIcon } from '@heroicons/vue/24/outline'
 
-const emojis = Users.emojis
+const emojis = State.emojis
 const open = ref(false)
 const reactions = [{ emoji: '❤️' }, { emoji: '🤣' }]
 
