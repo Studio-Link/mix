@@ -21,7 +21,3 @@ features:
     details: No secrets, the code is available for free forever
     link: /self-hosting/install-intro
 ---
-
-
-
-<div class="text-bold mt-8">test</div>

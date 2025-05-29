@@ -32,7 +32,7 @@ function nav(): DefaultTheme.NavItem[] {
             activeMatch: '/self-hosting/'
         },
         {
-            text: '0.6.0-beta',
+            text: '1.0.0-beta',
             items: [
                 {
                     text: 'Changelog',
@@ -83,7 +83,6 @@ function sidebarSelfHosted(): DefaultTheme.SidebarItem[] {
                             text: 'From source',
                             base: '/self-hosting/install-source-',
                             items: [
-                                { text: 'Ubuntu 22.04', link: 'ubuntu' },
                                 { text: 'Ubuntu 24.04', link: 'ubuntu24_04' },
                                 { text: 'Arch Linux', link: 'archlinux' },
                                 { text: 'Build and configure', link: 'build' },
