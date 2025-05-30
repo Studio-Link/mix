@@ -6,6 +6,8 @@ struct http_conf sl_http_conf = {.conn_timeout = 10 * 1000,
 				 .recv_timeout = 60 * 1000,
 				 .idle_timeout = 900 * 1000};
 
+enum { HTTP_MAX_REDIRECTS = 10 };
+
 static void destroy(void *arg)
 {
 	struct sl_httpconn *p = arg;
@@ -16,11 +18,35 @@ static void destroy(void *arg)
 static void resph(int err, const struct http_msg *msg, void *arg)
 {
 	struct sl_httpconn *p = arg;
+	char *url	      = NULL;
 
+	if (!err && msg && msg->scode >= 301 && msg->scode <= 308) {
+		const struct http_hdr *location =
+			http_msg_hdr(msg, HTTP_HDR_LOCATION);
+
+		if (++p->redirects > HTTP_MAX_REDIRECTS) {
+			err = E2BIG;
+			goto err;
+		}
+
+		err = pl_strdup(&url, &location->val);
+		if (err)
+			goto err;
+
+		sl_httpc_req(p, SL_HTTP_GET, url, NULL);
+		if (err)
+			goto err;
+
+		goto out;
+	}
+
+err:
 	if (p->slresph)
 		p->slresph(err, msg, p->arg);
 
+out:
 	mem_deref(p);
+	mem_deref(url);
 }
 
 

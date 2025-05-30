@@ -243,6 +243,7 @@ enum sl_httpc_met {
 struct sl_httpconn {
 	struct http_reqconn *conn;
 	http_resp_h *slresph;
+	int redirects;
 	void *arg;
 };
 
