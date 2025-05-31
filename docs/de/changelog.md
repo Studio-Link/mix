@@ -5,17 +5,30 @@ Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokument
 Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 und dieses Projekt hält sich an die [Semantische Versionierung](https://semver.org/spec/v2.0.0.html).
 
-## v1.0.0-beta - 2025-05-29
+## v1.0.0-beta - 2025-05-31
+
+### ⁂ Fediverse Login
+
+Es ist nun möglich sich auch mit einem Fediverse Login (z.B. Mastodon) einzuloggen.
+
+<video width="720" class="aspect-video mt-2" controls>
+  <source src="/social_login.mp4" type="video/mp4">
+</video>
+
 
 ### 🎥 Verbesserte Video-Layouts
 
-[BILDER]
+Die neuen Video Layouts versuchen die vorhandene Fläche besser auszunutzen:
+
+![screenshot neue video layouts](/vidconv.drawio.png)
+
+<div class="text-center">(N = Anzahl der Teilnehmer*innen)</div>
 
 ### 👤 Solo-Button
 
 Ein neuer **Solo-Button** erlaubt es, gezielt einzelne Teilnehmer\*innen hervorzuheben – ideal für Moderation und Live-Schnitt.
 
-![[Pasted image 20250516152940.png]]
+![screenshot solo button](/solo_button.png)
 
 ### 🪞 Spiegelbild (Selfview)
 
@@ -24,6 +37,15 @@ Die eigene Kameraansicht wird nun mit weniger Verzögerung und gespiegelt angeze
 ### 🎛️ Kameraeinstellungen für Login-Avatar-Snapshots
 
 Es ist jetzt möglich gezielt eine Kamera für die Avatar Erstellung (Login) auszuwählen.
+
+### Emoticon Reaktionen
+
+Es gibt nun eine Möglichkeit mit Emoticons zu reagieren:
+
+<video width="720" class="aspect-video mt-2" controls>
+  <source src="/emoticons.mp4" type="video/mp4">
+</video>
+
 
 ### 📚 Dokumentation
 
