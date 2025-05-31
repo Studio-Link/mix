@@ -1,14 +1,16 @@
 # Was ist Mix Rooms?
+**Studio Link - Mix Rooms** ist ein innovatives Remote-Podcasting-Tool, das die Art und Weise, wie Podcaster\*innen zusammenarbeiten,
+aufnehmen und Inhalte produzieren, verbessern soll. Diese Plattform ist auf die Bedürfnisse von Podcastern\*innen zugeschnitten,
+die von verschiedenen Standorten aus arbeiten und/oder Gäste einladen möchten.
 
-**Studio Link - Mix Rooms** is an innovative remote podcasting tool designed to revolutionize the way podcasters collaborate, record, and produce content. This platform caters to the needs of podcasters working from different locations, offering a seamless and feature-rich experience for creating high-quality podcasts remotely.
+## Anwendungsfälle
+- **Remote-Podcast-Aufnahmestudio**
 
-## Use Cases
+Mix Rooms bietet ein virtuelles Aufnahmestudio, in das sich Moderator\*innen und Gäste per Fernzugriff einklinken können. Das
+Tool sorgt für **Video- und Audioaufnahmen** in Studioqualität, bei denen die
+Stimme jedes Teilnehmers klar und präzise wiedergegeben wird.
 
-- **Remote Podcast Recording Studio**
+- **Kollaboration in Echtzeit**
 
-  Mix Rooms provides a virtual recording studio where hosts, co-hosts, and guests can connect remotely. The tool ensures studio-quality audio recording, capturing each participant's voice with clarity and precision.
-
-- **Real-time Collaboration**
-
-  Foster real-time collaboration during recording sessions with Mix Rooms. 
-  Podcasters can communicate using integrated chat or voice features, enhancing teamwork and connection irrespective of geographical distances.
+Auch das Publikum erlebt die Aufnahme in Echtzeit (keine sekundenlangen Verzögerungen im Stream mehr).
+Podcaster\*innen können auch über den integrierten Chat mit dem Publikum kommunizieren.

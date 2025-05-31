@@ -8,7 +8,7 @@ sudo apt install nginx curl wget ninja-build pkg-config clang cmake make git pat
     libavformat-dev libavcodec-dev libavfilter-dev libavdevice-dev
 ```
 
-## Node.js v20.x LTS or v21.x (Current)
+## Node.js v22.x LTS
 
 https://github.com/nodesource/distributions/blob/master/README.md#debinstall
 
