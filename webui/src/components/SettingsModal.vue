@@ -86,7 +86,7 @@
                     </div>
 
                     <div v-if="video_select === 'Camera'">
-                      <label for="camera" class="block text-sm font-medium text-gray-700">Cam</label>
+                      <label for="cam" class="block text-sm font-medium text-gray-700">Cam</label>
                       <select
                         id="cam"
                         v-model="video_input_id"
