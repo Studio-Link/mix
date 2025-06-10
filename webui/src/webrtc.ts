@@ -450,6 +450,7 @@ export const Webrtc = {
         let audio_available = false
         let video_available = false
         await pc_media_audio()
+        await pc_media_video()
         this.deviceInfos.value = await navigator.mediaDevices.enumerateDevices()
 
         this.deviceInfos.value.forEach((device) => {
