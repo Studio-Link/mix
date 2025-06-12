@@ -19,6 +19,12 @@ mix_token_guests        TOKENREPLACEME # invite url
 mix_token_download      TOKENREPLACEME # protected download folder 
 ```
 
+::: tip
+Bitte verwende nur Buchstaben und Zahlen als Token (keine Sonderzeichen!).
+Du kannst ein solches Token mit dem Kommandozeilentool `pwgen 24 4` oder über die Webseite
+[random.org](https://www.random.org/strings/?num=4&len=24&digits=on&upperalpha=on&loweralpha=on&unique=on&format=html&rnd=new) generieren.
+:::
+
 ## Nginx Config  <Badge type="warning" text="SSL is needed for WebRTC" />
 
 ```nginx

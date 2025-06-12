@@ -19,6 +19,12 @@ mix_token_guests        TOKENREPLACEME # invite url
 mix_token_download      TOKENREPLACEME # protected download folder 
 ```
 
+::: tip
+Please only use letters and numbers in your token. Do not use any special characters.
+You can generate a token using the command line tool `pwgen 24 4`, or via the
+[random.org](https://www.random.org/strings/?num=4&len=24&digits=on&upperalpha=on&loweralpha=on&unique=on&format=html&rnd=new) website.
+:::
+
 ## Nginx Config  <Badge type="warning" text="SSL is needed for WebRTC" />
 
 ```nginx

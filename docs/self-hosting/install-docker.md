@@ -3,12 +3,18 @@
 ```bash
 docker pull ghcr.io/studio-link/mix/slmix:v1.0.0-beta
 docker run --name slmix -it -p8080:80 \
-    -e TOKENHOST=host \
+    -e TOKENHOST=host_token \
     -e TOKENDOWNLOAD=downloadsecret \
-    -e TOKENGUEST=guest \
-    -e TOKENAPI=1234 \
+    -e TOKENGUEST=guest_token \
+    -e TOKENAPI=api_token \
     slmix:v1.0.0-beta
 ```
+
+::: tip
+Please only use letters and numbers in your token. Do not use any special characters.
+You can generate a token using the command line tool `pwgen 24 4`, or via the
+[random.org](https://www.random.org/strings/?num=4&len=24&digits=on&upperalpha=on&loweralpha=on&unique=on&format=html&rnd=new) website.
+:::
 
 ## Nginx reverse proxy example
 
