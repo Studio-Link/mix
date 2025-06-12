@@ -8,7 +8,7 @@ enum {
 	SESSID_SZ  = 32,
 	USERID_SZ  = 16,
 	NAME_SZ	   = 32,
-	TOKEN_SZ   = 32,
+	TOKEN_SZ   = 33,
 	CHAT_MSGSZ = 1024,
 	PATH_SZ	   = 256,
 	URL_SZ	   = 256,
