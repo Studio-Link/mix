@@ -20,7 +20,7 @@ RUN pacman -Syu --noconfirm ca-certificates gd opus zlib ffmpeg flac lmdb \
     useradd slmix -d /opt/slmix -s /bin/bash -u 16371 -U && \
     mkdir -p /opt/slmix/webui/public/avatars && \
     mkdir -p /opt/slmix/webui/public/download && \
-    echo "<!doctype html><html lang=\"en\"><title>Download</title><b>Use /download/TOKEN<\b></html>" > /opt/slmix/webui/public/download/index.html && \
+    echo "<!doctype html><html lang=\"en\"><title>Download</title><b>Use /download/TOKEN</b></html>" > /opt/slmix/webui/public/download/index.html && \
     mkdir -p /opt/slmix/webui/database && \
     chown -R slmix:slmix /opt/slmix && \
     echo 'slmix ALL=(ALL) NOPASSWD:SETENV: /usr/bin/supervisord' >> /etc/sudoers
