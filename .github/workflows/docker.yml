@@ -4,12 +4,11 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'Dockerfile'
-      - 'entrypoint.sh'
       - '.github/workflows/docker.yml'
 
 env:
   VERSION_SLMIX: v1.0.0-beta
+  RELEASE_DATE: 2025061301 # Increase to release (not used anywhere)
 
 jobs:
   docker:
