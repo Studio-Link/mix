@@ -8,7 +8,7 @@ on:
 
 env:
   VERSION_SLMIX: v1.0.0-beta
-  RELEASE_DATE: 2025061301 # Increase to release (not used anywhere)
+  RELEASE_DATE: 2025061302 # Increase to release (not used anywhere)
 
 jobs:
   docker:
