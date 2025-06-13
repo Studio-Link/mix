@@ -27,7 +27,10 @@ mix_token_guests        $TOKENGUEST # invite url
 mix_token_api           $TOKENAPI # api token
 #mix_path               /opt/slmix/
 EOF
-    exec sudo -E /usr/bin/supervisord -n -c /etc/supervisord.conf
+    sudo -E /usr/bin/nginx &
+    cd /opt/slmix && /opt/slmix/build/slmix -c /opt/slmix/config &
+    wait -n
+    exit $?
 else
     exec "$@"
 fi
