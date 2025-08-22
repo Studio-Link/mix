@@ -4,7 +4,8 @@
 static struct ua *sip_ua;
 
 
-static void ua_event_handler(enum bevent_ev ev, struct bevent *event, void *arg)
+static void ua_event_handler(enum bevent_ev ev, struct bevent *event,
+			     void *arg)
 {
 	struct mix *mix	  = arg;
 	struct call *call = bevent_get_call(event);
