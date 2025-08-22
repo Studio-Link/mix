@@ -4,14 +4,14 @@
 static struct ua *sip_ua;
 
 
-static void ua_event_handler(enum ua_event ev, struct bevent *event, void *arg)
+static void ua_event_handler(enum bevent_ev ev, struct bevent *event, void *arg)
 {
 	struct mix *mix	  = arg;
 	struct call *call = bevent_get_call(event);
 
 	switch (ev) {
 
-	case UA_EVENT_CALL_INCOMING:
+	case BEVENT_CALL_INCOMING:
 		if (call_state(call) != CALL_STATE_INCOMING)
 			return;
 
@@ -47,7 +47,7 @@ static void ua_event_handler(enum ua_event ev, struct bevent *event, void *arg)
 
 		break;
 
-	case UA_EVENT_CALL_CLOSED: {
+	case BEVENT_CALL_CLOSED: {
 		slmix_source_deref(mix, call, NULL);
 
 		break;

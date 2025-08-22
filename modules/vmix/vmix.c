@@ -42,7 +42,7 @@ struct vidmix *vmix_mix;
 /*
  * Relay UA events as publish messages to the Broker
  */
-static void ua_event_handler(enum ua_event ev, struct bevent *event, void *arg)
+static void ua_event_handler(enum bevent_ev ev, struct bevent *event, void *arg)
 {
 	struct pl r, module = pl_null, myevent = pl_null, sess_id = pl_null;
 	struct vidsrc_st *st;
@@ -54,7 +54,7 @@ static void ua_event_handler(enum ua_event ev, struct bevent *event, void *arg)
 
 	const char *prm = bevent_get_text(event);
 
-	if (ev != UA_EVENT_MODULE)
+	if (ev != BEVENT_MODULE)
 		return;
 
 	/* disabled */
