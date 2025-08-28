@@ -102,30 +102,8 @@ static int init_stream(void)
 		return ENOMEM;
 	}
 
-	AVCodecContext *videoCodecCtx = avcodec_alloc_context3(videoCodec);
-	if (!videoCodecCtx) {
-		warning("videocontext error\n");
-		return ENOMEM;
-	}
-
-	videoCodecCtx->width	     = 1920;
-	videoCodecCtx->height	     = 1080;
-	videoCodecCtx->time_base.num = 1;
-	videoCodecCtx->time_base.den = 30;
-	videoCodecCtx->pix_fmt	     = AV_PIX_FMT_YUV420P;
-	videoCodecCtx->bit_rate	     = 4000000;
-
-	if (rec.streamFormatContext->oformat->flags & AVFMT_GLOBALHEADER)
-		videoCodecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-
-	ret = avcodec_open2(videoCodecCtx, videoCodec, NULL);
-	if (ret < 0) {
-		warning("avcodec_open2 video error\n");
-		return EINVAL;
-	}
-
-
-	avcodec_parameters_from_context(videoStream->codecpar, videoCodecCtx);
+	avcodec_parameters_from_context(videoStream->codecpar,
+					rec.videoCodecCtx);
 
 	const AVCodec *audioCodec = avcodec_find_encoder(AV_CODEC_ID_AAC);
 
@@ -136,26 +114,8 @@ static int init_stream(void)
 		return ENOMEM;
 	}
 
-	AVCodecContext *audioCodecCtx = avcodec_alloc_context3(audioCodec);
-	if (!audioCodecCtx)
-		return ENOMEM;
-
-	audioCodecCtx->codec_id	   = AV_CODEC_ID_AAC;
-	audioCodecCtx->codec_type  = AVMEDIA_TYPE_AUDIO;
-	audioCodecCtx->sample_rate = 48000;
-	audioCodecCtx->sample_fmt  = AV_SAMPLE_FMT_FLTP;
-	audioCodecCtx->ch_layout   = (AVChannelLayout)AV_CHANNEL_LAYOUT_STEREO;
-	audioCodecCtx->bit_rate	   = 96000;
-	if (rec.streamFormatContext->oformat->flags & AVFMT_GLOBALHEADER)
-		audioCodecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-
-	avcodec_open2(audioCodecCtx, audioCodec, NULL);
-	if (ret < 0) {
-		warning("avcodec_open2 audio error\n");
-		return EINVAL;
-	}
-
-	avcodec_parameters_from_context(audioStream->codecpar, audioCodecCtx);
+	avcodec_parameters_from_context(audioStream->codecpar,
+					rec.audioCodecCtx);
 
 	ret = avio_open(&rec.streamFormatContext->pb, stream_url,
 			AVIO_FLAG_WRITE);
