@@ -164,6 +164,7 @@ static int write_stream(AVPacket *pkt, AVRational *time_base_src,
 	if (!re_atomic_rlx(&rec.run_stream))
 		return 0;
 
+	int err = 0;
 	AVPacket *packet = av_packet_clone(pkt);
 
 	packet->pts =
@@ -175,12 +176,12 @@ static int write_stream(AVPacket *pkt, AVRational *time_base_src,
 	int ret = av_interleaved_write_frame(rec.streamFormatContext, packet);
 	if (ret < 0) {
 		warning("av write stream error (%s)\n", av_err2str(ret));
-		return EPIPE;
+		err = EPIPE;
 	}
 
 	av_packet_free(&packet);
 
-	return 0;
+	return err;
 }
 #endif
 
