@@ -1,6 +1,7 @@
 #include <getopt.h>
 #include <mix.h>
 
+#define HTTP_DEFAULT_LISTEN "127.0.0.1:9999"
 
 static const char *modv[] = {
 	"ice",
@@ -17,14 +18,14 @@ static const char *modv[] = {
 	"vmix",
 };
 
-static char *config_file = NULL;
+static char *config_file   = NULL;
 static char *config_listen = NULL;
 
 
 const char *slmix_config_listen(void)
 {
 	if (!config_listen)
-		return "127.0.0.1";
+		return HTTP_DEFAULT_LISTEN;
 	return config_listen;
 }
 
@@ -42,7 +43,8 @@ static void usage(void)
 				 "options:\n"
 				 "\t-h		Help\n"
 				 "\t-c --config	Load config file\n"
-				 "\t-l          Listen IP\n"
+				 "\t-l		Listen IP and port, "
+				 "default " HTTP_DEFAULT_LISTEN "\n"
 				 "\t-v		Verbose debug\n");
 }
 
@@ -116,7 +118,7 @@ int main(int argc, char *const argv[])
 	struct mix *mix = slmix();
 
 	const char *conf =
-/*		"sip_listen		0.0.0.0:5060\n" */
+		"#sip_listen		0.0.0.0:5060\n"
 		"call_max_calls		10\n" /* SIP incoming only */
 		"sip_verify_server	yes\n"
 		"audio_buffer		40-100\n"
@@ -235,7 +237,7 @@ int main(int argc, char *const argv[])
 	module_app_unload();
 	conf_close();
 
-	config_file = mem_deref(config_file);
+	config_file   = mem_deref(config_file);
 	config_listen = mem_deref(config_listen);
 
 	baresip_close();
