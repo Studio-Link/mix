@@ -14,7 +14,8 @@ static struct mix mix = {.room		  = "main",
 			 .token_host	  = "",
 			 .token_guests	  = "",
 			 .token_listeners = "",
-			 .token_download  = ""};
+			 .token_download  = "",
+			 .stream_url	  = ""};
 
 static struct tmr tmr_room_update;
 static uint64_t last_room_update = 0;
@@ -212,6 +213,9 @@ int slmix_config(char *file)
 
 	conf_get_str(conf, "mix_token_download", mix.token_download,
 		     sizeof(mix.token_download));
+
+	conf_get_str(conf, "mix_stream_url", mix.stream_url,
+		     sizeof(mix.stream_url));
 
 	err = conf_get_str(conf, "mix_path", mix.path, sizeof(mix.path));
 	if (err) {
