@@ -43,6 +43,7 @@ struct mix {
 	char token_guests[TOKEN_SZ];
 	char token_listeners[TOKEN_SZ];
 	char token_download[TOKEN_SZ];
+	char stream_url[URL_SZ];
 	struct rtc_configuration pc_config;
 	mix_rec_h *audio_rec_h;
 	mix_rec_h *video_rec_h;

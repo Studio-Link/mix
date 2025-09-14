@@ -10,8 +10,6 @@
 #include <libavutil/rational.h>
 #include <libswresample/swresample.h>
 
-#include <string.h>
-#include <time.h>
 #include <sys/stat.h>
 #include <re_atomic.h>
 #include <re.h>
@@ -19,8 +17,9 @@
 #include <baresip.h>
 #include <re_atomic.h>
 #include "vmix.h"
+#include <mix.h>
 
-#define STREAM 0
+#define STREAM 1
 
 static struct {
 	RE_ATOMIC bool run;
@@ -51,7 +50,6 @@ struct record_entry {
 };
 
 #if STREAM
-static const char *stream_url	 = "rtmp://example.net/stream";
 static AVRational timebase_audio = {1, 48000};
 #endif
 static AVRational timebase_video = {1, 1000000};
@@ -88,8 +86,16 @@ static int init_stream(void)
 
 	/* av_log_set_level(AV_LOG_DEBUG); */
 
+	if (str_isset(slmix()->stream_url)) {
+		info("streaming enabled: %s\n", slmix()->stream_url);
+	}
+	else {
+		info("streaming disabled\n");
+		return 0;
+	}
+
 	ret = avformat_alloc_output_context2(&rec.streamFormatContext, NULL,
-					     "flv", stream_url);
+					     "flv", slmix()->stream_url);
 	if (ret < 0)
 		return EINVAL;
 
@@ -117,14 +123,14 @@ static int init_stream(void)
 	avcodec_parameters_from_context(audioStream->codecpar,
 					rec.audioCodecCtx);
 
-	ret = avio_open(&rec.streamFormatContext->pb, stream_url,
+	ret = avio_open(&rec.streamFormatContext->pb, slmix()->stream_url,
 			AVIO_FLAG_WRITE);
 	if (ret < 0) {
 		warning("avio_open stream error\n");
 		return EINVAL;
 	}
 
-	av_dump_format(rec.streamFormatContext, 0, stream_url, 1);
+	av_dump_format(rec.streamFormatContext, 0, slmix()->stream_url, 1);
 
 	AVDictionary *opts = NULL;
 	av_dict_set(&opts, "flvflags", "no_duration_filesize", 0);
@@ -164,7 +170,7 @@ static int write_stream(AVPacket *pkt, AVRational *time_base_src,
 	if (!re_atomic_rlx(&rec.run_stream))
 		return 0;
 
-	int err = 0;
+	int err		 = 0;
 	AVPacket *packet = av_packet_clone(pkt);
 
 	packet->pts =
