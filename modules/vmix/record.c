@@ -88,7 +88,8 @@ static int init_stream(void)
 
 	if (str_isset(slmix()->stream_url)) {
 		info("streaming enabled: %s\n", slmix()->stream_url);
-	} else {
+	}
+	else {
 		info("streaming disabled\n");
 		return 0;
 	}
@@ -169,7 +170,7 @@ static int write_stream(AVPacket *pkt, AVRational *time_base_src,
 	if (!re_atomic_rlx(&rec.run_stream))
 		return 0;
 
-	int err = 0;
+	int err		 = 0;
 	AVPacket *packet = av_packet_clone(pkt);
 
 	packet->pts =
