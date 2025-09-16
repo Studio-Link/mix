@@ -7,11 +7,17 @@ static struct ua *sip_ua;
 static void ua_event_handler(enum bevent_ev ev, struct bevent *event,
 			     void *arg)
 {
-	struct mix *mix	  = arg;
-	struct call *call = bevent_get_call(event);
+	struct mix *mix		  = arg;
+	struct call *call	  = bevent_get_call(event);
+	const struct sip_msg *msg = bevent_get_msg(event);
 
 	switch (ev) {
 
+	case BEVENT_SIPSESS_CONN:
+		struct ua *ua = uag_find_msg(msg);
+		ua_accept(ua, msg);
+
+		break;
 	case BEVENT_CALL_INCOMING:
 		if (call_state(call) != CALL_STATE_INCOMING)
 			return;
