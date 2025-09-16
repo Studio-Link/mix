@@ -40,15 +40,7 @@ const constraintsVideo: any = {
 const configuration: RTCConfiguration = {
     bundlePolicy: 'balanced',
 
-    iceTransportPolicy: 'relay',
-    iceServers: [
-        {
-            urls: 'turn:167.235.37.175:3478',
-            username: 'turn200301',
-            credential: 'choh4zeem3foh1',
-        },
-    ],
-
+    iceTransportPolicy: 'all',
 
     /* default on Firefox/Chrome but needed by Safari */
     rtcpMuxPolicy: 'require'
@@ -202,7 +194,7 @@ async function pc_setup() {
 
     pc.onicecandidate = async (event) => {
         console.log('webrtc/icecandidate: ' + event.candidate?.type + ' IP: ' + event.candidate?.candidate, event)
-        if (event.candidate?.type != "relay")
+        if (event.candidate?.type != "host")
             return
 
         if (event.candidate?.component != "rtp")
