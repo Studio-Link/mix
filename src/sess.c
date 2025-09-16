@@ -138,7 +138,7 @@ static void pc_estab_handler(struct media_track *media, void *arg)
 		stream_enable_tx(media_get_stream(media), true);
 
 /* Enable/Disable Source view */
-#if 0
+#if 1
 		if (!sess->user->host)
 			slmix_source_append_all(sess->mix, NULL,
 						sess->user->id);
