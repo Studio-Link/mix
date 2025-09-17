@@ -154,16 +154,18 @@ export const State: State = {
                         this.user.value = data.users[key]
                     }
 
+                    /*
                     if (data.users[key].name.startsWith('sip:'))
-                        continue
+                    continue
+                    */
 
                     if (data.users[key].speaker) {
+                        this.speakers.value?.push(data.users[key])
                         if (data.users[key].pidx) {
                             this.vspeakers.value.push(data.users[key])
                             this.vspeakers.value.sort((a, b) => a.pidx - b.pidx)
                             continue
                         }
-                        this.speakers.value?.push(data.users[key])
                     } else {
                         this.listeners.value?.push(data.users[key])
                     }
@@ -219,12 +221,12 @@ export const State: State = {
                 }
 
                 if (data.speaker) {
+                    this.speakers.value?.unshift(user)
                     if (user.pidx) {
                         this.vspeakers.value.push(user)
                         this.vspeakers.value.sort((a, b) => a.pidx - b.pidx)
                         return
                     }
-                    this.speakers.value?.unshift(user)
                 } else {
                     this.listeners.value?.unshift(user)
                 }
