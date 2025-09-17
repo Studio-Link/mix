@@ -48,7 +48,7 @@ static void ua_event_handler(enum bevent_ev ev, struct bevent *event,
 		sess->connected	  = true;
 		sess->user->video = true;
 
-		slmix_disp_enable(mix, peer, true);
+		sess->user->pidx = slmix_disp_enable(mix, peer, true);
 
 		slmix_source_append_all(mix, call, peer);
 
