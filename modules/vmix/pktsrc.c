@@ -14,9 +14,10 @@ static struct {
 static void pktsrc_deref(void *arg)
 {
 	struct vidsrc_st *st = arg;
+	mtx_lock(pktsrc.mtx);
 	mem_deref(st->device);
-
 	list_unlink(&st->le);
+	mtx_unlock(pktsrc.mtx);
 }
 
 
