@@ -4,7 +4,7 @@
       <div v-for="item in sources" class="my-1">
         <video :id="'source' + item.rtc?.id" playsinline autoplay muted preload="none"></video>
         <div>
-          {{ item.dev }}
+            {{ item.dev }} ({{item.rtc?.id}})
           <button
             @click="solo_source(item.dev)"
             :class="{ 'bg-red-600 hover:bg-red-500': item.solo }"
