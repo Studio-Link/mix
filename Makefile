@@ -85,7 +85,7 @@ tsan:
 
 .PHONY: cloc
 cloc:
-	cloc --exclude-dir='node_modules,external,build,env' --exclude-ext='json' .
+	cloc --exclude-dir='dist,node_modules,external,build,env' --exclude-ext='json' src webui/src modules
 
 .PHONY: update
 update: external
