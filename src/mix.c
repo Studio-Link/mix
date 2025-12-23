@@ -128,20 +128,6 @@ int slmix_update_room(void)
 int slmix_init(void)
 {
 	int err;
-#if 1
-	struct pl srv;
-	pl_set_str(&srv, "turn:167.235.37.175:3478");
-
-	err = stunuri_decode(&mix.pc_config.ice_server, &srv);
-	if (err) {
-		warning("mix: invalid iceserver '%r' (%m)\n", &srv, err);
-		return err;
-	}
-
-	mix.pc_config.stun_user	 = "turn200301";
-	mix.pc_config.credential = "choh4zeem3foh1";
-
-#endif
 
 	mix.mnat = mnat_find(baresip_mnatl(), "ice");
 	if (!mix.mnat) {
