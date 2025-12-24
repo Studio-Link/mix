@@ -49,7 +49,7 @@ static void conn_destroy(void *arg)
 	struct ws_conn *wsc = arg;
 	char *json	    = NULL;
 
-	mem_deref(wsc->c);
+	wsc->c = mem_deref(wsc->c);
 
 	if (wsc->sess && wsc->sess->user) {
 		wsc->sess->connected   = false;
