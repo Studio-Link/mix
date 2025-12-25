@@ -128,29 +128,28 @@ static void estab_handler(struct media_track *media, void *arg)
 
 static void close_handler(int err, void *arg)
 {
-
 	struct source_pc *src = arg;
-	(void)err;
+	struct odict *od;
 
-	mem_deref(src);
+	int ret = odict_alloc(&od, 1);
+	if (ret)
+		return;
+
+	odict_entry_add(od, "type", ODICT_STRING, "source_close");
+	odict_entry_add(od, "id", ODICT_INT, src->id);
+	ws_json(src->sess, od);
+	mem_deref(od);
+
+	if (err)
+		mem_deref(src);
 }
 
 
 static void source_dealloc(void *arg)
 {
 	struct source_pc *src = arg;
-	struct odict *od;
 
 	list_unlink(&src->le);
-
-	int err = odict_alloc(&od, 1);
-	if (!err) {
-		odict_entry_add(od, "type", ODICT_STRING, "source_close");
-		odict_entry_add(od, "id", ODICT_INT, src->id);
-		ws_json(src->sess, od);
-		mem_deref(od);
-	}
-
 	src->pc = mem_deref(src->pc);
 }
 
