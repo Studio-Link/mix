@@ -1,5 +1,4 @@
 import Cropper from 'cropperjs'
-import 'cropperjs/dist/cropper.css'
 import { ref } from 'vue'
 
 let videoStream: MediaStream | undefined
@@ -78,11 +77,19 @@ export default {
         canvas.setAttribute('height', String(height))
 
         context?.drawImage(video!, 0, 0, width, height)
-        cropper = new Cropper(canvas, { aspectRatio: 1 })
+        cropper = new Cropper(canvas)
+        const selection = cropper?.getCropperSelection()
+        if (selection) {
+            selection.initialAspectRatio = 1
+            selection.initialCoverage = 0.8
+        }
     },
 
-    savePicture() {
-        const croppedCanvas = cropper?.getCroppedCanvas()
+    async savePicture() {
+        const selection = cropper?.getCropperSelection()
+        if (!selection)
+            return
+        const croppedCanvas = await selection.$toCanvas()
         const roundedCanvas = getRoundedCanvas(croppedCanvas)
         this.picture.value = roundedCanvas?.toDataURL('image/png')
         cropper?.destroy()

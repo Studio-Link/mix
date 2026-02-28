@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="cropper-container">
     <video ref="video" :class="{ hidden: Webcam.preview.value }" playsinline autoplay muted />
     <canvas ref="picture" :class="{ hidden: !Webcam.preview.value || Webcam.picture.value }" class="w-full" />
     <img v-if="Webcam.picture.value" :src="Webcam.picture.value" class="mx-auto rounded-full h-48" />
