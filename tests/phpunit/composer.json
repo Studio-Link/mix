@@ -1,6 +1,6 @@
 {
     "require": {
-        "phpunit/phpunit": "^11.5",
+        "phpunit/phpunit": "^12.5",
         "guzzlehttp/guzzle": "^7.9",
         "phrity/websocket": "^3.4"
     },
