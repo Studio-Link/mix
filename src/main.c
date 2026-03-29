@@ -13,7 +13,7 @@ static const char *modv[] = {
 	"auresamp",
 
 	/* video */
-	"vp8",
+	/*"vp8", */
 	"avcodec",
 	"vmix",
 };
