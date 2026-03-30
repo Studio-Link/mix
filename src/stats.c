@@ -36,6 +36,10 @@ static void slmix_metrics(void *arg)
 	struct jbuf_stat video_jstat;
 	bool types = true;
 	(void)arg;
+
+	if (mbuf_pos(mb_stats) == 0)
+		goto out;
+
 	struct mix *mix = slmix();
 
 	re_snprintf(metric_url, sizeof(metric_url), METRICS_URL, mix->room);
@@ -180,8 +184,6 @@ static void slmix_metrics(void *arg)
 			    video_jstat.n_gnacks);
 	}
 
-	if (mbuf_pos(mb_stats) == 0)
-		goto out;
 
 	err = sl_httpc_alloc(&http_conn, NULL, NULL, NULL);
 	if (err)
