@@ -149,6 +149,7 @@ async function pc_stats(pc: RTCPeerConnection | null) {
         }
 
         labels.push(`browser="${adapter.browserDetails.browser}"`);
+        labels.push(`user="${api.user_id()}"`);
 
         Object.entries(value).forEach(([key, v]: any) => {
             if (typeof v === "number") {
