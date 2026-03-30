@@ -84,7 +84,19 @@ static void slmix_metrics(void *arg)
 			types = false;
 		}
 
-		audio_stat = stream_rtcp_stats(media_get_stream(sess->maudio));
+		struct stream *audio_stream;
+		struct stream *video_stream;
+
+		if (sess->call) {
+			audio_stream = audio_strm(call_audio(sess->call));
+			video_stream = video_strm(call_video(sess->call));
+		}
+		else {
+			audio_stream = media_get_stream(sess->maudio);
+			video_stream = media_get_stream(sess->mvideo);
+		}
+
+		audio_stat = stream_rtcp_stats(audio_stream);
 		if (audio_stat) {
 			mbuf_printf(mb_stats,
 				    "mix_rtt{%s,kind=\"audio\"} %u\n", labels,
@@ -109,7 +121,7 @@ static void slmix_metrics(void *arg)
 				    labels, audio_stat->rx.jit);
 		}
 
-		video_stat = stream_rtcp_stats(media_get_stream(sess->mvideo));
+		video_stat = stream_rtcp_stats(video_stream);
 		if (video_stat) {
 			mbuf_printf(mb_stats,
 				    "mix_rtt{%s,kind=\"video\"} %u\n", labels,
@@ -134,10 +146,8 @@ static void slmix_metrics(void *arg)
 				    labels, video_stat->rx.jit);
 		}
 
-		err = stream_jbuf_stats(media_get_stream(sess->maudio),
-					&audio_jstat);
-		err |= stream_jbuf_stats(media_get_stream(sess->mvideo),
-					 &video_jstat);
+		err = stream_jbuf_stats(audio_stream, &audio_jstat);
+		err |= stream_jbuf_stats(video_stream, &video_jstat);
 		if (err)
 			continue;
 
