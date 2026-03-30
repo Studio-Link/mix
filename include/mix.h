@@ -1,7 +1,7 @@
 #include <re.h>
 #include <baresip.h>
 
-#define METRICS_URL "http://127.0.0.1:9091/metrics/job/rtc"
+#define METRICS_URL "http://127.0.0.1:6969/push/atrium"
 
 enum {
 	ROOM_SZ	   = 128,
@@ -281,6 +281,7 @@ int slmix_handle_ice_candidate(struct peer_connection *pc,
 /******************************************************************************
  * stats.c
  */
+int sl_mix_stats_append(struct mbuf *mb);
 int slmix_stats_init(void);
 void slmix_stats_close(void);
 

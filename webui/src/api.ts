@@ -167,7 +167,7 @@ export default {
 
         const blob = await compressedResponse.blob();
 
-        await api_fetch('POST', '/webrtc/stats', blob, false, true)
+        await api_fetch('POST', '/webrtc/stats', data, false, true)
     },
 
     async record_switch(type: RecordType) {
