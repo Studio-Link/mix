@@ -6,6 +6,7 @@
 static const char *modv[] = {
 	"ice",
 	"dtls_srtp",
+	"contact",
 
 	/* audio */
 	"amix",

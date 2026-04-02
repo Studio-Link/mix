@@ -225,6 +225,6 @@ export default {
     },
 
     async track_dial(track: number, peer: string) {
-        api_fetch('POST', '/tracks/dial?track=' + String(track), peer);
+        api_fetch('POST', '/tracks/dial?track=' + String(track), peer, false);
     }
 }

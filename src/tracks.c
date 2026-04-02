@@ -207,10 +207,26 @@ int sl_track_dial(struct sl_track *track, struct pl *peer)
 
 	track->error[0] = '\0';
 
-	err = account_uri_complete_strdup(ua_account(slmix_sip_ua()), &peerc,
-					  peer);
-	if (err)
-		goto out;
+	const struct contacts *cs = baresip_contacts();
+
+	for (struct le *le = list_head(contact_list(cs)); le; le = le->next) {
+		struct contact *c  = le->data;
+		struct sip_addr *a = contact_addr(c);
+		if (!a)
+			continue;
+
+		if (pl_casecmp(peer, &a->dname) == 0) {
+			str_dup(&peerc, contact_uri(c));
+			break;
+		}
+	}
+
+	if (!peerc) {
+		err = account_uri_complete_strdup(ua_account(slmix_sip_ua()),
+						  &peerc, peer);
+		if (err)
+			goto out;
+	}
 
 	err = ua_connect(slmix_sip_ua(), &track->u.remote.call, NULL, peerc,
 			 VIDMODE_OFF);
@@ -219,9 +235,6 @@ int sl_track_dial(struct sl_track *track, struct pl *peer)
 
 	track->status = SL_TRACK_REMOTE_CALLING;
 	pl_strcpy(peer, track->name, sizeof(track->name));
-	char buf[ITOA_BUFSZ];
-	char *id = str_itoa(track->id, buf, 10);
-	audio_set_devicename(call_audio(track->u.remote.call), id, id);
 
 out:
 	if (err)
@@ -269,7 +282,6 @@ void sl_track_toggle_mute(struct sl_track *track)
 		return;
 
 	local_track->muted = !local_track->muted;
-	//sl_audio_mute(local_track->u.local.slaudio, local_track->muted);
 	sl_track_ws_send();
 }
 

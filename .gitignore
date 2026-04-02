@@ -24,3 +24,7 @@
 node_modules
 
 re_trace.json
+
+config
+contacts
+current_contact

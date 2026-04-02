@@ -213,6 +213,8 @@ int slmix_config(char *file)
 		err = 0;
 	}
 
+	conf_path_set(mix.path);
+
 	info("slmix_config path: %s\n", mix.path);
 
 out:
