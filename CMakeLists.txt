@@ -116,6 +116,7 @@ set(SRCS_LIB
   src/social.c
   src/source.c
   src/stats.c
+  src/tracks.c
   src/users.c
   src/ws.c
   ${CMAKE_CURRENT_BINARY_DIR}/version.c

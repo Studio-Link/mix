@@ -33,8 +33,7 @@
         <main class="w-full pb-24">
           <WebrtcVideo />
           <audio id="live" autoplay></audio>
-          <Speakers />
-          <Listeners />
+          <Tracks />
         </main>
         <Chat />
       </div>
@@ -46,12 +45,11 @@
 
 <script setup lang="ts">
 import WebrtcVideo from '../components/WebrtcVideo.vue'
-import Speakers from '../components/Speakers.vue'
-import Listeners from '../components/Listeners.vue'
 import BottomActions from '../components/BottomActions.vue'
 import Chat from '../components/Chat.vue'
 import RecButton from '../components/RecButton.vue'
 import Calls from '../components/Calls.vue'
+import Tracks from '../components/Tracks/Tracks.vue'
 import api from '../api'
 import { onMounted } from 'vue'
 //import StudioNav from '../components/StudioNav.vue'

@@ -232,7 +232,99 @@ static void http_req_handler(struct http_conn *conn,
 	 * Websocket Request
 	 */
 	if (0 == pl_strcasecmp(&msg->path, "/ws/v1/users")) {
-		sl_ws_open(conn, msg, mix, sess);
+		sl_ws_open(WS_USERS, conn, msg, mix, sess);
+		return;
+	}
+
+	if (0 == pl_strcasecmp(&msg->path, "/ws/v1/tracks")) {
+		sl_ws_open(WS_TRACKS, conn, msg, mix, sess);
+		return;
+	}
+
+	ROUTE("/api/v1/tracks/remote", "POST")
+	{
+		struct sl_track *track;
+
+		err = sl_track_add(&track, SL_TRACK_REMOTE);
+		if (err)
+			goto err;
+
+		sl_track_ws_send();
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	ROUTE("/api/v1/tracks", "DELETE")
+	{
+		struct pl pltrack = {"3", 2};
+		err = re_regex((char *)mbuf_buf(msg->mb),
+			       mbuf_get_left(msg->mb), "[0-9]+", &pltrack);
+		int32_t id = pl_i32(&pltrack);
+
+		err = sl_track_del(id);
+		if (err)
+			goto notfound;
+
+		sl_track_ws_send();
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	ROUTE("/api/v1/tracks/accept", "POST")
+	{
+		struct pl pltrack = PL_INIT;
+
+		err = re_regex(msg->prm.p, msg->prm.l, "track=[0-9]+",
+			       &pltrack);
+		if (err)
+			goto err;
+
+		sl_track_accept(sl_track_by_id(pl_i32(&pltrack)));
+
+		sl_track_ws_send();
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	ROUTE("/api/v1/tracks/hangup", "POST")
+	{
+		struct pl pltrack = PL_INIT;
+
+		err = re_regex(msg->prm.p, msg->prm.l, "track=[0-9]+",
+			       &pltrack);
+		if (err)
+			goto err;
+
+		sl_track_hangup(sl_track_by_id(pl_i32(&pltrack)));
+
+		sl_track_ws_send();
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
+	ROUTE("/api/v1/tracks/dial", "POST")
+	{
+		struct pl pltrack = PL_INIT;
+		struct pl peer;
+
+		pl_set_mbuf(&peer, msg->mb);
+
+		err = re_regex(msg->prm.p, msg->prm.l, "track=[0-9]+",
+			       &pltrack);
+		if (err)
+			goto err;
+
+		err = sl_track_dial(sl_track_by_id(pl_i32(&pltrack)), &peer);
+		if (err)
+			goto err;
+
+		sl_track_ws_send();
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
 		return;
 	}
 
@@ -710,9 +802,9 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/webrtc/stats", "POST")
 	{
+#if 0
 		struct sl_httpconn *http_conn;
 		char metric_url[URL_SZ] = {0};
-
 		err = sl_httpc_alloc(&http_conn, NULL, NULL, NULL);
 		if (err)
 			goto err;
@@ -721,6 +813,7 @@ static void http_req_handler(struct http_conn *conn,
 			    METRICS_URL "/instance/%s/user/%s", mix->room,
 			    sess->user->id);
 
+#endif
 		err = sl_mix_stats_append(msg->mb);
 		if (err)
 			goto err;
@@ -820,7 +913,7 @@ static void http_req_handler(struct http_conn *conn,
 		re_snprintf(json, sizeof(json),
 			    "{\"type\": \"emoji\", \"id\": %r }", &id);
 
-		sl_ws_send_event_all(json);
+		sl_ws_send_event_all(WS_USERS, json);
 		http_sreply(conn, 204, "OK", "text/html", "", 0, NULL);
 		return;
 	}

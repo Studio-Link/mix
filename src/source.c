@@ -12,7 +12,7 @@ static int ws_json(struct session *sess, const struct odict *od)
 	if (err)
 		goto out;
 
-	sl_ws_send_event_self(sess, buf);
+	sl_ws_send_event_self(WS_USERS, sess, buf);
 
 out:
 	mem_deref(buf);

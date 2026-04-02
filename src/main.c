@@ -226,7 +226,11 @@ int main(int argc, char *const argv[])
 	if (err)
 		return err;
 
+	sl_tracks_init();
+
 	re_main(signal_handler);
+
+	sl_tracks_close();
 
 	sl_ws_close();
 	slmix_close();

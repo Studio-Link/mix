@@ -9,6 +9,7 @@ struct ws_conn {
 	struct websock_conn *c;
 	struct mix *mix;
 	struct session *sess;
+	enum ws_type type;
 };
 
 enum { KEEPALIVE = 30 * 1000 };
@@ -57,7 +58,7 @@ static void conn_destroy(void *arg)
 		wsc->sess->user->video = false;
 
 		if (0 == user_event_json(&json, USER_DELETED, wsc->sess)) {
-			sl_ws_send_event(wsc->sess, json);
+			sl_ws_send_event(WS_USERS, wsc->sess, json);
 			json = mem_deref(json);
 		}
 
@@ -99,8 +100,9 @@ static void ws_recv_h(const struct websock_hdr *hdr, struct mbuf *mb,
 }
 
 
-int sl_ws_open(struct http_conn *httpc, const struct http_msg *msg,
-	       struct mix *mix, struct session *sess)
+int sl_ws_open(enum ws_type type, struct http_conn *httpc,
+	       const struct http_msg *msg, struct mix *mix,
+	       struct session *sess)
 {
 	struct ws_conn *ws_conn;
 	int err;
@@ -119,8 +121,12 @@ int sl_ws_open(struct http_conn *httpc, const struct http_msg *msg,
 	ws_conn->sess = mem_ref(sess);
 	mem_ref(ws_conn->sess->user);
 	ws_conn->sess->connected = true;
+	ws_conn->type		 = type;
 
 	list_append(&wsl, &ws_conn->le, ws_conn);
+
+	if (type != WS_USERS)
+		goto out;
 
 	char *json = NULL;
 	if (0 == users_json(&json, ws_conn->mix)) {
@@ -133,7 +139,7 @@ int sl_ws_open(struct http_conn *httpc, const struct http_msg *msg,
 	slmix_refresh_rooms(&force);
 
 	if (0 == user_event_json(&json, USER_ADDED, ws_conn->sess)) {
-		sl_ws_send_event(ws_conn->sess, json);
+		sl_ws_send_event(WS_USERS, ws_conn->sess, json);
 		json = mem_deref(json);
 	}
 
@@ -145,7 +151,7 @@ out:
 }
 
 
-void sl_ws_send_event(struct session *sess, char *json)
+void sl_ws_send_event(enum ws_type type, struct session *sess, char *json)
 {
 	struct le *le;
 
@@ -157,12 +163,14 @@ void sl_ws_send_event(struct session *sess, char *json)
 		struct ws_conn *ws_conn = le->data;
 		if (ws_conn->sess == sess)
 			continue;
+		if (ws_conn->type != type)
+			continue;
 		websock_send(ws_conn->c, WEBSOCK_TEXT, "%s", json);
 	}
 }
 
 
-void sl_ws_send_event_self(struct session *sess, char *json)
+void sl_ws_send_event_self(enum ws_type type, struct session *sess, char *json)
 {
 	struct le *le;
 
@@ -174,12 +182,14 @@ void sl_ws_send_event_self(struct session *sess, char *json)
 		struct ws_conn *ws_conn = le->data;
 		if (ws_conn->sess != sess)
 			continue;
+		if (ws_conn->type != type)
+			continue;
 		websock_send(ws_conn->c, WEBSOCK_TEXT, "%s", json);
 	}
 }
 
 
-void sl_ws_send_event_host(char *json)
+void sl_ws_send_event_host(enum ws_type type, char *json)
 {
 	struct le *le;
 
@@ -191,12 +201,14 @@ void sl_ws_send_event_host(char *json)
 		struct ws_conn *ws_conn = le->data;
 		if (!ws_conn->sess->user->host)
 			continue;
+		if (ws_conn->type != type)
+			continue;
 		websock_send(ws_conn->c, WEBSOCK_TEXT, "%s", json);
 	}
 }
 
 
-void sl_ws_send_event_all(char *json)
+void sl_ws_send_event_all(enum ws_type type, char *json)
 {
 	struct le *le;
 
@@ -206,6 +218,8 @@ void sl_ws_send_event_all(char *json)
 	LIST_FOREACH(&wsl, le)
 	{
 		struct ws_conn *ws_conn = le->data;
+		if (ws_conn->type != type)
+			continue;
 		websock_send(ws_conn->c, WEBSOCK_TEXT, "%s", json);
 	}
 }
@@ -240,7 +254,7 @@ static void ws_send_rtcp_stats(struct mix *mix)
 			    "}}",
 			    sess->user->speaker_id, audio_stat->rtt / 1000,
 			    video_stat->rtt / 1000);
-		sl_ws_send_event_all(json);
+		sl_ws_send_event_all(WS_USERS, json);
 	}
 }
 
@@ -262,7 +276,7 @@ static void update_handler(void *arg)
 	re_snprintf(json, sizeof(json),
 		    "{\"type\": \"rec\", \"t\": %lu, \"s\": %u}", secs,
 		    mix->talk_detect_h());
-	sl_ws_send_event_all(json);
+	sl_ws_send_event_all(WS_USERS, json);
 
 	ws_send_rtcp_stats(mix);
 

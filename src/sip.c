@@ -16,7 +16,7 @@ static void destruct_sess_e(void *arg)
 
 	char *json = NULL;
 	user_event_json(&json, USER_DELETED, e->sess);
-	sl_ws_send_event(e->sess, json);
+	sl_ws_send_event(WS_USERS, e->sess, json);
 	mem_deref(json);
 
 	list_unlink(&e->le);
@@ -113,6 +113,12 @@ static void ua_event_handler(enum bevent_ev ev, struct bevent *event,
 	return;
 hangup:
 	call_hangup(call, 500, "Server Error");
+}
+
+
+struct ua *slmix_sip_ua(void)
+{
+	return sip_ua;
 }
 
 
