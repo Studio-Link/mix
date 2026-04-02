@@ -49,6 +49,7 @@
         </ButtonSecondary>
     </div>
     <div v-if="isOnCall()" class="text-center">
+        <video></video>
         <svg class="w-24 h-24 fill-yellow-800 mx-auto"
         xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
         <path
