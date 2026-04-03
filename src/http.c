@@ -644,7 +644,7 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/webrtc/focus", "PUT")
 	{
-		char user[USERID_SZ] = {0};
+		char user[64] = {0};
 		struct pl user_id    = PL_INIT;
 
 		/* check permission */
@@ -652,10 +652,12 @@ static void http_req_handler(struct http_conn *conn,
 			goto err;
 
 		err = re_regex((char *)mbuf_buf(msg->mb),
-			       mbuf_get_left(msg->mb), "[a-zA-Z0-9@:]+",
+			       mbuf_get_left(msg->mb), "[a-zA-Z0-9@.:]+",
 			       &user_id);
 		if (err)
 			goto err;
+
+		warning("focus %r\n", &user_id);
 
 		pl_strcpy(&user_id, user, sizeof(user));
 
@@ -667,7 +669,7 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/webrtc/solo/enable", "PUT")
 	{
-		char user[USERID_SZ] = {0};
+		char user[64] = {0};
 		struct pl user_id    = PL_INIT;
 
 		/* check permission */
@@ -677,8 +679,10 @@ static void http_req_handler(struct http_conn *conn,
 		err = re_regex((char *)mbuf_buf(msg->mb),
 			       mbuf_get_left(msg->mb), "[a-zA-Z0-9@:]+",
 			       &user_id);
-		if (err)
+		if (err) {
+			warning("solo regex err %m\n", err);
 			goto err;
+		}
 
 		pl_strcpy(&user_id, user, sizeof(user));
 

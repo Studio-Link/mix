@@ -16,12 +16,12 @@
                 class="absolute right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-neutral-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 bg-sl-06dp text-sl-on_surface_2">
                 <div class="py-1">
                     <MenuItem v-slot="{ active }">
-                    <a href="#" @click="deleteTrack()" :class="[active ? 'bg-sl-01dp' : '', 'group flex items-center px-4 py-2 text-sm']">
+                    <button @click="deleteTrack()" :class="[active ? 'bg-sl-01dp' : '', 'group flex items-center px-4 py-2 text-sm w-full']">
 
                         <TrashIcon class="mr-3 h-5 w-5 text-neutral-400 group-hover:text-neutral-500"
                             aria-hidden="true" />
                         Delete Track
-                    </a>
+                    </button>
                     </MenuItem>
                 </div>
             </MenuItems>

@@ -125,6 +125,9 @@ int sl_ws_open(enum ws_type type, struct http_conn *httpc,
 
 	list_append(&wsl, &ws_conn->le, ws_conn);
 
+	if (type == WS_TRACKS)
+		sl_track_ws_send();
+
 	if (type != WS_USERS)
 		goto out;
 

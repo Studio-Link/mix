@@ -229,7 +229,7 @@ int sl_track_dial(struct sl_track *track, struct pl *peer)
 	}
 
 	err = ua_connect(slmix_sip_ua(), &track->u.remote.call, NULL, peerc,
-			 VIDMODE_OFF);
+			 VIDMODE_ON);
 	if (err)
 		goto out;
 
@@ -397,11 +397,21 @@ static void eventh(enum bevent_ev ev, struct bevent *event, void *arg)
 		if (ev == BEVENT_CALL_RINGING) {
 			track->status = SL_TRACK_REMOTE_CALLING;
 			changed	      = true;
+			const char *peer = call_peeruri(call);
+			audio_set_devicename(call_audio(call), peer, peer);
+			video_set_devicename(call_video(call), peer, peer);
 		}
 
 		if (ev == BEVENT_CALL_ESTABLISHED) {
-			track->status = SL_TRACK_REMOTE_CONNECTED;
-			changed	      = true;
+			track->status	 = SL_TRACK_REMOTE_CONNECTED;
+			changed		 = true;
+			const char *peer = call_peeruri(call);
+			struct mix *mix = slmix();
+
+			slmix_source_append_all(mix, call, peer);
+			slmix_disp_enable(mix, peer, true);
+
+			info("track: call with '%s' established\n", peer);
 		}
 
 		if (ev == BEVENT_CALL_CLOSED) {
