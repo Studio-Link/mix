@@ -205,7 +205,7 @@ static void slmix_metrics(void *arg)
 	mbuf_rewind(mb_stats);
 
 out:
-	tmr_start(&tmr_metrics, 2000, slmix_metrics, NULL);
+	tmr_start(&tmr_metrics, 6000, slmix_metrics, NULL);
 }
 
 
