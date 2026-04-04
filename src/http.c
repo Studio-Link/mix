@@ -243,6 +243,9 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/tracks/remote", "POST")
 	{
+		if (!sess->user->host)
+			goto auth;
+
 		struct sl_track *track;
 
 		err = sl_track_add(&track, SL_TRACK_REMOTE);
@@ -257,7 +260,10 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/tracks", "DELETE")
 	{
-		struct pl pltrack = {"3", 2};
+		if (!sess->user->host)
+			goto auth;
+
+		struct pl pltrack = PL_INIT;
 		err = re_regex((char *)mbuf_buf(msg->mb),
 			       mbuf_get_left(msg->mb), "[0-9]+", &pltrack);
 		int32_t id = pl_i32(&pltrack);
@@ -274,6 +280,9 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/tracks/accept", "POST")
 	{
+		if (!sess->user->host)
+			goto auth;
+
 		struct pl pltrack = PL_INIT;
 
 		err = re_regex(msg->prm.p, msg->prm.l, "track=[0-9]+",
@@ -291,6 +300,9 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/tracks/hangup", "POST")
 	{
+		if (!sess->user->host)
+			goto auth;
+
 		struct pl pltrack = PL_INIT;
 
 		err = re_regex(msg->prm.p, msg->prm.l, "track=[0-9]+",
@@ -308,6 +320,9 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/tracks/dial", "POST")
 	{
+		if (!sess->user->host)
+			goto auth;
+
 		struct pl pltrack = PL_INIT;
 		struct pl peer;
 
@@ -644,8 +659,8 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/webrtc/focus", "PUT")
 	{
-		char user[64] = {0};
-		struct pl user_id    = PL_INIT;
+		char user[64]	  = {0};
+		struct pl user_id = PL_INIT;
 
 		/* check permission */
 		if (!sess->user->host)
@@ -669,8 +684,8 @@ static void http_req_handler(struct http_conn *conn,
 
 	ROUTE("/api/v1/webrtc/solo/enable", "PUT")
 	{
-		char user[64] = {0};
-		struct pl user_id    = PL_INIT;
+		char user[64]	  = {0};
+		struct pl user_id = PL_INIT;
 
 		/* check permission */
 		if (!sess->user->host)

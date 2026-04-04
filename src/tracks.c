@@ -42,7 +42,8 @@ int sl_tracks_json(struct re_printf *pf, void *arg)
 		if (err)
 			return ENOMEM;
 
-		if (track->type == SL_TRACK_REMOTE) {
+		if (track->type == SL_TRACK_REMOTE ||
+		    track->type == SL_TRACK_REMOTE_RTC) {
 			odict_entry_add(o_track, "type", ODICT_STRING,
 					"remote");
 		}
@@ -202,9 +203,10 @@ int sl_track_dial(struct sl_track *track, struct pl *peer)
 	int err;
 	char *peerc = NULL;
 
-	if (!track || track->type != SL_TRACK_REMOTE)
+	if (!track)
 		return EINVAL;
 
+	track->type = SL_TRACK_REMOTE;
 	track->error[0] = '\0';
 
 	const struct contacts *cs = baresip_contacts();
@@ -264,11 +266,17 @@ void sl_track_accept(struct sl_track *track)
 
 void sl_track_hangup(struct sl_track *track)
 {
-	if (!track || track->type != SL_TRACK_REMOTE)
+	if (!track)
 		return;
 
-	ua_hangup(call_get_ua(track->u.remote.call), track->u.remote.call, 0,
-		  "");
+	warning("hangup %d\n", track->type);
+
+	if (track->type == SL_TRACK_REMOTE)
+		ua_hangup(call_get_ua(track->u.remote.call),
+			  track->u.remote.call, 0, "");
+
+	if (track->type == SL_TRACK_REMOTE_RTC)
+		track->status = SL_TRACK_IDLE;
 
 	track->name[0]	     = '\0';
 	track->u.remote.call = NULL;
@@ -395,8 +403,8 @@ static void eventh(enum bevent_ev ev, struct bevent *event, void *arg)
 
 
 		if (ev == BEVENT_CALL_RINGING) {
-			track->status = SL_TRACK_REMOTE_CALLING;
-			changed	      = true;
+			track->status	 = SL_TRACK_REMOTE_CALLING;
+			changed		 = true;
 			const char *peer = call_peeruri(call);
 			audio_set_devicename(call_audio(call), peer, peer);
 			video_set_devicename(call_video(call), peer, peer);
@@ -406,7 +414,7 @@ static void eventh(enum bevent_ev ev, struct bevent *event, void *arg)
 			track->status	 = SL_TRACK_REMOTE_CONNECTED;
 			changed		 = true;
 			const char *peer = call_peeruri(call);
-			struct mix *mix = slmix();
+			struct mix *mix	 = slmix();
 
 			slmix_source_append_all(mix, call, peer);
 			slmix_disp_enable(mix, peer, true);

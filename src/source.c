@@ -156,18 +156,33 @@ static void source_dealloc(void *arg)
 
 static int32_t source_id_next(struct source_pc *src)
 {
+	int32_t next_id = 0;
 	if (!src || !src->sess)
 		return -1;
 
 	if (!src->sess->source_pcl.tail)
-		return 0;
+		goto out;
 
 	struct source_pc *last = src->sess->source_pcl.tail->data;
 
 	if (!last)
 		return -1;
 
-	return last->id + 1;
+	next_id = last->id + 1;
+
+out:
+	struct sl_track *track = sl_track_by_id(next_id + 1);
+	if (!track) {
+		sl_track_add(&track, SL_TRACK_REMOTE_RTC);
+		track->status = SL_TRACK_REMOTE_CONNECTED;
+	}
+	else {
+		track->type   = SL_TRACK_REMOTE_RTC;
+		track->status = SL_TRACK_REMOTE_CONNECTED;
+	}
+	sl_track_ws_send();
+
+	return next_id;
 }
 
 
