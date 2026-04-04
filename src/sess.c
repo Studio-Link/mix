@@ -229,6 +229,9 @@ int slmix_session_alloc(struct session **sessp, struct mix *mix,
 	struct session *sess;
 	struct user *user;
 
+	if (!sessp)
+		return EINVAL;
+
 	sess = mem_zalloc(sizeof(*sess), destructor);
 	if (!sess)
 		return ENOMEM;
@@ -245,6 +248,11 @@ int slmix_session_alloc(struct session **sessp, struct mix *mix,
 		pl_strcpy(sess_id, sess->id, sizeof(sess->id));
 		pl_strcpy(user_id, user->id, sizeof(user->id));
 		sess->auth = true;
+	}
+	else if (user_id) {
+		info("session: create new with user %r\n", user_id);
+		rand_str(sess->id, sizeof(sess->id));
+		pl_strcpy(user_id, user->id, sizeof(user->id));
 	}
 	else {
 		/* generate a unique session and user id */

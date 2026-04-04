@@ -206,7 +206,7 @@ int sl_track_dial(struct sl_track *track, struct pl *peer)
 	if (!track)
 		return EINVAL;
 
-	track->type = SL_TRACK_REMOTE;
+	track->type	= SL_TRACK_REMOTE;
 	track->error[0] = '\0';
 
 	const struct contacts *cs = baresip_contacts();
@@ -218,7 +218,7 @@ int sl_track_dial(struct sl_track *track, struct pl *peer)
 			continue;
 
 		if (pl_casecmp(peer, &a->dname) == 0) {
-			str_dup(&peerc, contact_uri(c));
+			str_dup(&peerc, contact_str(c));
 			break;
 		}
 	}
@@ -391,9 +391,13 @@ static void eventh(enum bevent_ev ev, struct bevent *event, void *arg)
 		return;
 	}
 
+	struct mix *mix = slmix();
+
 	LIST_FOREACH(&tracks, le)
 	{
 		struct sl_track *track = le->data;
+		const char *peername   = NULL;
+		struct pl peername_pl  = PL_INIT;
 
 		if (track->type != SL_TRACK_REMOTE)
 			continue;
@@ -401,28 +405,48 @@ static void eventh(enum bevent_ev ev, struct bevent *event, void *arg)
 		if (track->u.remote.call != call)
 			continue;
 
+		switch (ev) {
+		case BEVENT_CALL_RINGING:
+			track->status = SL_TRACK_REMOTE_CALLING;
+			changed	      = true;
+			peername      = call_peername(call);
+			pl_set_str(&peername_pl, peername);
 
-		if (ev == BEVENT_CALL_RINGING) {
-			track->status	 = SL_TRACK_REMOTE_CALLING;
-			changed		 = true;
-			const char *peer = call_peeruri(call);
-			audio_set_devicename(call_audio(call), peer, peer);
-			video_set_devicename(call_video(call), peer, peer);
-		}
+			audio_set_devicename(call_audio(call), peername,
+					     peername);
+			video_set_devicename(call_video(call), peername,
+					     peername);
+			break;
 
-		if (ev == BEVENT_CALL_ESTABLISHED) {
-			track->status	 = SL_TRACK_REMOTE_CONNECTED;
-			changed		 = true;
-			const char *peer = call_peeruri(call);
-			struct mix *mix	 = slmix();
+		case BEVENT_CALL_ESTABLISHED:
+			track->status = SL_TRACK_REMOTE_CONNECTED;
+			changed	      = true;
+			peername      = call_peername(call);
+			pl_set_str(&peername_pl, peername);
 
-			slmix_source_append_all(mix, call, peer);
-			slmix_disp_enable(mix, peer, true);
+			int err = slmix_session_alloc(
+				&track->u.remote.sess, mix, NULL, &peername_pl,
+				&peername_pl, false, true);
+			if (err)
+				break;
 
-			info("track: call with '%s' established\n", peer);
-		}
+			slmix_source_append_all(mix, call, peername);
 
-		if (ev == BEVENT_CALL_CLOSED) {
+			amix_mute(peername, false, ++mix->next_speaker_id);
+			track->u.remote.sess->call	  = call;
+			track->u.remote.sess->connected	  = true;
+			track->u.remote.sess->user->video = true;
+
+			track->u.remote.sess->user->pidx =
+				slmix_disp_enable(mix, peername, true);
+			slmix_disp_enable(mix, peername, true);
+
+			warning("track: call with '%s' established\n",
+				peername);
+			break;
+
+		case BEVENT_CALL_CLOSED:
+			track->u.remote.sess = mem_deref(track->u.remote.sess);
 			track->status	     = SL_TRACK_IDLE;
 			track->u.remote.call = NULL;
 			track->name[0]	     = '\0';
@@ -430,6 +454,9 @@ static void eventh(enum bevent_ev ev, struct bevent *event, void *arg)
 				str_ncpy(track->error, prm,
 					 sizeof(track->error));
 			changed = true;
+			break;
+
+		default:
 		}
 	}
 

@@ -306,6 +306,7 @@ struct sl_local {
 /* Remote audio call track */
 struct sl_remote {
 	struct call *call;
+	struct session *sess;
 };
 enum sl_track_type { SL_TRACK_REMOTE, SL_TRACK_REMOTE_RTC, SL_TRACK_LOCAL };
 enum sl_track_status {

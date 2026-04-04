@@ -3,7 +3,7 @@ import { State } from './ws/state'
 
 function solo_source(index: number) {
     const dev = State.sources.value[index].dev
-    api.source_focus(dev)
+    api.video_solo(dev, true)
     State.sources.value.forEach((item) => {
         if (dev === item.dev) item.solo = true
         else item.solo = false
