@@ -2,7 +2,6 @@
 #include <baresip.h>
 #include <mix.h>
 
-#define SL_MAX_TRACKS 16
 
 static struct list tracks = LIST_INIT;
 
@@ -275,8 +274,11 @@ void sl_track_hangup(struct sl_track *track)
 		ua_hangup(call_get_ua(track->u.remote.call),
 			  track->u.remote.call, 0, "");
 
-	if (track->type == SL_TRACK_REMOTE_RTC)
+	if (track->type == SL_TRACK_REMOTE_RTC) {
 		track->status = SL_TRACK_IDLE;
+
+		/*TODO quit rtc*/
+	}
 
 	track->name[0]	     = '\0';
 	track->u.remote.call = NULL;

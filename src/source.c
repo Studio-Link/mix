@@ -156,34 +156,32 @@ static void source_dealloc(void *arg)
 
 static int32_t source_id_next(struct source_pc *src)
 {
-	int32_t next_id = 0;
-	if (!src || !src->sess)
-		return -1;
+	int32_t next_id;
+	for (next_id = 0; next_id <= SL_MAX_TRACKS; next_id++) {
+		struct sl_track *track = sl_track_by_id(next_id + 1);
+		if (!track) {
+			sl_track_add(&track, SL_TRACK_REMOTE_RTC);
+			track->status = SL_TRACK_REMOTE_CONNECTED;
+			info("track/source add %d/%d, RTC\n", track->id,
+			     next_id);
 
-	if (!src->sess->source_pcl.tail)
-		goto out;
+			goto out;
+		}
 
-	struct source_pc *last = src->sess->source_pcl.tail->data;
+		if (track->status == SL_TRACK_IDLE) {
+			track->type   = SL_TRACK_REMOTE_RTC;
+			track->status = SL_TRACK_REMOTE_CONNECTED;
+			info("track/source update %d/%d, RTC\n", track->id,
+			     next_id);
 
-	if (!last)
-		return -1;
+			goto out;
+		}
+	}
 
-	next_id = last->id + 1;
+	next_id = -1;
 
 out:
-	struct sl_track *track = sl_track_by_id(next_id + 1);
-	if (!track) {
-		info("track/source add %d/%d, RTC\n", track->id, next_id);
-		sl_track_add(&track, SL_TRACK_REMOTE_RTC);
-		track->status = SL_TRACK_REMOTE_CONNECTED;
-	}
-	else if (track->status == SL_TRACK_IDLE) {
-		info("track/source update %d/%d, RTC\n", track->id, next_id);
-		track->type   = SL_TRACK_REMOTE_RTC;
-		track->status = SL_TRACK_REMOTE_CONNECTED;
-	}
 	sl_track_ws_send();
-
 	return next_id;
 }
 

@@ -308,6 +308,7 @@ struct sl_remote {
 	struct call *call;
 	struct session *sess;
 };
+enum { SL_MAX_TRACKS = 16 };
 enum sl_track_type { SL_TRACK_REMOTE, SL_TRACK_REMOTE_RTC, SL_TRACK_LOCAL };
 enum sl_track_status {
 	SL_TRACK_INVALID	     = -1,
