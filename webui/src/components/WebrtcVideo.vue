@@ -23,7 +23,7 @@
       @mouseleave="nav = false"
       @touchstart.passive="nav = true"
       class="relative flex bg-black mx-auto"
-      :class="[isFullscreen ? 'w-full' : 'max-w-(--breakpoint-xl) mt-8 lg:mt-0']"
+      :class="[isFullscreen ? 'w-full' : 'max-w-(--breakpoint-lg) mt-8 lg:mt-0']"
     >
       <div v-show="nav" class="absolute z-30 text-gray-200 bottom-0 right-0 px-2">
         <button class="mr-4" @click="enable_stats()" type="button">
