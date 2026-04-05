@@ -108,6 +108,8 @@ static void track_destructor(void *data)
 		if (track->u.remote.call)
 			ua_hangup(slmix_sip_ua(), track->u.remote.call, 0,
 				  NULL);
+
+		track->u.remote.sess = mem_deref(track->u.remote.sess);
 	}
 }
 
@@ -293,9 +295,11 @@ void sl_track_hangup(struct sl_track *track)
 
 	warning("hangup %d\n", track->type);
 
-	if (track->type == SL_TRACK_REMOTE)
+	if (track->type == SL_TRACK_REMOTE) {
+		track->u.remote.sess = mem_deref(track->u.remote.sess);
 		ua_hangup(call_get_ua(track->u.remote.call),
 			  track->u.remote.call, 0, "");
+	}
 
 	if (track->type == SL_TRACK_REMOTE_RTC) {
 		track->status = SL_TRACK_IDLE;
