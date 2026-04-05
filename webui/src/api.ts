@@ -212,6 +212,10 @@ export default {
         api_fetch('POST', '/tracks/' + type, null);
     },
 
+    async track_togglemute(track: number) {
+        api_fetch('POST', '/tracks/togglemute', String(track), false)
+    },
+
     async track_del(track: number) {
         api_fetch('DELETE', '/tracks', String(track), false)
     },

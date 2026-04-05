@@ -258,6 +258,25 @@ static void http_req_handler(struct http_conn *conn,
 		return;
 	}
 
+	ROUTE("/api/v1/tracks/togglemute", "POST")
+	{
+		if (!sess->user->host)
+			goto auth;
+
+		struct pl pltrack = PL_INIT;
+		err = re_regex((char *)mbuf_buf(msg->mb),
+			       mbuf_get_left(msg->mb), "[0-9]+", &pltrack);
+		if (err)
+			goto err;
+
+		int32_t id = pl_i32(&pltrack);
+
+		sl_track_toggle_mute(id);
+
+		http_sreply(conn, 204, "OK", "text/html", "", 0, sess);
+		return;
+	}
+
 
 	ROUTE("/api/v1/tracks/focus", "POST")
 	{

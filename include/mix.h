@@ -350,5 +350,5 @@ struct slaudio *sl_track_audio(struct sl_track *track);
 int sl_track_dial(struct sl_track *track, struct pl *peer);
 void sl_track_accept(struct sl_track *track);
 void sl_track_hangup(struct sl_track *track);
-void sl_track_toggle_mute(struct sl_track *track);
+void sl_track_toggle_mute(int id);
 void sl_track_ws_send(void);

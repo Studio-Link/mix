@@ -1,5 +1,6 @@
 <template>
-    <li aria-label="Remote track" class="aspect-video col-span-1" @mouseenter="setActive()" @touchstart.passive="setActive()">
+    <li aria-label="Remote track" class="aspect-video col-span-1" @mouseenter="setActive()"
+        @touchstart.passive="setActive()">
         <div class="flex justify-between h-5">
             <h2 class="ml-1 font-semibold text-sl-disabled text-sm truncate pr-2">{{ getTrackName() }}</h2>
             <div class="flex">
@@ -22,6 +23,8 @@
                         {{ pkey }}
                         <span class="sr-only">selected</span>
                     </div>
+                    <button @click="toggleMuteRemote()" :class="[isMuted() ? 'bg-red-900' : 'bg-sl-disabled']"
+                        class="rounded-sm px-2 py-1 text-xs font-semibold text-sl  shadow-xs hover:bg-indigo-100 dark:bg-indigo-500/20 dark:text-indigo-400 dark:shadow-none dark:hover:bg-indigo-500/30">M</button>
                     <div class="shrink-0 pr-2 text-right mt-2 w-8 h-8">
                         <RemoteTrackSettings v-if="isActive()" :pkey="props.pkey" />
                     </div>
@@ -39,10 +42,10 @@
                 </div>
             </div>
 
-            <div class="flex w-5 items-end ml-0.5 opacity-60" aria-hidden="true">
+            <div v-if=0 class="flex w-5 items-end ml-0.5 opacity-60" aria-hidden="true">
                 <div id="levels" class="levels">
-                    <div :id="'level'+(pkey+pkey-1)" class="level"></div>
-                    <div :id="'level'+(pkey+pkey)" class="level"></div>
+                    <div :id="'level' + (pkey + pkey - 1)" class="level"></div>
+                    <div :id="'level' + (pkey + pkey)" class="level"></div>
                 </div>
             </div>
         </div>
@@ -56,7 +59,7 @@ import RemoteTrackCall from './RemoteTrackCall.vue'
 import { Tracks } from '../../ws/tracks'
 import api from '../../api'
 
-const props = defineProps({ 
+const props = defineProps({
     'pkey': { type: Number, required: true },
     'idx': { type: Number, required: true },
     'error': { type: String, required: true },
@@ -70,6 +73,10 @@ onMounted(() => {
 
 function isActive() {
     return Tracks.isSelected(props.pkey)
+}
+
+function isMuted() {
+    return Tracks.isMuted(props.pkey)
 }
 
 function isFocused() {
@@ -86,5 +93,9 @@ function getTrackName() {
 
 function deleteRemoteTrack() {
     api.track_del(props.pkey)
+}
+
+function toggleMuteRemote() {
+    api.track_togglemute(props.pkey)
 }
 </script>

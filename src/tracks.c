@@ -132,7 +132,7 @@ int sl_track_add(struct sl_track **trackp, enum sl_track_type type)
 	track->id     = sl_track_next_id();
 	track->type   = type;
 	track->status = SL_TRACK_IDLE;
-	track->muted  = false;
+	track->muted  = true;
 
 	list_append(&tracks, &track->le, track);
 	list_sort(&tracks, sort_handler, NULL);
@@ -307,13 +307,16 @@ void sl_track_hangup(struct sl_track *track)
 }
 
 
-void sl_track_toggle_mute(struct sl_track *track)
+void sl_track_toggle_mute(int id)
 {
-	/* only allowed for local track currently */
-	if (!track || track->id != 1)
+	struct sl_track *track = sl_track_by_id(id);
+	if (!track)
 		return;
 
-	local_track->muted = !local_track->muted;
+	track->muted = !track->muted;
+
+	amix_mute(track->name, track->muted, 0);
+
 	sl_track_ws_send();
 }
 
@@ -456,7 +459,8 @@ static void eventh(enum bevent_ev ev, struct bevent *event, void *arg)
 
 			slmix_source_append_all(mix, call, peername);
 
-			amix_mute(peername, false, ++mix->next_speaker_id);
+			amix_mute(peername, track->muted,
+				  ++mix->next_speaker_id);
 			track->u.remote.sess->call	  = call;
 			track->u.remote.sess->connected	  = true;
 			track->u.remote.sess->user->video = true;
