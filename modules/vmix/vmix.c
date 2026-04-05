@@ -113,8 +113,10 @@ static uint32_t disp_enable_h(const char *device, bool enable)
 		return 0;
 
 	src = vmix_src_find(device);
-	if (!src)
+	if (!src) {
+		warning("disp_enable: device %s not found\n", device);
 		return 0;
+	}
 
 	vidmix_source_enable(src->vidmix_src, enable);
 

@@ -6,6 +6,7 @@
 static const char *modv[] = {
 	"ice",
 	"dtls_srtp",
+	"contact",
 
 	/* audio */
 	"amix",
@@ -13,7 +14,7 @@ static const char *modv[] = {
 	"auresamp",
 
 	/* video */
-	"vp8",
+	/*"vp8", */
 	"avcodec",
 	"vmix",
 };
@@ -118,7 +119,7 @@ int main(int argc, char *const argv[])
 	struct mix *mix = slmix();
 
 	const char *conf =
-		"#sip_listen		0.0.0.0:5060\n"
+		"sip_listen		0.0.0.0:5060\n"
 		"call_max_calls		10\n" /* SIP incoming only */
 		"sip_verify_server	yes\n"
 		"audio_buffer		40-100\n"
@@ -132,10 +133,10 @@ int main(int argc, char *const argv[])
 		"opus_bitrate		64000\n"
 		"ice_policy		all\n"
 		"video_size		1920x1080\n"
-		"video_bitrate		2500000\n"
-		"video_sendrate		10000000\n" /* max burst send */
+		"video_bitrate		4500000\n"
+		"video_sendrate		30000000\n" /* max burst send */
 		"video_burst_bit	1000000\n"  /* max burst send */
-		"video_fps		24\n"
+		"video_fps		30\n"
 		"avcodec_keyint		10\n"
 		"avcodec_h265enc	nil\n"
 		"avcodec_h265dec	nil\n"
@@ -226,7 +227,11 @@ int main(int argc, char *const argv[])
 	if (err)
 		return err;
 
+	sl_tracks_init();
+
 	re_main(signal_handler);
+
+	sl_tracks_close();
 
 	sl_ws_close();
 	slmix_close();

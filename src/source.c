@@ -12,7 +12,7 @@ static int ws_json(struct session *sess, const struct odict *od)
 	if (err)
 		goto out;
 
-	sl_ws_send_event_self(sess, buf);
+	sl_ws_send_event_self(WS_USERS, sess, buf);
 
 out:
 	mem_deref(buf);
@@ -156,18 +156,29 @@ static void source_dealloc(void *arg)
 
 static int32_t source_id_next(struct source_pc *src)
 {
-	if (!src || !src->sess)
-		return -1;
+	int32_t next_id;
+	for (next_id = 0; next_id < SL_MAX_TRACKS; next_id++) {
+		struct sl_track *track = sl_track_by_id(next_id + 1);
+		if (!track) {
+			sl_track_add(&track, SL_TRACK_REMOTE_RTC);
+			track->status = SL_TRACK_REMOTE_CONNECTED;
+			re_snprintf(track->name, sizeof(track->name), "%s",
+				    src->dev);
+			info("track/source add %d/%d, RTC\n", track->id,
+			     next_id);
 
-	if (!src->sess->source_pcl.tail)
-		return 0;
+			goto out;
+		}
 
-	struct source_pc *last = src->sess->source_pcl.tail->data;
+		if (str_cmp(track->name, src->dev) == 0)
+			goto out;
+	}
 
-	if (!last)
-		return -1;
+	next_id = -1;
 
-	return last->id + 1;
+out:
+	sl_track_ws_send();
+	return next_id;
 }
 
 

@@ -1,5 +1,6 @@
 <template>
   <div
+    v-if="!State.user.value.host"
     class="fixed inset-x-0 bottom-0 z-20"
     :class="[Webrtc.state.value >= WebrtcState.Listening ? '' : 'bg-gray-500']"
   >

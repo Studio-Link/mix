@@ -1,7 +1,7 @@
 #include <re.h>
 #include <baresip.h>
 
-#define METRICS_URL "http://127.0.0.1:9091/metrics/job/rtc"
+#define METRICS_URL "http://127.0.0.1:6969/push/atrium"
 
 enum {
 	ROOM_SZ	   = 128,
@@ -134,6 +134,7 @@ int slmix_update_room(void);
  */
 int slmix_sip_init(struct mix *mix);
 int slmix_sip_close(void);
+struct ua *slmix_sip_ua(void);
 
 
 /******************************************************************************
@@ -199,14 +200,17 @@ int user_event_json(char **json, enum user_event event, struct session *sess);
 /******************************************************************************
  * ws.c
  */
+enum ws_type { WS_USERS, WS_TRACKS };
 int sl_ws_init(void);
 int sl_ws_close(void);
-int sl_ws_open(struct http_conn *httpc, const struct http_msg *msg,
-	       struct mix *mix, struct session *sess);
-void sl_ws_send_event(struct session *sess, char *json);
-void sl_ws_send_event_self(struct session *sess, char *json);
-void sl_ws_send_event_host(char *json);
-void sl_ws_send_event_all(char *json);
+int sl_ws_open(enum ws_type type, struct http_conn *httpc,
+	       const struct http_msg *msg, struct mix *mix,
+	       struct session *sess);
+void sl_ws_send_event(enum ws_type type, struct session *sess, char *json);
+void sl_ws_send_event_self(enum ws_type type, struct session *sess,
+			   char *json);
+void sl_ws_send_event_host(enum ws_type type, char *json);
+void sl_ws_send_event_all(enum ws_type type, char *json);
 void sl_ws_dummyh(const struct websock_hdr *hdr, struct mbuf *mb, void *arg);
 void sl_ws_users_auth(const struct websock_hdr *hdr, struct mbuf *mb,
 		      void *arg);
@@ -281,6 +285,7 @@ int slmix_handle_ice_candidate(struct peer_connection *pc,
 /******************************************************************************
  * stats.c
  */
+int sl_mix_stats_append(struct mbuf *mb);
 int slmix_stats_init(void);
 void slmix_stats_close(void);
 
@@ -289,3 +294,61 @@ void slmix_stats_close(void);
  */
 int social_request(struct http_conn *conn, const struct http_msg *msg,
 		   struct session *sess);
+
+/******************************************************************************
+ * tracks.c
+ */
+/* Local audio device track */
+struct sl_local {
+	struct slaudio *slaudio;
+};
+
+/* Remote audio call track */
+struct sl_remote {
+	struct call *call;
+	struct session *sess;
+};
+enum { SL_MAX_TRACKS = 16 };
+enum sl_track_type { SL_TRACK_REMOTE, SL_TRACK_REMOTE_RTC, SL_TRACK_LOCAL };
+enum sl_track_status {
+	SL_TRACK_INVALID	     = -1,
+	SL_TRACK_IDLE		     = 0,
+	SL_TRACK_LOCAL_REGISTERING   = 1,
+	SL_TRACK_LOCAL_REGISTER_OK   = 2,
+	SL_TRACK_LOCAL_REGISTER_FAIL = 3,
+	SL_TRACK_LOCAL_AUDIO_READY   = 4,
+	SL_TRACK_REMOTE_CONNECTED    = 5,
+	SL_TRACK_REMOTE_CALLING	     = 6,
+	SL_TRACK_REMOTE_INCOMING     = 7,
+};
+struct sl_track {
+	struct le le;
+	uint16_t id;
+	enum sl_track_type type;
+	char name[64];
+	char error[128];
+	enum sl_track_status status;
+	bool muted;
+	bool focus;
+	union
+	{
+		struct sl_local local;
+		struct sl_remote remote;
+	} u;
+};
+int sl_tracks_init(void);
+int sl_tracks_close(void);
+const struct list *sl_tracks(void);
+int sl_track_next_id(void);
+int sl_track_add(struct sl_track **trackp, enum sl_track_type type);
+int sl_track_del(int id);
+void sl_track_focus(int id);
+enum sl_track_status sl_track_status(int id);
+int sl_tracks_json(struct re_printf *pf, void *arg);
+struct sl_track *sl_track_by_id(int id);
+struct slaudio *sl_track_audio(struct sl_track *track);
+int sl_track_dial(struct sl_track *track, struct pl *peer);
+void sl_track_accept(struct sl_track *track);
+void sl_track_hangup(struct sl_track *track);
+void sl_track_toggle_mute(int id);
+void sl_track_ws_send(void);

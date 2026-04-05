@@ -457,7 +457,7 @@ int vmix_codec_init(void)
 	if (err)
 		return err;
 
-#if 0
+#if 1
 	proxy_codec_alloc("H264", "packetization-mode=0");
 	proxy_codec_alloc("H264", "packetization-mode=1");
 #else
