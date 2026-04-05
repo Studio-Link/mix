@@ -157,23 +157,31 @@ static void source_dealloc(void *arg)
 static int32_t source_id_next(struct source_pc *src)
 {
 	int32_t next_id;
-	for (next_id = 0; next_id <= SL_MAX_TRACKS; next_id++) {
+	for (next_id = 0; next_id < SL_MAX_TRACKS; next_id++) {
 		struct sl_track *track = sl_track_by_id(next_id + 1);
 		if (!track) {
 			sl_track_add(&track, SL_TRACK_REMOTE_RTC);
-			track->status = SL_TRACK_REMOTE_CONNECTED;
+			track->status	 = SL_TRACK_REMOTE_CONNECTED;
+			track->source_id = next_id;
 			info("track/source add %d/%d, RTC\n", track->id,
 			     next_id);
 
 			goto out;
 		}
-
-		if (track->status == SL_TRACK_IDLE) {
-			track->type   = SL_TRACK_REMOTE_RTC;
-			track->status = SL_TRACK_REMOTE_CONNECTED;
+		else if (track->source_id == -1 &&
+			 track->status == SL_TRACK_IDLE) {
+			track->type	 = SL_TRACK_REMOTE_RTC;
+			track->status	 = SL_TRACK_REMOTE_CONNECTED;
+			track->source_id = next_id;
 			info("track/source update %d/%d, RTC\n", track->id,
 			     next_id);
 
+			goto out;
+		}
+		else if (track->source_id == -1) {
+			track->source_id = next_id;
+			info("track/source update %d/%d\n", track->id,
+			     next_id);
 			goto out;
 		}
 	}

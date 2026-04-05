@@ -324,6 +324,7 @@ enum sl_track_status {
 struct sl_track {
 	struct le le;
 	uint16_t id;
+	int32_t source_id;
 	enum sl_track_type type;
 	char name[64];
 	char error[128];
