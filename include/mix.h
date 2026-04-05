@@ -329,6 +329,7 @@ struct sl_track {
 	char error[128];
 	enum sl_track_status status;
 	bool muted;
+	bool focus;
 	union
 	{
 		struct sl_local local;
@@ -341,6 +342,7 @@ const struct list *sl_tracks(void);
 int sl_track_next_id(void);
 int sl_track_add(struct sl_track **trackp, enum sl_track_type type);
 int sl_track_del(int id);
+void sl_track_focus(int id);
 enum sl_track_status sl_track_status(int id);
 int sl_tracks_json(struct re_printf *pf, void *arg);
 struct sl_track *sl_track_by_id(int id);

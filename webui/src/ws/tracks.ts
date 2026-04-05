@@ -23,6 +23,7 @@ interface Track {
     name: string
     status: TrackStatus
     muted: boolean
+    focus: boolean
     error: string
 }
 
@@ -59,6 +60,7 @@ interface Tracks {
     getTrackName(id: number): string
     websocket(): void
     isValid(id: number): boolean
+    isFocused(id: number): boolean
     isSelected(id: number): boolean
     isMuted(id: number): boolean
     localState(id: number): LocalTrackStates
@@ -112,7 +114,8 @@ export const Tracks: Tracks = {
                     error: "",
                     local: LocalTrackStates.Setup,
                     name: tracks[key].name,
-                    muted: tracks[key].muted
+                    muted: tracks[key].muted,
+                    focus: tracks[key].focus
                 }
                 last_key = parseInt(key)
             }
@@ -120,6 +123,7 @@ export const Tracks: Tracks = {
             this.state[tracks[key].id].name = tracks[key].name
             this.state[tracks[key].id].status = tracks[key].status
             this.state[tracks[key].id].muted = tracks[key].muted
+            this.state[tracks[key].id].focus = tracks[key].focus
 
             if (tracks[key].type == 'local') {
                 this.local_tracks.push(tracks[key])
@@ -157,12 +161,16 @@ export const Tracks: Tracks = {
         return false
     },
 
+    isFocused(id: number): boolean {
+        return this.state[id]?.focus
+    },
+
     isMuted(id: number): boolean {
         return this.state[id]?.muted
     },
 
     localState(id: number): LocalTrackStates {
-        return this.state[id].local
+        return this.state[id]?.local
     },
 
     select(id: number): void {

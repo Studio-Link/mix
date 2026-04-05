@@ -51,6 +51,7 @@ int sl_tracks_json(struct re_printf *pf, void *arg)
 		odict_entry_add(o_track, "status", ODICT_INT, track->status);
 		odict_entry_add(o_track, "error", ODICT_STRING, track->error);
 		odict_entry_add(o_track, "muted", ODICT_BOOL, track->muted);
+		odict_entry_add(o_track, "focus", ODICT_BOOL, track->focus);
 		odict_entry_add(o_tracks, str_itoa(track->id, id, 10),
 				ODICT_OBJECT, o_track);
 		o_track = mem_deref(o_track);
@@ -128,10 +129,10 @@ int sl_track_add(struct sl_track **trackp, enum sl_track_type type)
 	if (!track)
 		return ENOMEM;
 
-	track->id	 = sl_track_next_id();
-	track->type	 = type;
-	track->status	 = SL_TRACK_IDLE;
-	track->muted	 = false;
+	track->id     = sl_track_next_id();
+	track->type   = type;
+	track->status = SL_TRACK_IDLE;
+	track->muted  = false;
 
 	list_append(&tracks, &track->le, track);
 	list_sort(&tracks, sort_handler, NULL);
@@ -139,6 +140,28 @@ int sl_track_add(struct sl_track **trackp, enum sl_track_type type)
 	*trackp = track;
 
 	return 0;
+}
+
+
+void sl_track_focus(int id)
+{
+	struct le *le;
+	struct mix *mix = slmix();
+
+	LIST_FOREACH(&tracks, le)
+	{
+		struct sl_track *track = le->data;
+
+		track->focus = false;
+		slmix_disp_enable(mix, track->name, false);
+
+		if (track->id == id) {
+			slmix_disp_enable(mix, track->name, true);
+			track->focus = true;
+		}
+	}
+
+	sl_track_ws_send();
 }
 
 

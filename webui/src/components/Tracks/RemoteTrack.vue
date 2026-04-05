@@ -12,7 +12,7 @@
             <!-- <div class="font-semibold text-sm text-sl-red uppercase">Error</div> -->
         </div>
 
-        <div class="flex mt-1">
+        <div class="flex mt-1 border-red-500" :class="[isFocused() ? 'border-red-700 border-2' : '']">
             <div class="relative bg-sl-02dpa rounded-lg min-h-[12em] w-full shadow-sm pb-2">
                 <div class="flex justify-between items-center">
                     <div :id="`track${pkey}`" ref="tid" tabindex="0" @focus="setActive()"
@@ -70,6 +70,10 @@ onMounted(() => {
 
 function isActive() {
     return Tracks.isSelected(props.pkey)
+}
+
+function isFocused() {
+    return Tracks.isFocused(props.pkey)
 }
 
 function setActive() {

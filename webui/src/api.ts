@@ -213,7 +213,11 @@ export default {
     },
 
     async track_del(track: number) {
-        api_fetch('DELETE', '/tracks', String(track))
+        api_fetch('DELETE', '/tracks', String(track), false)
+    },
+
+    async track_focus(track: number) {
+        api_fetch('POST', '/tracks/focus', String(track), false)
     },
 
     async track_accept(track: number) {

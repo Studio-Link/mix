@@ -161,7 +161,9 @@ static int32_t source_id_next(struct source_pc *src)
 		struct sl_track *track = sl_track_by_id(next_id + 1);
 		if (!track) {
 			sl_track_add(&track, SL_TRACK_REMOTE_RTC);
-			track->status	 = SL_TRACK_REMOTE_CONNECTED;
+			track->status = SL_TRACK_REMOTE_CONNECTED;
+			re_snprintf(track->name, sizeof(track->name), "%s",
+				    src->dev);
 			info("track/source add %d/%d, RTC\n", track->id,
 			     next_id);
 
