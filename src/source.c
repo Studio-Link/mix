@@ -162,28 +162,14 @@ static int32_t source_id_next(struct source_pc *src)
 		if (!track) {
 			sl_track_add(&track, SL_TRACK_REMOTE_RTC);
 			track->status	 = SL_TRACK_REMOTE_CONNECTED;
-			track->source_id = next_id;
 			info("track/source add %d/%d, RTC\n", track->id,
 			     next_id);
 
 			goto out;
 		}
-		else if (track->source_id == -1 &&
-			 track->status == SL_TRACK_IDLE) {
-			track->type	 = SL_TRACK_REMOTE_RTC;
-			track->status	 = SL_TRACK_REMOTE_CONNECTED;
-			track->source_id = next_id;
-			info("track/source update %d/%d, RTC\n", track->id,
-			     next_id);
 
+		if (str_cmp(track->name, src->dev) == 0)
 			goto out;
-		}
-		else if (track->source_id == -1) {
-			track->source_id = next_id;
-			info("track/source update %d/%d\n", track->id,
-			     next_id);
-			goto out;
-		}
 	}
 
 	next_id = -1;

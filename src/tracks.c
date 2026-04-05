@@ -129,7 +129,6 @@ int sl_track_add(struct sl_track **trackp, enum sl_track_type type)
 		return ENOMEM;
 
 	track->id	 = sl_track_next_id();
-	track->source_id = -1;
 	track->type	 = type;
 	track->status	 = SL_TRACK_IDLE;
 	track->muted	 = false;
@@ -280,7 +279,6 @@ void sl_track_hangup(struct sl_track *track)
 		/*TODO quit rtc*/
 	}
 
-	track->source_id     = -1;
 	track->name[0]	     = '\0';
 	track->u.remote.call = NULL;
 }
@@ -453,7 +451,6 @@ static void eventh(enum bevent_ev ev, struct bevent *event, void *arg)
 			track->status	     = SL_TRACK_IDLE;
 			track->u.remote.call = NULL;
 			track->name[0]	     = '\0';
-			track->source_id     = -1;
 			if (call_scode(call) != 200)
 				str_ncpy(track->error, prm,
 					 sizeof(track->error));
