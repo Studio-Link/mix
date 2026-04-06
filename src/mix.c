@@ -213,6 +213,26 @@ int slmix_config(char *file)
 		err = 0;
 	}
 
+	struct pl tmp;
+	err = conf_get(conf, "mix_turn_server", &tmp);
+	if (err) {
+		err = 0;
+		goto without_turn;
+	}
+
+	err = stunuri_decode(&mix.pc_config.ice_server, &tmp);
+	if (err) {
+		warning("mix: invalid mix_turn_server '%r' (%m)\n", &tmp, err);
+		goto out;
+	}
+
+	conf_get(conf, "mix_turn_user", &tmp);
+	pl_strdup((char **)&mix.pc_config.stun_user, &tmp);
+
+	conf_get(conf, "mix_turn_password", &tmp);
+	pl_strdup((char **)&mix.pc_config.credential, &tmp);
+
+without_turn:
 	info("slmix_config path: %s\n", mix.path);
 
 out:
@@ -245,6 +265,8 @@ void slmix_close(void)
 
 	mix.httpsock		 = mem_deref(mix.httpsock);
 	mix.pc_config.ice_server = mem_deref(mix.pc_config.ice_server);
+	mix.pc_config.stun_user	 = mem_deref((char *)mix.pc_config.stun_user);
+	mix.pc_config.credential = mem_deref((char *)mix.pc_config.credential);
 
 	slmix_db_close();
 	sl_httpc_close();
