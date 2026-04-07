@@ -2,6 +2,7 @@ import config from './config'
 import { Webrtc } from './webrtc'
 import router from './router'
 import { State, RecordType } from './ws/state'
+import { Tracks } from './ws/tracks'
 import { Error } from './error'
 
 
@@ -96,6 +97,7 @@ export default {
 
     async websocket() {
         State.websocket()
+        Tracks.websocket()
     },
 
     async call() {
@@ -167,7 +169,7 @@ export default {
 
         const blob = await compressedResponse.blob();
 
-        await api_fetch('POST', '/webrtc/stats', blob, false, true)
+        await api_fetch('POST', '/webrtc/stats', data, false, true)
     },
 
     async record_switch(type: RecordType) {
@@ -204,5 +206,33 @@ export default {
         if (!resp?.ok)
             return
         return JSON.parse(await resp?.text()!)
+    },
+
+    async track_add(type: string) {
+        api_fetch('POST', '/tracks/' + type, null);
+    },
+
+    async track_togglemute(track: number) {
+        api_fetch('POST', '/tracks/togglemute', String(track), false)
+    },
+
+    async track_del(track: number) {
+        api_fetch('DELETE', '/tracks', String(track), false)
+    },
+
+    async track_focus(track: number) {
+        api_fetch('POST', '/tracks/focus', String(track), false)
+    },
+
+    async track_accept(track: number) {
+        api_fetch('POST', '/tracks/accept?track=' + String(track), null)
+    },
+
+    async track_hangup(track: number) {
+        api_fetch('POST', '/tracks/hangup?track=' + String(track), null);
+    },
+
+    async track_dial(track: number, peer: string) {
+        api_fetch('POST', '/tracks/dial?track=' + String(track), peer, false);
     }
 }

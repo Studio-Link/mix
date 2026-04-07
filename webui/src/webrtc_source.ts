@@ -7,6 +7,79 @@ const pc_configuration: RTCConfiguration = {
     iceTransportPolicy: 'all',
 };
 
+const QualityLimitationReasons = {
+    none: 0,
+    bandwidth: 1,
+    cpu: 2,
+    other: 3,
+};
+
+async function pc_stats(pc: RTCPeerConnection | null, id: number) {
+
+    if (!pc || pc.connectionState === 'closed')
+        return
+
+    const state = pc.connectionState
+
+    const stats = await pc.getStats()
+
+    // @ts-ignore
+    const values = [...stats.values()].filter(
+        (v) =>
+            ["peer-connection", "inbound-rtp", "outbound-rtp", "remote-inbound-rtp"].indexOf(v.type) !== -1,
+    );
+
+    let data = "";
+    const sentTypes = new Set();
+
+
+    values.forEach((value: any) => {
+        const type = value.type.replace(/-/g, "_");
+        const labels: any = [];
+        const metrics: any = [];
+
+        if (value.type === "peer-connection") {
+            labels.push(`state="${state}"`);
+        }
+
+        labels.push(`user="${api.user_id()}"`);
+        labels.push(`source="${id}"`);
+
+        Object.entries(value).forEach(([key, v]: any) => {
+            if (typeof v === "number") {
+                metrics.push([key, v]);
+            } else if (typeof v === "object") {
+                Object.entries(v).forEach(([subkey, subv]) => {
+                    if (typeof subv === "number") {
+                        metrics.push([`${key}_${subkey}`, subv]);
+                    }
+                });
+            } else if (
+                key === "qualityLimitationReason" &&
+                QualityLimitationReasons[v as keyof typeof QualityLimitationReasons] !== undefined
+            ) {
+                metrics.push([key, QualityLimitationReasons[v as keyof typeof QualityLimitationReasons]]);
+            } else {
+                labels.push(`${key}="${v}"`);
+            }
+        });
+
+        metrics.forEach(([key, v]: any) => {
+            const name = `${type}_${key.replace(/-/g, "_")}`;
+            let typeDesc = "";
+
+            if (!sentTypes.has(name)) {
+                typeDesc = `# TYPE ${name} gauge\n`;
+                sentTypes.add(name);
+            }
+            data += `${typeDesc}${name}{${labels.join(",")}} ${v}\n`;
+        });
+    });
+
+    await api.rtc_stats(data)
+    setTimeout(pc_stats, 5000, pc, id)
+}
+
 export class WebRTCSource {
     private pc: RTCPeerConnection
     public audio: MediaStream | null
@@ -43,6 +116,8 @@ export class WebRTCSource {
 
                 video.srcObject = this.video
                 video.play()
+
+                pc_stats(this.pc, this.id)
 
                 console.log("WebRTCSource: video track added")
             }

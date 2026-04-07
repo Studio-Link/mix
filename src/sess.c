@@ -138,7 +138,7 @@ static void pc_estab_handler(struct media_track *media, void *arg)
 		stream_enable_tx(media_get_stream(media), true);
 
 /* Enable/Disable Source view */
-#if 0
+#if 1
 		if (!sess->user->host)
 			slmix_source_append_all(sess->mix, NULL,
 						sess->user->id);
@@ -229,6 +229,9 @@ int slmix_session_alloc(struct session **sessp, struct mix *mix,
 	struct session *sess;
 	struct user *user;
 
+	if (!sessp)
+		return EINVAL;
+
 	sess = mem_zalloc(sizeof(*sess), destructor);
 	if (!sess)
 		return ENOMEM;
@@ -245,6 +248,11 @@ int slmix_session_alloc(struct session **sessp, struct mix *mix,
 		pl_strcpy(sess_id, sess->id, sizeof(sess->id));
 		pl_strcpy(user_id, user->id, sizeof(user->id));
 		sess->auth = true;
+	}
+	else if (user_id) {
+		info("session: create new with user %r\n", user_id);
+		rand_str(sess->id, sizeof(sess->id));
+		pl_strcpy(user_id, user->id, sizeof(user->id));
 	}
 	else {
 		/* generate a unique session and user id */
@@ -446,7 +454,7 @@ int slmix_session_user_updated(struct session *sess)
 	if (err)
 		return err;
 
-	sl_ws_send_event_all(json);
+	sl_ws_send_event_all(WS_USERS, json);
 	json = mem_deref(json);
 
 	return 0;

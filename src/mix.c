@@ -89,7 +89,7 @@ void slmix_refresh_rooms(void *arg)
 
 	re_sdprintf(&json, "{\"type\": \"rooms\", \"rooms\": {%b}}", mjson.buf,
 		    mjson.end - 1);
-	sl_ws_send_event_all(json);
+	sl_ws_send_event_all(WS_USERS, json);
 	mem_deref(json);
 
 	slmix_db_cur_close(cur);
@@ -212,6 +212,8 @@ int slmix_config(char *file)
 		}
 		err = 0;
 	}
+
+	conf_path_set(mix.path);
 
 	info("slmix_config path: %s\n", mix.path);
 

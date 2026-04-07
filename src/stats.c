@@ -5,6 +5,7 @@ static struct tmr tmr_jitter;
 static uint64_t jitter_last = 0;
 static int64_t max_jitter   = 0; /* Mainloop jitter */
 enum { JITTER_INTERVAL = 10 };
+static struct mbuf *mb_stats;
 
 
 static void jitter_stats(void *arg)
@@ -35,17 +36,16 @@ static void slmix_metrics(void *arg)
 	struct jbuf_stat video_jstat;
 	bool types = true;
 	(void)arg;
-	struct mix *mix = slmix();
 
-	struct mbuf *mb = mbuf_alloc(512);
-	if (!mb)
+	if (mbuf_pos(mb_stats) == 0)
 		goto out;
 
-	re_snprintf(metric_url, sizeof(metric_url), METRICS_URL "/instance/%s",
-		    mix->room);
+	struct mix *mix = slmix();
 
-	mbuf_printf(mb, "# TYPE mix_jitter gauge\n");
-	mbuf_printf(mb, "mix_jitter %lld\n", max_jitter);
+	re_snprintf(metric_url, sizeof(metric_url), METRICS_URL, mix->room);
+
+	mbuf_printf(mb_stats, "# TYPE mix_jitter gauge\n");
+	mbuf_printf(mb_stats, "mix_jitter %lld\n", max_jitter);
 	max_jitter = 0;
 
 	LIST_FOREACH(&mix->sessl, le)
@@ -60,115 +60,158 @@ static void slmix_metrics(void *arg)
 			    sess->user->id);
 
 		if (types) {
-			mbuf_printf(mb, "# TYPE mix_rtt gauge\n");
-			mbuf_printf(mb, "# TYPE mix_tx_sent counter\n");
-			mbuf_printf(mb, "# TYPE mix_tx_lost counter\n");
-			mbuf_printf(mb, "# TYPE mix_tx_jit gauge\n");
-			mbuf_printf(mb, "# TYPE mix_rx_sent counter\n");
-			mbuf_printf(mb, "# TYPE mix_rx_lost counter\n");
-			mbuf_printf(mb, "# TYPE mix_rx_jit gauge\n");
-			mbuf_printf(mb, "# TYPE mix_jbuf_delay gauge\n");
-			mbuf_printf(mb, "# TYPE mix_jbuf_skew gauge\n");
-			mbuf_printf(mb, "# TYPE mix_jbuf_late counter\n");
-			mbuf_printf(mb, "# TYPE mix_jbuf_late_lost counter\n");
-			mbuf_printf(mb, "# TYPE mix_jbuf_lost counter\n");
-			mbuf_printf(mb, "# TYPE mix_jbuf_gnacks counter\n");
-			mbuf_printf(mb, "# TYPE mix_jbuf_jitter gauge\n");
-			mbuf_printf(mb, "# TYPE mix_jbuf_packets gauge\n");
+			mbuf_printf(mb_stats, "# TYPE mix_rtt gauge\n");
+			mbuf_printf(mb_stats, "# TYPE mix_tx_sent counter\n");
+			mbuf_printf(mb_stats, "# TYPE mix_tx_lost counter\n");
+			mbuf_printf(mb_stats, "# TYPE mix_tx_jit gauge\n");
+			mbuf_printf(mb_stats, "# TYPE mix_rx_sent counter\n");
+			mbuf_printf(mb_stats, "# TYPE mix_rx_lost counter\n");
+			mbuf_printf(mb_stats, "# TYPE mix_rx_jit gauge\n");
+			mbuf_printf(mb_stats, "# TYPE mix_jbuf_delay gauge\n");
+			mbuf_printf(mb_stats, "# TYPE mix_jbuf_skew gauge\n");
+			mbuf_printf(mb_stats,
+				    "# TYPE mix_jbuf_late counter\n");
+			mbuf_printf(mb_stats,
+				    "# TYPE mix_jbuf_late_lost counter\n");
+			mbuf_printf(mb_stats,
+				    "# TYPE mix_jbuf_lost counter\n");
+			mbuf_printf(mb_stats,
+				    "# TYPE mix_jbuf_gnacks counter\n");
+			mbuf_printf(mb_stats,
+				    "# TYPE mix_jbuf_jitter gauge\n");
+			mbuf_printf(mb_stats,
+				    "# TYPE mix_jbuf_packets gauge\n");
 			types = false;
 		}
 
-		audio_stat = stream_rtcp_stats(media_get_stream(sess->maudio));
+		struct stream *audio_stream;
+		struct stream *video_stream;
+
+		if (sess->call) {
+			audio_stream = audio_strm(call_audio(sess->call));
+			video_stream = video_strm(call_video(sess->call));
+		}
+		else {
+			audio_stream = media_get_stream(sess->maudio);
+			video_stream = media_get_stream(sess->mvideo);
+		}
+
+		audio_stat = stream_rtcp_stats(audio_stream);
 		if (audio_stat) {
-			mbuf_printf(mb, "mix_rtt{%s,kind=\"audio\"} %u\n",
-				    labels, audio_stat->rtt / 1000);
-			mbuf_printf(mb, "mix_tx_sent{%s,kind=\"audio\"} %u\n",
+			mbuf_printf(mb_stats,
+				    "mix_rtt{%s,kind=\"audio\"} %u\n", labels,
+				    audio_stat->rtt / 1000);
+			mbuf_printf(mb_stats,
+				    "mix_tx_sent{%s,kind=\"audio\"} %u\n",
 				    labels, audio_stat->tx.sent);
-			mbuf_printf(mb, "mix_tx_lost{%s,kind=\"audio\"} %d\n",
+			mbuf_printf(mb_stats,
+				    "mix_tx_lost{%s,kind=\"audio\"} %d\n",
 				    labels, audio_stat->tx.lost);
-			mbuf_printf(mb, "mix_tx_jit{%s,kind=\"audio\"} %u\n",
+			mbuf_printf(mb_stats,
+				    "mix_tx_jit{%s,kind=\"audio\"} %u\n",
 				    labels, audio_stat->tx.jit);
-			mbuf_printf(mb, "mix_rx_sent{%s,kind=\"audio\"} %u\n",
+			mbuf_printf(mb_stats,
+				    "mix_rx_sent{%s,kind=\"audio\"} %u\n",
 				    labels, audio_stat->rx.sent);
-			mbuf_printf(mb, "mix_rx_lost{%s,kind =\"audio\"} %d\n",
+			mbuf_printf(mb_stats,
+				    "mix_rx_lost{%s,kind =\"audio\"} %d\n",
 				    labels, audio_stat->rx.lost);
-			mbuf_printf(mb, "mix_rx_jit{%s,kind=\"audio\"} %u\n",
+			mbuf_printf(mb_stats,
+				    "mix_rx_jit{%s,kind=\"audio\"} %u\n",
 				    labels, audio_stat->rx.jit);
 		}
 
-		video_stat = stream_rtcp_stats(media_get_stream(sess->mvideo));
+		video_stat = stream_rtcp_stats(video_stream);
 		if (video_stat) {
-			mbuf_printf(mb, "mix_rtt{%s,kind=\"video\"} %u\n",
-				    labels, video_stat->rtt / 1000);
-			mbuf_printf(mb, "mix_tx_sent{%s,kind=\"video\"} %u\n",
+			mbuf_printf(mb_stats,
+				    "mix_rtt{%s,kind=\"video\"} %u\n", labels,
+				    video_stat->rtt / 1000);
+			mbuf_printf(mb_stats,
+				    "mix_tx_sent{%s,kind=\"video\"} %u\n",
 				    labels, video_stat->tx.sent);
-			mbuf_printf(mb, "mix_tx_lost{%s,kind=\"video\"} %d\n",
+			mbuf_printf(mb_stats,
+				    "mix_tx_lost{%s,kind=\"video\"} %d\n",
 				    labels, video_stat->tx.lost);
-			mbuf_printf(mb, "mix_tx_jit{%s,kind=\"video\"} %u\n",
+			mbuf_printf(mb_stats,
+				    "mix_tx_jit{%s,kind=\"video\"} %u\n",
 				    labels, video_stat->tx.jit);
-			mbuf_printf(mb, "mix_rx_sent{%s,kind=\"video\"} %u\n",
+			mbuf_printf(mb_stats,
+				    "mix_rx_sent{%s,kind=\"video\"} %u\n",
 				    labels, video_stat->rx.sent);
-			mbuf_printf(mb, "mix_rx_lost{%s,kind=\"video\"} %d\n",
+			mbuf_printf(mb_stats,
+				    "mix_rx_lost{%s,kind=\"video\"} %d\n",
 				    labels, video_stat->rx.lost);
-			mbuf_printf(mb, "mix_rx_jit{%s,kind=\"video\"} %u\n",
+			mbuf_printf(mb_stats,
+				    "mix_rx_jit{%s,kind=\"video\"} %u\n",
 				    labels, video_stat->rx.jit);
 		}
 
-		err = stream_jbuf_stats(media_get_stream(sess->maudio),
-					&audio_jstat);
-		err |= stream_jbuf_stats(media_get_stream(sess->mvideo),
-					 &video_jstat);
+		err = stream_jbuf_stats(audio_stream, &audio_jstat);
+		err |= stream_jbuf_stats(video_stream, &video_jstat);
 		if (err)
 			continue;
 
-		mbuf_printf(mb, "mix_jbuf_delay{%s,kind=\"audio\"} %u\n",
+		mbuf_printf(mb_stats, "mix_jbuf_delay{%s,kind=\"audio\"} %u\n",
 			    labels, audio_jstat.c_delay);
-		mbuf_printf(mb, "mix_jbuf_skew{%s,kind=\"audio\"} %d\n",
+		mbuf_printf(mb_stats, "mix_jbuf_skew{%s,kind=\"audio\"} %d\n",
 			    labels, audio_jstat.c_skew);
-		mbuf_printf(mb, "mix_jbuf_late{%s,kind=\"audio\"} %u\n",
+		mbuf_printf(mb_stats, "mix_jbuf_late{%s,kind=\"audio\"} %u\n",
 			    labels, audio_jstat.n_late);
-		mbuf_printf(mb, "mix_jbuf_late_lost{%s,kind=\"audio\"} %u\n",
+		mbuf_printf(mb_stats,
+			    "mix_jbuf_late_lost{%s,kind=\"audio\"} %u\n",
 			    labels, audio_jstat.n_late_lost);
-		mbuf_printf(mb, "mix_jbuf_lost{%s,kind=\"audio\"} %u\n",
+		mbuf_printf(mb_stats, "mix_jbuf_lost{%s,kind=\"audio\"} %u\n",
 			    labels, audio_jstat.n_lost);
-		mbuf_printf(mb, "mix_jbuf_jitter{%s,kind=\"audio\"} %u\n",
-			    labels, audio_jstat.c_jitter);
-		mbuf_printf(mb, "mix_jbuf_packets{%s,kind=\"audio\"} %u\n",
-			    labels, audio_jstat.c_packets);
-		mbuf_printf(mb, "mix_jbuf_gnacks{%s,kind=\"audio\"} %u\n",
-			    labels, audio_jstat.n_gnacks);
+		mbuf_printf(mb_stats,
+			    "mix_jbuf_jitter{%s,kind=\"audio\"} %u\n", labels,
+			    audio_jstat.c_jitter);
+		mbuf_printf(mb_stats,
+			    "mix_jbuf_packets{%s,kind=\"audio\"} %u\n", labels,
+			    audio_jstat.c_packets);
+		mbuf_printf(mb_stats,
+			    "mix_jbuf_gnacks{%s,kind=\"audio\"} %u\n", labels,
+			    audio_jstat.n_gnacks);
 
-		mbuf_printf(mb, "mix_jbuf_delay{%s,kind=\"video\"} %u\n",
+		mbuf_printf(mb_stats, "mix_jbuf_delay{%s,kind=\"video\"} %u\n",
 			    labels, video_jstat.c_delay);
-		mbuf_printf(mb, "mix_jbuf_skew{%s,kind=\"video\"} %d\n",
+		mbuf_printf(mb_stats, "mix_jbuf_skew{%s,kind=\"video\"} %d\n",
 			    labels, video_jstat.c_skew);
-		mbuf_printf(mb, "mix_jbuf_late{%s,kind=\"video\"} %u\n",
+		mbuf_printf(mb_stats, "mix_jbuf_late{%s,kind=\"video\"} %u\n",
 			    labels, video_jstat.n_late);
-		mbuf_printf(mb, "mix_jbuf_late_lost{%s,kind=\"video\"} %u\n",
+		mbuf_printf(mb_stats,
+			    "mix_jbuf_late_lost{%s,kind=\"video\"} %u\n",
 			    labels, video_jstat.n_late_lost);
-		mbuf_printf(mb, "mix_jbuf_lost{%s,kind=\"video\"} %u\n",
+		mbuf_printf(mb_stats, "mix_jbuf_lost{%s,kind=\"video\"} %u\n",
 			    labels, video_jstat.n_lost);
-		mbuf_printf(mb, "mix_jbuf_jitter{%s,kind=\"video\"} %u\n",
-			    labels, video_jstat.c_jitter);
-		mbuf_printf(mb, "mix_jbuf_packets{%s,kind=\"video\"} %u\n",
-			    labels, video_jstat.c_packets);
-		mbuf_printf(mb, "mix_jbuf_gnacks{%s,kind=\"video\"} %u\n",
-			    labels, video_jstat.n_gnacks);
+		mbuf_printf(mb_stats,
+			    "mix_jbuf_jitter{%s,kind=\"video\"} %u\n", labels,
+			    video_jstat.c_jitter);
+		mbuf_printf(mb_stats,
+			    "mix_jbuf_packets{%s,kind=\"video\"} %u\n", labels,
+			    video_jstat.c_packets);
+		mbuf_printf(mb_stats,
+			    "mix_jbuf_gnacks{%s,kind=\"video\"} %u\n", labels,
+			    video_jstat.n_gnacks);
 	}
 
-	if (mbuf_pos(mb) == 0)
-		goto out;
 
 	err = sl_httpc_alloc(&http_conn, NULL, NULL, NULL);
 	if (err)
 		goto out;
 
-	sl_httpc_req(http_conn, SL_HTTP_POST, metric_url, mb);
+	sl_httpc_req(http_conn, SL_HTTP_POST, metric_url, mb_stats);
 	mem_deref(http_conn);
 
+	mbuf_rewind(mb_stats);
+
 out:
-	mem_deref(mb);
-	tmr_start(&tmr_metrics, 2000, slmix_metrics, NULL);
+	tmr_start(&tmr_metrics, 6000, slmix_metrics, NULL);
+}
+
+
+int sl_mix_stats_append(struct mbuf *mb)
+{
+	return mbuf_write_mem(mb_stats, mbuf_buf(mb), mbuf_get_left(mb));
 }
 
 
@@ -179,6 +222,10 @@ int slmix_stats_init(void)
 	tmr_start(&tmr_metrics, 2000, slmix_metrics, NULL);
 	tmr_start(&tmr_jitter, JITTER_INTERVAL, jitter_stats, NULL);
 
+	mb_stats = mbuf_alloc(512);
+	if (!mb_stats)
+		return ENOMEM;
+
 	return 0;
 }
 
@@ -187,4 +234,5 @@ void slmix_stats_close(void)
 {
 	tmr_cancel(&tmr_metrics);
 	tmr_cancel(&tmr_jitter);
+	mb_stats = mem_deref(mb_stats);
 }
