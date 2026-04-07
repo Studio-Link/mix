@@ -302,10 +302,20 @@ void sl_track_hangup(struct sl_track *track)
 	}
 
 	if (track->type == SL_TRACK_REMOTE_RTC) {
-		track->status = SL_TRACK_IDLE;
-		/*TODO quit rtc*/
+		track->status	  = SL_TRACK_IDLE;
+		struct mix *mix	  = slmix();
+		struct pl user_id = PL_INIT;
+
+		pl_set_str(&user_id, track->name);
+		struct session *sess =
+			slmix_session_lookup_user_id(&mix->sessl, &user_id);
+		if (!sess)
+			goto out;
+
+		slmix_session_speaker(sess, false);
 	}
 
+out:
 	track->name[0]	     = '\0';
 	track->u.remote.call = NULL;
 }
