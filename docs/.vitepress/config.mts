@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitepress'
-import { en } from './en'
-import { de } from './de'
+import { en } from './en.mts'
+import { de } from './de.mts'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({

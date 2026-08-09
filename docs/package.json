@@ -1,7 +1,7 @@
 {
   "devDependencies": {
     "tailwindcss": "^4.1.7",
-    "vitepress": "^1.6.3"
+    "vitepress": "^2.0.0-alpha.19"
   },
   "scripts": {
     "dev": "vitepress dev .",
