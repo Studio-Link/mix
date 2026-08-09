@@ -16,7 +16,7 @@ class LoginTest extends TestCase
         $alice->login();
         $bob->login();
 
-        $alice->login("alice");
+        $alice->login("alice2");
         $bob->login("bob");
 
         $msg_bob = json_decode($bob->ws->receive()->getContent());
@@ -24,7 +24,7 @@ class LoginTest extends TestCase
         $this->assertFalse($msg_bob->users[0]->speaker);
 
         $msg_alice = json_decode($alice->ws->receive()->getContent());
-        $this->assertEquals("alice", $msg_alice->users[0]->name);
+        $this->assertEquals("alice2", $msg_alice->users[0]->name);
         $this->assertFalse($msg_alice->users[0]->speaker);
         $this->assertEquals("bob", $msg_alice->users[1]->name);
     }

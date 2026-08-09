@@ -10,8 +10,7 @@ use Tests\Client;
 
 class TestCase extends BaseTestCase
 {
-    public static function setUpBeforeClass(): void
-    {
+    protected function setUp(): void {
         $client = new Client();
 
         shell_exec("cd ../.. &&" .
@@ -19,25 +18,19 @@ class TestCase extends BaseTestCase
         $start_count = 0;
 
         while ($start_count++ < 1000) {
-            usleep(5000);
             try {
                 $client->get("/api/v1/sessions/connected");
                 break;
             } catch (\Exception $_) {
+                usleep(100);
                 continue;
             }
         }
     }
 
-    public static function tearDownAfterClass(): void
-    {
-        system("pkill slmix");
-    }
-
-    protected function setUp(): void {}
-
     protected function tearDown(): void
     {
+        system("pkill slmix");
         if (!$this->status()->isSuccess()) {
             system("cat /tmp/slmix.log");
         }

@@ -11,6 +11,7 @@ enum ClientAuth: String
     case Host = "TOKENHOST";
     case Guest = "TOKENGUEST";
     case Audience = "";
+    case Admin = "Admin";
 }
 
 class Client
