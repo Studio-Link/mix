@@ -51,8 +51,15 @@ struct mix {
 	mix_time_rec_h *time_rec_h;
 	mix_talk_detect_h *talk_detect_h;
 	enum mix_rec rec_state;
+	struct mix_rec_s {
+		char base[PATH_SZ];
+		char name[PATH_SZ];
+		char full[PATH_SZ];
+	} rec;
 	char path[PATH_SZ];
 };
+
+
 
 struct user {
 	char id[USERID_SZ];
