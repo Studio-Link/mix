@@ -43,16 +43,31 @@ export default {
     },
 
     async start() {
+        if (!navigator.mediaDevices?.getUserMedia) {
+            console.error('webcam: getUserMedia unavailable (insecure origin?)')
+            return
+        }
+
+        /* stop the previous stream first: iOS Safari only allows one camera
+         * stream at a time and silently tears the old one down otherwise */
+        videoStream?.getTracks().forEach((t) => t.stop())
+        videoStream = undefined
+
         try {
+            /* 'ideal' so a stale stored id falls back to the default camera
+             * instead of rejecting with OverconstrainedError */
             constraintsVideo.video.deviceId = this.deviceId.value
+                ? { ideal: this.deviceId.value }
+                : undefined
             videoStream = await navigator.mediaDevices.getUserMedia(constraintsVideo)
         } catch (e) {
             console.error(`An error occurred: ${e}`)
         }
-        this.deviceId.value = videoStream?.getVideoTracks()[0].getSettings().deviceId
+        this.deviceId.value = videoStream?.getVideoTracks()[0]?.getSettings().deviceId
         if (hvideo && videoStream) {
             hvideo.srcObject = videoStream
-            hvideo.play()
+            /* play() rejects, it does not throw */
+            hvideo.play().catch((e) => console.log('webcam: play', e))
         }
 
         this.picture.value = undefined
@@ -61,7 +76,8 @@ export default {
     },
 
     stop() {
-        videoStream?.getVideoTracks()[0].stop()
+        videoStream?.getTracks().forEach((t) => t.stop())
+        videoStream = undefined
     },
 
     takePicture(canvas: HTMLCanvasElement | null, video: HTMLVideoElement | null) {
