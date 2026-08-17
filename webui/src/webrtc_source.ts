@@ -42,7 +42,7 @@ export class WebRTCSource {
                 }
 
                 video.srcObject = this.video
-                video.play()
+                video.play().catch((e) => console.log('WebRTCSource: play', e))
 
                 console.log("WebRTCSource: video track added")
             }
