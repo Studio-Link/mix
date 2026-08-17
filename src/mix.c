@@ -1,6 +1,6 @@
 #include <time.h>
-#include <stdlib.h>
 #include <unistd.h>
+#include <sys/wait.h>
 #include <mix.h>
 
 extern const char *GIT_TAG;
@@ -318,17 +318,25 @@ enum mix_rec slmix_rec_state(struct mix *m)
 
 static int rec_zip_folder(void *arg)
 {
-	struct mix *m = arg;
-	char cmd[512];
+	struct mix_rec_s *r = arg;
+	int status;
 
-	if (!str_isset(m->rec_folder_base) || !str_isset(m->rec_folder_name))
+	if (!str_isset(r->base) || !str_isset(r->name)) {
+		mem_deref(r);
 		return EINVAL;
+	}
 
-	re_snprintf(cmd, sizeof(cmd), "cd %s && zip -r %s.zip %s",
-		    m->rec_folder_base, m->rec_folder_name,
-		    m->rec_folder_name);
-
-	return system(cmd);
+	pid_t pid = fork();
+	if (pid == 0) {
+		chdir(r->base);
+		char zipname[PATH_SZ];
+		re_snprintf(zipname, sizeof(zipname), "%s.zip", r->name);
+		execlp("zip", "zip", "-r", zipname, r->name, (char *)NULL);
+		_exit(127);
+	}
+	waitpid(pid, &status, 0);
+	mem_deref(r);
+	return status;
 }
 
 
@@ -356,31 +364,38 @@ void slmix_record(struct mix *m, enum mix_rec state)
 		info("slmix: record stopped\n");
 
 		/* zip files if record was started before */
-		if (m->rec_state > REC_DISABLED)
-			re_thread_async(rec_zip_folder, NULL, m);
+		if (m->rec_state > REC_DISABLED) {
+			struct mix_rec_s *r =
+				mem_zalloc(sizeof(struct mix_rec_s), NULL);
+			if (!r)
+				goto out;
+
+			*r = m->rec;
+			re_thread_async(rec_zip_folder, NULL, r);
+		}
 
 		goto out;
 	}
 
 	localtime_r(&now, &tm);
 
-	(void)re_snprintf(m->rec_folder_base, sizeof(m->rec_folder_base),
+	(void)re_snprintf(m->rec.base, sizeof(m->rec.base),
 			  "webui/public/download/%s", m->token_download);
-	fs_mkdir(m->rec_folder_base, 0755);
+	fs_mkdir(m->rec.base, 0755);
 
-	(void)re_snprintf(m->rec_folder_name, sizeof(m->rec_folder_name),
-			  "%H-%s", timestamp_print, &tm, m->room);
+	(void)re_snprintf(m->rec.name, sizeof(m->rec.name), "%H-%s",
+			  timestamp_print, &tm, m->room);
 
-	(void)re_snprintf(m->rec_folder_full, sizeof(m->rec_folder_full),
-			  "%s/%s", m->rec_folder_base, m->rec_folder_name);
-	fs_mkdir(m->rec_folder_full, 0755);
+	(void)re_snprintf(m->rec.full, sizeof(m->rec.full), "%s/%s",
+			  m->rec.base, m->rec.name);
+	fs_mkdir(m->rec.full, 0755);
 
 	if (state & REC_VIDEO) {
-		err = m->video_rec_h(m->rec_folder_full, true);
+		err = m->video_rec_h(m->rec.full, true);
 	}
 
 	if (state & REC_AUDIO) {
-		err |= m->audio_rec_h(m->rec_folder_full, true);
+		err |= m->audio_rec_h(m->rec.full, true);
 	}
 
 	if (err) {
