@@ -327,8 +327,14 @@ static int rec_zip_folder(void *arg)
 	}
 
 	pid_t pid = fork();
-	if (pid == 0) {
-		chdir(r->base);
+	if (pid < 0) {
+		warning("slmix: fork failed for zip: %m\n", errno);
+		mem_deref(r);
+		return errno;
+	}
+	else if (pid == 0) {
+		if (chdir(r->base) != 0)
+			_exit(126);
 		char zipname[PATH_SZ];
 		re_snprintf(zipname, sizeof(zipname), "%s.zip", r->name);
 		execlp("zip", "zip", "-r", zipname, r->name, (char *)NULL);
@@ -336,7 +342,7 @@ static int rec_zip_folder(void *arg)
 	}
 	waitpid(pid, &status, 0);
 	mem_deref(r);
-	return status;
+	return WEXITSTATUS(status);
 }
 
 
