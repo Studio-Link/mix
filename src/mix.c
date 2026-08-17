@@ -1,4 +1,5 @@
 #include <time.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <mix.h>
 
@@ -315,12 +316,27 @@ enum mix_rec slmix_rec_state(struct mix *m)
 }
 
 
+static int rec_zip_folder(void *arg)
+{
+	struct mix *m = arg;
+	char cmd[512];
+
+	if (!str_isset(m->rec_folder_base) || !str_isset(m->rec_folder_name))
+		return EINVAL;
+
+	re_snprintf(cmd, sizeof(cmd), "cd %s && zip -r %s.zip %s",
+		    m->rec_folder_base, m->rec_folder_name,
+		    m->rec_folder_name);
+
+	return system(cmd);
+}
+
+
 void slmix_record(struct mix *m, enum mix_rec state)
 {
 	struct tm tm;
-	time_t now	     = time(NULL);
-	char folder[PATH_SZ] = {0};
-	int err		     = 0;
+	time_t now = time(NULL);
+	int err	   = 0;
 
 	if (!m || !m->video_rec_h || !m->audio_rec_h) {
 		warning("slmix: record init state %s failed\n",
@@ -338,27 +354,33 @@ void slmix_record(struct mix *m, enum mix_rec state)
 		}
 
 		info("slmix: record stopped\n");
+
+		/* zip files if record was started before */
+		if (m->rec_state > REC_DISABLED)
+			re_thread_async(rec_zip_folder, NULL, m);
+
 		goto out;
 	}
 
 	localtime_r(&now, &tm);
 
-	(void)re_snprintf(folder, sizeof(folder), "webui/public/download/%s",
-			  m->token_download);
-	fs_mkdir(folder, 0755);
+	(void)re_snprintf(m->rec_folder_base, sizeof(m->rec_folder_base),
+			  "webui/public/download/%s", m->token_download);
+	fs_mkdir(m->rec_folder_base, 0755);
 
-	(void)re_snprintf(folder, sizeof(folder),
-			  "webui/public/download/%s/%H-%s", m->token_download,
-			  timestamp_print, &tm, mix.room);
-	fs_mkdir(folder, 0755);
+	(void)re_snprintf(m->rec_folder_name, sizeof(m->rec_folder_name),
+			  "%H-%s", timestamp_print, &tm, m->room);
 
+	(void)re_snprintf(m->rec_folder_full, sizeof(m->rec_folder_full),
+			  "%s/%s", m->rec_folder_base, m->rec_folder_name);
+	fs_mkdir(m->rec_folder_full, 0755);
 
 	if (state & REC_VIDEO) {
-		err = m->video_rec_h(folder, true);
+		err = m->video_rec_h(m->rec_folder_full, true);
 	}
 
 	if (state & REC_AUDIO) {
-		err |= m->audio_rec_h(folder, true);
+		err |= m->audio_rec_h(m->rec_folder_full, true);
 	}
 
 	if (err) {

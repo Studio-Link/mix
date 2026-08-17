@@ -51,6 +51,9 @@ struct mix {
 	mix_time_rec_h *time_rec_h;
 	mix_talk_detect_h *talk_detect_h;
 	enum mix_rec rec_state;
+	char rec_folder_base[PATH_SZ];
+	char rec_folder_name[PATH_SZ];
+	char rec_folder_full[PATH_SZ];
 	char path[PATH_SZ];
 };
 
