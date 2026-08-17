@@ -478,7 +478,9 @@ export const Webrtc = {
         else
             this.audio_input_id.value = audiostream?.getAudioTracks()[0].getSettings().deviceId
 
-        if (!video_available)
+        if (video_available)
+            this.change_video()
+        else
             this.video_input_id.value = undefined
 
         useEventListener(navigator!.mediaDevices, 'devicechange', Webrtc.update_avdevices)
@@ -531,7 +533,7 @@ export const Webrtc = {
             updateBandwidthRestriction(400)
         }
 
-        if (this.video_input_id.value !== 'undefined')
+        if (this.video_input_id.value !== undefined)
             constraintsVideo.video.deviceId = { exact: this.video_input_id.value }
 
         await pc_media_video()
