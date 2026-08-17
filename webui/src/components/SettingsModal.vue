@@ -70,6 +70,7 @@
                             v-slot="{ active, checked }"
                           >
                             <div
+                              @click="on_video_option(option)"
                               :class="[
                                 active ? 'ring-2 ring-offset-2 ring-indigo-500' : '',
                                 checked
@@ -185,13 +186,16 @@ import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } fro
 import { RadioGroup, RadioGroupLabel, RadioGroupOption } from '@headlessui/vue'
 import { Cog6ToothIcon, MicrophoneIcon } from '@heroicons/vue/24/outline'
 import { State } from '../ws/state'
-import { Webrtc, WebrtcState } from '../webrtc'
-import { ref, watch } from 'vue'
+import { Webrtc, WebrtcState, has_display_media, pc_screen_request } from '../webrtc'
+import { computed, nextTick, ref, watch } from 'vue'
 import api from '../api'
 import { Error } from '../error'
 
 const open = State.settings_active
-const videoOptions = ['Disabled', 'Camera', 'Screen']
+/* iOS Safari has no getDisplayMedia at all - do not offer what cannot work */
+const videoOptions = computed(() =>
+  has_display_media() ? ['Disabled', 'Camera', 'Screen'] : ['Disabled', 'Camera']
+)
 const video_select = Webrtc.video_select
 const video_resolution = Webrtc.video_resolution
 const audio_input_id = Webrtc.audio_input_id
@@ -201,13 +205,20 @@ const echo = Webrtc.echo
 const video_echo = ref<HTMLVideoElement>()
 const video_error = Error.video
 
-watch(video_select, async (newValue, oldValue) => {
-  const interval = setInterval(async () => {
-    if (video_echo.value) {
-      clearInterval(interval)
-      video_echo.value.srcObject = await Webrtc.change_video()
-    }
-  }, 50)
+/* Has to run inside the click handler: Safari ties transient user activation
+ * to the current task, so a getDisplayMedia() started from the watcher below
+ * (a microtask, previously a 50ms timer) is rejected with InvalidAccessError. */
+function on_video_option(option: string) {
+  if (option === 'Screen' && video_select.value !== 'Screen') pc_screen_request()
+}
+
+/* The old setInterval polled for the video ref and never cleared itself when
+ * the modal closed first, leaking a timer and racing concurrent
+ * change_video() calls against each other. */
+watch(video_select, async () => {
+  const stream = await Webrtc.change_video()
+  await nextTick()
+  if (video_echo.value) video_echo.value.srcObject = stream
 })
 
 watch(audio_input_id, async (newValue, oldValue) => {
