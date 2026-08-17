@@ -1,7 +1,7 @@
 FROM archlinux:latest as build
 
 RUN pacman -Syu --noconfirm curl wget ninja pkgconf clang cmake make git \
-        patch ca-certificates gd opus zlib ffmpeg flac nodejs npm lmdb
+        patch ca-certificates gd opus zlib ffmpeg flac nodejs npm lmdb zip
 COPY . /opt/mix_build
 RUN cd /opt/mix_build && make release && \
     cd /opt/mix_build && make webui && \
