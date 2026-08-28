@@ -9,6 +9,9 @@ build: external
 		-DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-gdwarf-4 -g3 -DJBUF_STAT -DRE_RTP_PCAP"
 	@cmake --build build --parallel
 
+.PHONY: build_pro
+build_pro: external_pro build
+
 .PHONY: webui
 webui:
 	cd webui && npm install && npm run build-only
@@ -32,6 +35,9 @@ systemd: external
 		-DCMAKE_C_FLAGS="-g -DJBUF_STAT" -DUSE_SD_SOCK=ON -DUSE_TLS1_3_PHA=OFF
 	make build
 
+.PHONY: systemd_pro
+systemd_pro: external_pro systemd
+
 .PHONY: unix
 unix: external
 	make clean
@@ -46,7 +52,13 @@ external:
 	git clone --depth 1 \
 		https://github.com/baresip/baresip.git external/baresip
 	cd external/re && \
-		patch -p1 < ../../patches/re_aubuf_timestamp_order_fix.patch
+		patch -p1 < ../../patches/re_aubuf_timestamp_order_fix.patch && \
+		patch -p1 < ../../patches/re_aumix_record_only.patch
+
+.PHONY: external_pro
+external_pro: external
+	cd external/baresip && \
+		patch -p1 < ../../../mix_pro/patches/slmagic.diff
 
 ##############################################################################
 #

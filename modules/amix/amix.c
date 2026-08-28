@@ -42,6 +42,7 @@ struct amix {
 	struct aumix_source *aumix_src;
 	char *device;
 	uint16_t speaker_id;
+	bool magic;
 	bool muted;
 };
 
@@ -139,6 +140,13 @@ static int amix_alloc(struct amix **amixp, const char *device)
 	aumix_source_readh(amix->aumix_src, mix_readh);
 
 	amix->muted = true;
+
+	if (strstr(device, "slmagic")) {
+		amix->magic = true;
+		aumix_source_mute(amix->aumix_src, amix->muted);
+		aumix_source_enable(amix->aumix_src, true);
+		aumix_source_record_only(amix->aumix_src, true);
+	}
 
 out:
 	if (err) {
@@ -306,7 +314,8 @@ out:
 void amix_mute(const char *dev, bool mute, uint16_t id);
 void amix_mute(const char *dev, bool mute, uint16_t id)
 {
-	struct le *le;
+	struct le *le, *le_magic;
+	char dev_magic[128];
 
 	le = hash_lookup(amixl, hash_joaat_str(dev), dev_cmp_h, (void *)dev);
 	if (!le)
@@ -321,6 +330,16 @@ void amix_mute(const char *dev, bool mute, uint16_t id)
 
 		if (!list_contains(&speakerl, &amix->sle))
 			list_append(&speakerl, &amix->sle, amix);
+	}
+
+	re_snprintf(dev_magic, sizeof(dev_magic), "%s_slmagic", dev);
+	le_magic = hash_lookup(amixl, hash_joaat_str(dev_magic), dev_cmp_h,
+			       (void *)dev_magic);
+	if (id && le_magic) {
+		struct amix *amix_magic = le_magic->data;
+		aumix_source_mute(amix_magic->aumix_src, mute);
+		amix_magic->muted = mute;
+		amix_magic->speaker_id = 10000 + id;
 	}
 }
 
